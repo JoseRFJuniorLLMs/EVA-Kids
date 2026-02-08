@@ -1,18 +1,20 @@
-import { Component, Inject, OnInit } from '@angular/core';
-import { MatDialog } from '@angular/material/dialog';
+import { Component, Inject, OnInit, OnDestroy } from '@angular/core';
+import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { Firestore } from '@angular/fire/firestore';
 import { NoteService } from './note.service';
 import { NoteCollection } from './note-collection';
-import { Observable } from 'rxjs';
+import { Observable, Subject, Subscription } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 import { CommonModule } from '@angular/common';
 import { CdkDragDrop, moveItemInArray, DragDropModule } from '@angular/cdk/drag-drop';
-import { VoiceRecognitionService } from '../../../pages/apps/voice-comand/voice-recognition.service';
+import { UnifiedVoiceService } from '../../../core/services/voice/unified-voice.service';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { FormsModule } from '@angular/forms';
 import { FlashcardComponent } from '../note/list/flashcard.component';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { RouterModule } from '@angular/router';
 
 @Component({
   selector: 'notes',
@@ -26,10 +28,14 @@ import { MatIconModule } from '@angular/material/icon';
     MatIconModule,
     DragDropModule,
     MatTooltipModule,
-    FormsModule
+    FormsModule,
+    RouterModule
   ]
 })
-export class NoteComponent implements OnInit {
+export class NoteComponent implements OnInit, OnDestroy {
+  // Cleanup subject for memory leak prevention
+  private destroy$ = new Subject<void>();
+
   notes$!: Observable<NoteCollection[]>;
   filteredNotes$!: Observable<NoteCollection[]>;
   searchTerm: string = '';
@@ -38,7 +44,7 @@ export class NoteComponent implements OnInit {
     public dialog: MatDialog,
     @Inject(Firestore) private firestore: Firestore,
     private noteService: NoteService,
-    private voiceService: VoiceRecognitionService 
+    private voiceService: UnifiedVoiceService
   ) {}
 
   trackById(index: number, noteCollection: NoteCollection): string | number {
@@ -51,8 +57,8 @@ export class NoteComponent implements OnInit {
 
   loadNotes(): void {
     this.notes$ = this.noteService.noteCollection$;
-    this.notes$.subscribe(notes => {
-      console.log('Loaded notes:', notes); 
+    this.notes$.pipe(takeUntil(this.destroy$)).subscribe(notes => {
+      console.log('Loaded notes:', notes);
     });
   }
 
@@ -120,7 +126,7 @@ export class NoteComponent implements OnInit {
 
   drop(event: CdkDragDrop<NoteCollection[]>): void {
     console.log('Drop event:', event);
-    this.notes$.subscribe(notes => {
+    this.notes$.pipe(takeUntil(this.destroy$)).subscribe(notes => {
       const prevIndex = notes.findIndex((d) => d === event.item.data);
       moveItemInArray(notes, prevIndex, event.currentIndex);
     });
@@ -150,15 +156,15 @@ export class NoteComponent implements OnInit {
   }
 
   openFlashcard(): void {
-    this.notes$.subscribe(notes => {
+    this.notes$.pipe(takeUntil(this.destroy$)).subscribe(notes => {
       const dialogRef = this.dialog.open(FlashcardComponent, {
         width: '80vw',
         height: '80vh',
         data: { notes },
         hasBackdrop: false
       });
-  
-      dialogRef.afterClosed().subscribe(result => {
+
+      dialogRef.afterClosed().pipe(takeUntil(this.destroy$)).subscribe(result => {
         if (dialogRef.componentInstance) {
           dialogRef.componentInstance.ngOnDestroy();
         }
@@ -180,6 +186,97 @@ export class NoteComponent implements OnInit {
     }
  */
   ngOnDestroy(): void {
-    
+    // Complete destroy$ to unsubscribe all subscriptions
+    this.destroy$.next();
+    this.destroy$.complete();
+
+    // Cancel any browser speech synthesis
+    if (typeof speechSynthesis !== 'undefined') {
+      speechSynthesis.cancel();
+    }
+  }
+
+  // ==================== HELPER METHODS FOR KIDS UI ====================
+
+  /**
+   * Get CSS class based on tag type
+   */
+  getTagClass(tags: string | undefined): string {
+    if (!tags) return 'tag-default';
+    const tagMap: Record<string, string> = {
+      'VERB': 'tag-verb',
+      'NOUN': 'tag-noun',
+      'BOOK': 'tag-book',
+      'CLASS': 'tag-class',
+      'GAME': 'tag-game',
+      'MUSIC': 'tag-music'
+    };
+    return tagMap[tags.toUpperCase()] || 'tag-default';
+  }
+
+  /**
+   * Get emoji based on tag type
+   */
+  getTagEmoji(tags: string | undefined): string {
+    if (!tags) return '📝';
+    const emojiMap: Record<string, string> = {
+      'VERB': '🏃',
+      'NOUN': '🎁',
+      'BOOK': '📚',
+      'CLASS': '🏫',
+      'GAME': '🎮',
+      'MUSIC': '🎵'
+    };
+    return emojiMap[tags.toUpperCase()] || '📝';
+  }
+
+  /**
+   * Get human-readable text for tag
+   */
+  getTagText(tags: string | undefined): string {
+    if (!tags) return 'Nota';
+    const textMap: Record<string, string> = {
+      'VERB': 'Verbo',
+      'NOUN': 'Nome',
+      'BOOK': 'Livro',
+      'CLASS': 'Aula',
+      'GAME': 'Jogo',
+      'MUSIC': 'Música'
+    };
+    return textMap[tags.toUpperCase()] || tags || 'Nota';
+  }
+
+  /**
+   * Get emoji based on difficulty level
+   */
+  getLevelEmoji(level: string | undefined): string {
+    if (!level) return '⭐';
+    const emojiMap: Record<string, string> = {
+      'easy': '😊',
+      'medium': '🤔',
+      'hard': '🧠'
+    };
+    return emojiMap[level.toLowerCase()] || '⭐';
+  }
+
+  /**
+   * Get human-readable text for level
+   */
+  getLevelText(level: string | undefined): string {
+    if (!level) return 'Normal';
+    const textMap: Record<string, string> = {
+      'easy': 'Fácil',
+      'medium': 'Médio',
+      'hard': 'Difícil'
+    };
+    return textMap[level.toLowerCase()] || level || 'Normal';
+  }
+
+  /**
+   * Handle image loading error
+   */
+  handleImageError(event: Event): void {
+    const img = event.target as HTMLImageElement;
+    img.style.display = 'none';
   }
 }

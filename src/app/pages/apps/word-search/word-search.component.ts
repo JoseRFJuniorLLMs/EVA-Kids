@@ -1,11 +1,12 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatButtonModule } from '@angular/material/button';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { Subject } from 'rxjs';
 import { WordService } from './word.service';
-import { Voice8RecognitionService } from './voice8-recognition.service';
+import { UnifiedVoiceService } from 'src/app/core/services/voice/unified-voice.service';
 
 interface Cell {
   letter: string;
@@ -27,7 +28,8 @@ interface Word {
   templateUrl: './word-search.component.html',
   styleUrls: ['./word-search.component.scss']
 })
-export class WordSearchComponent implements OnInit {
+export class WordSearchComponent implements OnInit, OnDestroy {
+  private destroy$ = new Subject<void>();
   grid: Cell[][] = [];
   words: Word[] = [];
   gridSize = 20;
@@ -35,10 +37,20 @@ export class WordSearchComponent implements OnInit {
   score: number = 0;
   subtitle: string | null = null;
 
-  constructor(private wordService: WordService, private voiceService: Voice8RecognitionService) {}
+  constructor(private wordService: WordService, private voiceService: UnifiedVoiceService) {}
 
   ngOnInit() {
+    this.voiceService.usePreset('simple');
     this.newGame();
+  }
+
+  ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
+
+    if (typeof speechSynthesis !== 'undefined') {
+      speechSynthesis.cancel();
+    }
   }
 
   newGame() {

@@ -16,7 +16,7 @@
   
 
     <select id="voiceSelect" (change)="onVoiceChange($event)" matTooltip="Voice Select Menu">
-      <option *ngFor="let voice of voiceRecognitionService.voices" [value]="voice.name">
+      <option *ngFor="let voice of voiceService.getVoices()" [value]="voice.name">
         {{ voice.name }}
       </option>
     </select>

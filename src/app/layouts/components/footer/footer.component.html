@@ -1,97 +1,41 @@
-<div class="flex-auto flex items-center container">
-  
-  <button
-  matTooltip="Comprehensible input. This approach was popularized by linguist Stephen Krashen. The main idea is that to acquire a language effectively, students must be exposed to texts and audio that are slightly above their current level of understanding, but still understandable with the help of context and clues."
-  (click)="openBothConfigsBook2()" class="config-panel-toggle2" color="primary" mat-fab type="button">
-  <span class="material-symbols-outlined" style="font-size: 40px;">
-    book_3
-    </span>
-</button>
+<!-- === FOOTER COMPACTO === -->
+<div class="footer-bar">
+  <!-- Botoes de navegacao -->
+  <div class="footer-buttons">
+    <!-- Unicornio IA -->
+    <button class="footer-btn unicorn" [class.active]="isUnicornSpeaking" (click)="activateUnicorn()" matTooltip="Assistente IA">
+      <span class="btn-icon">🦄</span>
+    </button>
 
-  <button
-    matTooltip="Shadowing can be a very effective language learning technique, especially for beginners. It helps to familiarize the learner with the sounds and rhythms of the language, and can also help to build vocabulary and improve listening skills. It can be particularly useful for languages that have a different phonetic system than the learner's native language. The shadowing technique can be used in a variety of ways. Some people prefer to listen to a recording and repeat each sentence or phrase immediately after hearing it."
-    (click)="openBothConfigsBook()" class="config-panel-toggle2" color="primary" mat-fab type="button">
-    <span class="material-symbols-outlined" style="font-size: 40px;">
-      local_library
-      </span>
-  </button>
+    <!-- Livros -->
+    <button class="footer-btn" (click)="openBothConfigsBook2()" matTooltip="Livros">
+      <span class="btn-icon">📚</span>
+    </button>
 
-  <button matTooltip="Video Call." (click)="openBothConfigsCam()" class="config-panel-toggle2" color="primary" mat-fab
-    type="button">
-    <span class="material-symbols-outlined" style="font-size: 40px;">
-      animated_images
-    </span>
-  </button>
+    <!-- Wim Hof -->
+    <button class="footer-btn" (click)="openBothConfigsWimHof()" matTooltip="Respiracao">
+      <span class="btn-icon">🧘</span>
+    </button>
 
-  <button
-    matTooltip="The Wim Hof Method is a powerful approach that aims to keep your body and mind in their optimal natural state. Developed by Dutch extreme athlete Wim Hof (also known as “The Iceman”), this method combines controlled breathing and cold exposure to stimulate various physiological processes."
-    (click)="openBothConfigsWimHof()" class="config-panel-toggle4" color="primary" mat-fab type="button">
-    <span class="material-symbols-outlined" style="font-size: 40px;">
-      self_improvement
-    </span>
-  </button>
+    <!-- Notas -->
+    <button class="footer-btn" (click)="openBothConfigsZettelkasten()" matTooltip="Notas">
+      <span class="btn-icon">📝</span>
+    </button>
 
-  <button
-    matTooltip="The Zettelkasten Method (Linking notes, One idea per note), literally translated from German as slip box method, is a note-taking system designed for knowledge management and creative thinking. Developed by sociologist Niklas Luhmann, it emphasizes capturing ideas on individual notes and then linking them together to form a web of knowledge."
-    (click)="openBothConfigsZettelkasten()" class="config-panel-toggle3" color="primary" mat-fab type="button">
-    <i class="fas fa-feather-alt" style="font-size: 24px;"></i>
-  </button>
+    <!-- Jogos -->
+    <button class="footer-btn" (click)="openBothConfigsGame()" matTooltip="Jogos">
+      <span class="btn-icon">🎮</span>
+    </button>
 
-  <button
-  matTooltip="Powell Janulus.
-  Powell had the Opposite Problem: He was on a quest to learn every language. He loved to learn languages. He would devour a new language in the same way you and I might eat that first perfectly sweet strawberry each spring. Above all, he loved learning fresh languages. He had just been entered into the Guinness Book of World Records for fluency in 42 languages."
-  (click)="openBothConfigsGame()" class="config-panel-toggle3" color="primary" mat-fab type="button">
-  <span class="material-symbols-outlined" style="font-size: 40px;">
-    stadia_controller
-    </span>
-</button>
+    <!-- Pomodoro -->
+    <div class="pomodoro-timer" (click)="pauseTimer()" matTooltip="Pomodoro">
+      <span class="timer-icon">🍅</span>
+      <span class="timer-value">{{ displayTime }}</span>
+    </div>
 
- <a class="action flex-none" (click)="stopProgressBar()" [matTooltip]="selected === 'get-vex3' ? 'Pause' : 'Pause'"
-    color="primary" id="get-vex3" mat-flat-button>
-    <mat-slide-toggle color="warn" [checked]="selected === 'get-vex3'" (change)="onToggleChange('get-vex3')">
-    </mat-slide-toggle>
-    <mat-icon class="icon-sm ltr:mr-2 rtl:ml-2"
-      [svgIcon]="selected === 'get-vex3' ? 'mat:sentiment_dissatisfied' : 'mat:front_hand'"></mat-icon>
-  </a> 
-  <a class="action flex-none"
-    matTooltip="Pomodoro Technique is a time management method developed by Francesco Cirillo. It’s designed to enhance productivity and focus by breaking work into manageable intervals.»»»»Pomodoro 60: {{ displayTime }}"
-    color="primary" id="get-vex2" mat-flat-button>
-    <mat-slide-toggle color="warn" [checked]="selected === 'get-vex2'"
-      (change)="onToggleChange('get-vex2')"></mat-slide-toggle>
-    <mat-icon class="icon-sm ltr:mr-2 rtl:ml-2" svgIcon="mat:alarm_on"></mat-icon>
-    <mat-icon class="icon-sm ltr:mr-2 rtl:ml-2"
-      [svgIcon]="selected === 'get-vex2' ? 'mat:60fps_select' : 'mat:60fps'"></mat-icon>
-  </a>
-
-  <a class="action flex-none"
-    matTooltip="Pomodoro Technique is a time management method developed by Francesco Cirillo. It’s designed to enhance productivity and focus by breaking work into manageable intervals.»»»»Pomodoro 30: {{ displayTime }}"
-    color="primary" id="get-vex1" mat-flat-button>
-    <mat-slide-toggle color="warn" [checked]="selected === 'get-vex1'" (change)="onToggleChange('get-vex1')">
-    </mat-slide-toggle>
-    <mat-icon class="icon-sm ltr:mr-2 rtl:ml-2" svgIcon="mat:alarm_on"></mat-icon>
-    <mat-icon class="icon-sm ltr:mr-2 rtl:ml-2"
-      [svgIcon]="selected === 'get-vex1' ? 'mat:30fps_select' : 'mat:30fps'"></mat-icon>
-  </a>
-
-  <button mat-raised-button color="primary" matBadgeSize="large"
-    matTooltip="Play Music: Binaural influences the mental and physiological state of the listener, promoting relaxation, focus, meditation, or even helping with sleep."
-    (click)="playBiNeural()" [class.playing]="isPlaying" [class.not-playing]="!isPlaying">
-    <mat-icon class="icon-sm" [svgIcon]="isPlaying ? 'mat:pause_circle' : 'mat:play_circle'"></mat-icon>
-  </button>
+    <!-- Musica -->
+    <button class="footer-btn" [class.active]="isPlaying" (click)="playBiNeural()" matTooltip="Musica">
+      <span class="btn-icon">🎵</span>
+    </button>
+  </div>
 </div>
-
-<!-- <div #mic id="mic" class="waveform-container"></div> -->
-  <div #waveform class="waveform-container"></div>
-
-  <button mat-raised-button color="primary" value="{{ displayTimeMin }}" color="warn" matBadge="{{ displayTimeMin }}"
-    matBadgeSize="large" matTooltip="Core Time Intervals
-  Pomodoro:  A single Pomodoro is 30 minutes long, dedicated to focused work on a task.
-  Short Break: After each Pomodoro, take a short 5-minute break to rest and reset your mind.
-  {{ displayTime }}" matBadgePosition="above after" matBadgeColor="warn" (click)="pauseTimer()">
-    Pomodoro {{ displayTime }}
-  </button>
- 
- <mat-progress-bar class="progress-ba-container" mode="buffer" value="{{ displayTimeMin }}" color="warn">
-  </mat-progress-bar>
-
-

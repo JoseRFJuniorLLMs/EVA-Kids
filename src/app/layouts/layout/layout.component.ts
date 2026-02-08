@@ -19,6 +19,7 @@ import { QuickpanelComponent } from '../components/quickpanel/quickpanel.compone
 import { SidenavComponent } from '../components/sidenav/sidenav.component';
 import { SearchComponent } from '../components/toolbar/search/search.component';
 import { ToolbarComponent } from '../components/toolbar/toolbar.component';
+import { VoiceAssistantComponent } from '../../shared/components/voice-assistant/voice-assistant.component';
 
 @Component({
   selector: 'vex-layout',
@@ -40,7 +41,8 @@ import { ToolbarComponent } from '../components/toolbar/toolbar.component';
     NgTemplateOutlet,
     RouterOutlet,
     SearchComponent,
-    VexProgressBarComponent
+    VexProgressBarComponent,
+    VoiceAssistantComponent
   ],
   standalone: true
 })

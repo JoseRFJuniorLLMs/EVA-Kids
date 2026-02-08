@@ -1,7 +1,9 @@
 import { Component, AfterViewInit, ViewChild, ElementRef, ChangeDetectorRef, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 import screenfull from 'screenfull';
-import { Voice5RecognitionService } from './voice5-recognition.service';
+import { UnifiedVoiceService } from 'src/app/core/services/voice/unified-voice.service';
 import { SoundService } from 'src/app/layouts/components/footer/sound.service';
 import { VexLayoutService } from '@vex/services/vex-layout.service';
 import { DatatextService } from './datatext.service';
@@ -52,6 +54,7 @@ interface SavedText {
   ]
 })
 export class Book3Component implements OnInit, AfterViewInit, OnDestroy {
+  private destroy$ = new Subject<void>();
 
   @ViewChild('textContainer') textContainer!: ElementRef;
   @ViewChild('mic') micElement!: ElementRef<HTMLDivElement>;
@@ -113,7 +116,7 @@ export class Book3Component implements OnInit, AfterViewInit, OnDestroy {
 
   constructor(
     private changeDetectorRef: ChangeDetectorRef,
-    public voiceRecognitionService: Voice5RecognitionService,
+    public voiceService: UnifiedVoiceService,
     private soundService: SoundService,
     public pdfLoaderService: PdfService,
     private layoutService: VexLayoutService,
@@ -121,16 +124,17 @@ export class Book3Component implements OnInit, AfterViewInit, OnDestroy {
     private dialog: MatDialog,
     private firestore: AngularFirestore,
     private authService: AuthService,
-
   ) { }
 
   ngOnInit(): void {
+    this.voiceService.usePreset('book');
     this.loadSavedTexts();
-    this.voiceRecognitionService.recordingEnded$.subscribe(url => {
+
+    this.voiceService.recordingEnded$.pipe(takeUntil(this.destroy$)).subscribe(url => {
       this.openResultDialog();
     });
 
-    this.voiceRecognitionService.spokenText$.subscribe(spokenText => {
+    this.voiceService.command$.pipe(takeUntil(this.destroy$)).subscribe(spokenText => {
       this.compareText(spokenText);
     });
 
@@ -441,17 +445,21 @@ export class Book3Component implements OnInit, AfterViewInit, OnDestroy {
   }
 
   startVoiceCommand(): void {
-    this.voiceRecognitionService.startListening();
+    this.voiceService.startListening();
   }
 
   ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+
     document.removeEventListener('mouseup', this.handleMouseUp.bind(this));
 
-    if (this.voiceRecognitionService.wavesurfer) {
-      this.voiceRecognitionService.wavesurfer.destroy();
+    this.voiceService.stopListening();
+    this.voiceService.stopRecording();
+
+    if (typeof speechSynthesis !== 'undefined') {
+      speechSynthesis.cancel();
     }
-    this.voiceRecognitionService.stopListening();
-    this.soundService.playErro();
   }
 
   selectText(index: number): void {
@@ -667,7 +675,7 @@ export class Book3Component implements OnInit, AfterViewInit, OnDestroy {
         this.isDialogOpen = true;
 
         this.pdfLoaderService.openSnackBar('Text copied to clipboard!');
-        this.voiceRecognitionService.speakSelectedText('Zettelkasten notes, now you can save the note to study:' + selectedText);
+        this.voiceService.speak('Zettelkasten notes, now you can save the note to study:' + selectedText);
 
         // Copia o texto para a área de transferência
         const textarea = document.createElement('textarea');
@@ -781,7 +789,7 @@ export class Book3Component implements OnInit, AfterViewInit, OnDestroy {
   }
 
   onSpeedChange(value: number): void {
-    this.voiceRecognitionService.setSpeechRateFromSlider(value);
+    this.currentSpeechRate = 0.5 + (value / 100) * 1.5;
   }
 
 

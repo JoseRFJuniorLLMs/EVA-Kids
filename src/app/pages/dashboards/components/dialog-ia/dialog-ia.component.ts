@@ -37,7 +37,7 @@ import nlp from 'compromise';
 import WaveSurfer from 'wavesurfer.js';
 //import Spectrogram from 'wavesurfer.js/dist/plugins/spectrogram'
 import RecordPlugin from 'wavesurfer.js/dist/plugins/record';
-import gpt4 from '../../../../../../gpt4.json';
+import { UnifiedAIService } from 'src/app/core/services/ai/unified-ai.service';
 
 // Extensão da interface WaveSurfer para incluir o RecordPlugin
 interface WaveSurferWithRecord extends WaveSurfer {
@@ -135,7 +135,8 @@ export class DialogIAComponent implements OnInit {
   constructor(
     private http: HttpClient,
     @Inject(MAT_DIALOG_DATA) public data: { texto: string },
-    private dialogRef: MatDialogRef<DialogIAComponent>
+    private dialogRef: MatDialogRef<DialogIAComponent>,
+    private aiService: UnifiedAIService
   ) {}
 
   /* ==================ngOnInit==================== */
@@ -231,7 +232,7 @@ export class DialogIAComponent implements OnInit {
     return this.voices[randomIndex];
   } //fim
 
-  /* ==================GERADOR DE AUDIO==================== */
+  /* ==================GERADOR DE AUDIO COM GEMINI==================== */
   generateAudio(): void {
     if (this.isGeneratingAudio) return;
     this.isGeneratingAudio = true;
@@ -242,39 +243,37 @@ export class DialogIAComponent implements OnInit {
       return;
     }
 
-    const openAIKey = gpt4.apiKey;
-    const url = 'https://api.openai.com/v1/audio/speech';
-    const body = {
-      model: 'tts-1',
-      voice: this.getRandomVoice(),
-      input: this.chatMessage
-    };
-
-    const headers = new HttpHeaders({
-      Authorization: `Bearer ${openAIKey}`,
-      'Content-Type': 'application/json'
-    });
-
-    this.http.post(url, body, { headers, responseType: 'blob' }).subscribe(
-      (response) => {
-        const audioBlob = new Blob([response], { type: 'audio/wav' });
-        const audioUrl = URL.createObjectURL(audioBlob);
-
-        if (this.waveSurfer) {
-          this.waveSurfer.load(audioUrl);
-          this.waveSurfer.on('ready', () => {
-            this.waveSurfer?.play();
-            this.isAudioReady = true; // Marca o áudio como pronto para reprodução
-          });
-        }
-
-        this.isGeneratingAudio = false;
+    // Use UnifiedAIService for browser-based TTS
+    this.aiService.speakWithHighlighting(
+      this.chatMessage,
+      (charIndex, charLength) => {
+        // Update word highlighting during speech
+        this.updateWordHighlight(charIndex);
       },
-      (error) => {
-        console.error('Error generating audio:', error);
-        this.isGeneratingAudio = false;
+      {
+        voice: this.getRandomVoice(),
+        language: 'en-GB'
       }
-    );
+    ).then(() => {
+      this.isAudioReady = true;
+      this.isGeneratingAudio = false;
+    }).catch((error) => {
+      console.error('Error generating audio:', error);
+      this.isGeneratingAudio = false;
+    });
+  } //fim
+
+  /* ==================UPDATE WORD HIGHLIGHT==================== */
+  private updateWordHighlight(charIndex: number): void {
+    // Find which word corresponds to the character index
+    let currentPos = 0;
+    for (let i = 0; i < this.words.length; i++) {
+      currentPos += this.words[i].length + 1; // +1 for space
+      if (charIndex < currentPos) {
+        this.currentWordIndex = i;
+        break;
+      }
+    }
   } //fim
 
   /* ==================initWaveSurfer==================== */
@@ -425,25 +424,16 @@ export class DialogIAComponent implements OnInit {
   transcribeAudio(audioBlob: Blob) {
     console.log('Tamanho do Blob:', audioBlob.size);
     console.log('Tipo do Blob:', audioBlob.type);
-    const openAIKey = gpt4.apiKey;
-    const url = 'https://api.openai.com/v1/audio/transcriptions';
-    const formData = new FormData();
-    formData.append('file', audioBlob);
-    formData.append('model', 'whisper-1');
 
-    let headers = new HttpHeaders({
-      Authorization: `Bearer ${openAIKey}`
-    });
-
-    this.http.post(url, formData, { headers, observe: 'response' }).subscribe(
-      (response: any) => {
-        // Acessa o texto transcrito na resposta
-        this.transcribedText = response.body.text;
+    // Use UnifiedAIService for transcription with Gemini
+    this.aiService.transcribe({ audioBlob }).subscribe({
+      next: (response) => {
+        this.transcribedText = response.text;
       },
-      (error) => {
+      error: (error) => {
         console.log('Error transcribing audio:', error);
       }
-    );
+    });
   } //fim
 
   /* ==================analyzeText==================== */

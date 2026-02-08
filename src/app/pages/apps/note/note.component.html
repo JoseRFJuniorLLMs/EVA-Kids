@@ -1,59 +1,146 @@
-<button matTooltip="View Flashcard" (click)="openFlashcard()" type="button">
-  <span matTooltip="FlashCard" class="material-symbols-outlined centered-and-enlarged"
-    style="font-size: 40px; color: rgb(255, 2, 2);">
-    self_improvement
-  </span>
-  FlashCard
-  <span class="material-symbols-outlined" style="font-size: 30px; color: rgb(254, 1, 1);">
-    skull
-  </span>
-</button>
+<!-- TELA DE NOTAS EM CARDS - VERSÃO KIDS -->
+<div class="kids-notes-page">
 
-<div class="p-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 container" cdkDropList
-  (cdkDropListDropped)="drop($event)">
-  <div class="card" *ngFor="let note of notes$ | async; trackBy: trackById" cdkDrag>
-    <div class="example-handle" cdkDragHandle>
-      <svg width="24px" fill="currentColor" viewBox="0 0 24 24">
-        <path
-          d="M10 9h4V6h3l-5-5-5 5h3v3zm-1 1H6V7l-5 5 5 5v-3h3v-4zm14 2l-5-5v3h-3v4h3v3l5-5zm-9 3h-4v3H7l5 5 5-5h-3v-3z">
-        </path>
-        <path d="M0 0h24v24H0z" fill="none"></path>
-      </svg>
+  <!-- Cabeçalho Divertido -->
+  <div class="kids-header">
+    <div class="mascot-container">
+      <div class="mascot animate-bounce">
+        <span class="mascot-emoji">📚</span>
+      </div>
     </div>
-
-    <div class="card-header">
-      <h4>{{ note.title }}</h4>
-    </div>
-
-    <div class="card-content">
-      <p class="description">{{ note.description }}</p>
-      <p>Tags: {{ note.tags }}</p>
-      <p>Answer: {{ note.answer }}</p>
-      <p>Level: {{ note.level }}</p>
-      <p [hidden]="true">Last Revision Date: {{ convertToDate(note.last_revision_date) | date: 'short' }}</p>
-      <p [hidden]="true">Next Revision Date: {{ convertToDate(note.next_revision_date) | date: 'short' }}</p>
-      <p>Image: <img [src]="note.image" alt="Note image" *ngIf="note.image"></p>
-      <p [ngClass]="{'highlight-permanent': note.permanent}">Permanent: {{ note.permanent ? 'Yes' : 'No' }}</p>
-      <p>Created at: {{ convertToDate(note.created_at) | date: 'short' }}</p>
-    </div>
-    <div class="card-footer">
-      <button mat-mini-fab matTooltip="Speak Notes" (click)="speak(note)">
-        <span class="material-symbols-outlined">text_to_speech</span>
-      </button>
-      <button mat-mini-fab disabled matTooltip="List Notes" (click)="speak(note)">
-        <span class="material-symbols-outlined">format_list_numbered</span>
-      </button>
-
-      <button mat-mini-fab disabled matTooltip="Edit Notes" (click)="speak(note)">
-        <span class="material-symbols-outlined">edit</span>
-      </button>
-
-      <button mat-mini-fab matTooltip="Permanent Notes" (click)="togglePermanent(note)">
-        <span class="material-symbols-outlined">deceased</span>
-      </button>
-      <button mat-mini-fab matTooltip="Delete Notes" (click)="deleteNote(note._id)">
-        <span class="material-symbols-outlined">delete</span>
-      </button>
-    </div>
+    <h1 class="kids-title">
+      <span class="title-icon">🌟</span>
+      Minhas Notinhas
+      <span class="title-icon">🌟</span>
+    </h1>
+    <p class="kids-subtitle">Arraste os cards para organizar!</p>
   </div>
+
+  <!-- Botão de Flashcard -->
+  <div class="flashcard-section">
+    <button class="flashcard-btn animate-wiggle" matTooltip="Jogar Flashcards!" (click)="openFlashcard()">
+      <span class="btn-emoji">🃏</span>
+      <span class="btn-text">Jogar Flashcards!</span>
+      <span class="btn-emoji">🎮</span>
+    </button>
+  </div>
+
+  <!-- Grid de Cards -->
+  <div class="kids-cards-grid" cdkDropList (cdkDropListDropped)="drop($event)">
+
+    <div class="kids-card animate-slide-up" *ngFor="let note of notes$ | async; trackBy: trackById" cdkDrag>
+
+      <!-- Alça de arrastar -->
+      <div class="drag-handle" cdkDragHandle>
+        <span class="handle-emoji">✋</span>
+        <span class="handle-text">Arraste!</span>
+      </div>
+
+      <!-- Cabeçalho do Card -->
+      <div class="card-header" [ngClass]="getTagClass(note.tags)">
+        <span class="tag-emoji">{{ getTagEmoji(note.tags) }}</span>
+        <h4 class="card-title">{{ note.title }}</h4>
+      </div>
+
+      <!-- Conteúdo do Card -->
+      <div class="card-content">
+        <p class="description">
+          <span class="content-icon">💭</span>
+          {{ note.description }}
+        </p>
+
+        <div class="card-info">
+          <div class="info-item" *ngIf="note.answer">
+            <span class="info-icon">💡</span>
+            <span class="info-label">Resposta:</span>
+            <span class="info-value">{{ note.answer }}</span>
+          </div>
+
+          <div class="info-item">
+            <span class="info-icon">{{ getLevelEmoji(note.level) }}</span>
+            <span class="info-label">Nível:</span>
+            <span class="info-value level-badge" [ngClass]="'level-' + note.level">
+              {{ getLevelText(note.level) }}
+            </span>
+          </div>
+
+          <div class="info-item" *ngIf="note.permanent">
+            <span class="info-icon">⭐</span>
+            <span class="info-label">Nota Especial!</span>
+          </div>
+
+          <div class="info-item">
+            <span class="info-icon">📅</span>
+            <span class="info-label">Criado:</span>
+            <span class="info-value">{{ convertToDate(note.created_at) | date: 'dd/MM/yyyy' }}</span>
+          </div>
+        </div>
+
+        <!-- Imagem (se houver) -->
+        <div class="card-image" *ngIf="note.image">
+          <img [src]="note.image" alt="Imagem da nota" (error)="handleImageError($event)">
+        </div>
+      </div>
+
+      <!-- Ações do Card -->
+      <div class="card-actions">
+        <button class="action-btn action-speak" matTooltip="Ouvir nota" (click)="speak(note)">
+          <span class="action-emoji">🔊</span>
+          <span class="action-text">Ouvir</span>
+        </button>
+
+        <button class="action-btn action-star" matTooltip="Marcar como especial" (click)="togglePermanent(note)">
+          <span class="action-emoji">{{ note.permanent ? '⭐' : '☆' }}</span>
+          <span class="action-text">{{ note.permanent ? 'Especial!' : 'Favoritar' }}</span>
+        </button>
+
+        <button class="action-btn action-delete" matTooltip="Apagar nota" (click)="deleteNote(note._id)">
+          <span class="action-emoji">🗑️</span>
+          <span class="action-text">Apagar</span>
+        </button>
+      </div>
+
+      <!-- Badge de Tag -->
+      <div class="tag-badge" [ngClass]="getTagClass(note.tags)">
+        {{ getTagText(note.tags) }}
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Mensagem quando não há notas -->
+  <div class="empty-state" *ngIf="(notes$ | async)?.length === 0">
+    <span class="empty-emoji animate-float">📝</span>
+    <h3>Nenhuma nota ainda!</h3>
+    <p>Que tal criar sua primeira nota?</p>
+    <button class="create-btn" [routerLink]="['/apps/noteinsert']">
+      <span class="btn-emoji">✨</span>
+      Criar Nota
+    </button>
+  </div>
+
+  <!-- Botões de Navegação -->
+  <div class="kids-navigation">
+    <button class="nav-btn nav-create" [routerLink]="['/apps/noteinsert']" matTooltip="Criar nova nota">
+      <span class="nav-emoji">➕</span>
+      <span class="nav-text">Nova Nota</span>
+    </button>
+
+    <button class="nav-btn nav-list" [routerLink]="['/apps/list']" matTooltip="Ver lista de notas">
+      <span class="nav-emoji">📋</span>
+      <span class="nav-text">Lista</span>
+    </button>
+
+    <button class="nav-btn nav-graph" [routerLink]="['/apps/graph']" matTooltip="Ver mapa mental">
+      <span class="nav-emoji">🗺️</span>
+      <span class="nav-text">Mapa</span>
+    </button>
+  </div>
+
+  <!-- Dica do dia -->
+  <div class="kids-tip animate-float">
+    <span class="tip-icon">💡</span>
+    <span class="tip-text">Dica: Arraste os cards para organizar suas notas!</span>
+  </div>
+
 </div>

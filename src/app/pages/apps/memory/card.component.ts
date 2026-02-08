@@ -2,10 +2,11 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CardService } from './card.service';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
-import { Voice6RecognitionService } from './voice6-recognition.service';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
+import { UnifiedVoiceService } from 'src/app/core/services/voice/unified-voice.service';
 import { SoundService } from 'src/app/layouts/components/footer/sound.service';
 import { SatoshiService } from '../note/satoshi.service';
-import { Subscription } from 'rxjs';
 import { AuthService } from '../../pages/auth/login/auth.service';
 
 interface Card {
@@ -24,25 +25,27 @@ interface Card {
   imports: [CommonModule, MatButtonModule]
 })
 export class CardComponent implements OnInit, OnDestroy {
+  private destroy$ = new Subject<void>();
   cards: Card[] = [];
   moves = 0;
   remainingPairs = 0;
   private flippedCards: Card[] = [];
   gameCount = 0;
-  private studentId = 'student-id'; 
+  private studentId = 'student-id';
   totalSatoshis = 0;
   showSatoshiAlert = false;
-  private satoshiSubscription: Subscription | null = null;
 
   constructor(
-    private cardService: CardService, 
-    public voiceService: Voice6RecognitionService, 
+    private cardService: CardService,
+    public voiceService: UnifiedVoiceService,
     public soundService: SoundService,
     private satoshiService: SatoshiService,
     private authService: AuthService
   ) {} 
 
   ngOnInit(): void {
+    this.voiceService.usePreset('memory');
+
     this.authService.getUID().then(uid => {
       if (uid) {
         this.studentId = uid;
@@ -57,8 +60,13 @@ export class CardComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    if (this.satoshiSubscription) {
-      this.satoshiSubscription.unsubscribe();
+    this.destroy$.next();
+    this.destroy$.complete();
+
+    this.voiceService.stopListening();
+
+    if (typeof speechSynthesis !== 'undefined') {
+      speechSynthesis.cancel();
     }
   }
 
@@ -67,8 +75,8 @@ export class CardComponent implements OnInit, OnDestroy {
       console.error('O ID do estudante não está definido.');
       return;
     }
-  
-    this.satoshiSubscription = this.satoshiService.getSatoshiBalance(this.studentId).subscribe(
+
+    this.satoshiService.getSatoshiBalance(this.studentId).pipe(takeUntil(this.destroy$)).subscribe(
       balance => {
         this.totalSatoshis = balance;
       },

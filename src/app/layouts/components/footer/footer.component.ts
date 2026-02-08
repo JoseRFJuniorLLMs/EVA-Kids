@@ -36,9 +36,10 @@ import { ShareBottomSheetComponent } from 'src/app/pages/dashboards/components/s
 import { HttpClientModule } from '@angular/common/http';
 import { SoundService } from './sound.service';
 import { ShareBottomGameComponent } from 'src/app/pages/dashboards/components/share-bottom-game/share-bottom-game.component';
-import { VoiceFoodRecognitionService } from './voice-food-recognition.service';
+import { UnifiedVoiceService } from 'src/app/core/services/voice/unified-voice.service';
 import { ShareBottomBooks3Component } from 'src/app/pages/dashboards/components/share-bottom-books3/share-bottom-books3.component';
 import { AioTableComponent } from 'src/app/pages/apps/student/list/aio-table.component';
+import { GeminiAudioService } from 'src/app/core/services/ai/gemini-audio.service';
 
 @Component({
   selector: 'vex-footer',
@@ -74,7 +75,6 @@ import { AioTableComponent } from 'src/app/pages/apps/student/list/aio-table.com
 export class FooterComponent implements OnInit, AfterViewInit, OnDestroy {
 
   @ViewChild('mic') micElement!: ElementRef<HTMLDivElement>;
-  @ViewChild('waveform') waveformElement!: ElementRef;
   
   @Output() openConfig = new EventEmitter();
   @Output() openBottomConfig = new EventEmitter();
@@ -97,12 +97,22 @@ export class FooterComponent implements OnInit, AfterViewInit, OnDestroy {
   progress: number = 0;
   isPlaying = false;
 
+  // Unicornio IA
+  isUnicornSpeaking = false;
+  unicornGreetings = [
+    'Ola amiguinho! Eu sou o Sparkle, seu unicornio magico! Vamos aprender juntos?',
+    'Oi! Que bom te ver! Estou aqui para te ajudar a aprender coisas incriveis!',
+    'Bem-vindo de volta! Vamos fazer magica com as palavras hoje?',
+    'Ola! Eu adoro quando voce vem estudar comigo! Vamos comecar?',
+    'Oi amiguinho! Hoje vamos descobrir coisas muito legais juntos!'
+  ];
+
   constructor(
     private soundService: SoundService,
     private cdr: ChangeDetectorRef,
     private _bottomSheet: MatBottomSheet,
-    private voiceRecognitionService: VoiceFoodRecognitionService
-    //@Inject(MAT_DIALOG_DATA) public data: { texto: string },
+    private voiceService: UnifiedVoiceService,
+    private geminiAudio: GeminiAudioService
   ) {}
 
   changeIcons(): void {
@@ -113,23 +123,16 @@ export class FooterComponent implements OnInit, AfterViewInit, OnDestroy {
 
   ngOnInit(): void {
     this.startTimer();
-    this.voiceRecognitionService.init(); // Solicita permissão do microfone
+    // UnifiedVoiceService initializes automatically - configure for footer use
+    this.voiceService.usePreset('simple');
   }
 
   ngAfterViewInit(): void {
-    if (this.waveformElement) {
-      this.voiceRecognitionService.setupWaveSurfer(this.waveformElement);
-      this.voiceRecognitionService.startRecording();
-    } else {
-      console.error('waveformElement não está disponível.');
-    }
+    // Footer compacto - sem waveform
   }
 
   ngOnDestroy(): void {
     this.stopTimer();
-    if (this.voiceRecognitionService.wavesurfer) {
-      this.voiceRecognitionService.wavesurfer.destroy();
-    }
   }
 
   playBiNeural() {
@@ -277,6 +280,24 @@ export class FooterComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   initializeWaveSurfer() {
-    this.voiceRecognitionService.setupWaveSurfer(this.micElement);
+    this.voiceService.setupWaveSurfer(this.micElement);
+  }
+
+  // === UNICORNIO IA - Fala usando Gemini ===
+  async activateUnicorn(): Promise<void> {
+    if (this.isUnicornSpeaking) return;
+
+    this.isUnicornSpeaking = true;
+    this.soundService.playToc();
+    this.cdr.detectChanges();
+
+    // Escolhe uma saudacao aleatoria
+    const greeting = this.unicornGreetings[Math.floor(Math.random() * this.unicornGreetings.length)];
+
+    // Usa apenas Gemini Audio para falar
+    await this.geminiAudio.speak(greeting, () => {
+      this.isUnicornSpeaking = false;
+      this.cdr.detectChanges();
+    });
   }
 }

@@ -1,65 +1,122 @@
-<div [ngStyle]="getBackgroundStyle()" class="w-full h-full flex flex-col items-center justify-center random-bg">
-  <div @fadeInUp class="card overflow-hidden w-full max-w-md">
-    <div class="p-6 pb-0 flex flex-col items-center justify-center">
-      <div class="fill-current text-center">
-        <img class="w-16" src="assets/img/icons/flags/united-states.svg" />
+<div class="login-container w-full h-full flex flex-col items-center justify-center">
+  <!-- Fundo animado com bolhas -->
+  <div class="bubbles-bg">
+    <div class="bubble"></div>
+    <div class="bubble"></div>
+    <div class="bubble"></div>
+    <div class="bubble"></div>
+    <div class="bubble"></div>
+    <div class="bubble"></div>
+    <div class="bubble"></div>
+    <div class="bubble"></div>
+  </div>
+
+  <div @fadeInUp class="login-card overflow-hidden w-full max-w-md">
+    <!-- Mascote e saudacao -->
+    <div class="mascot-section">
+      <div class="mascot-emoji">
+        <span class="mascot-bounce">🦄</span>
+      </div>
+      <div class="welcome-stars">
+        <span>⭐</span>
+        <span>✨</span>
+        <span>⭐</span>
       </div>
     </div>
 
-    <div class="text-center mt-4">
-      <h2 class="title m-0">Welcome back</h2>
-      <h4 class="body-2 text-secondary m-0">
-        Sign in with your credentials below.
-      </h4>
+    <div class="text-center mt-2">
+      <h2 class="welcome-title">Ola, Amiguinho!</h2>
+      <p class="welcome-subtitle">
+        Que bom te ver de novo! Vamos aprender juntos?
+      </p>
     </div>
 
-    <div [formGroup]="form" class="p-6 flex flex-col gap-4">
-      <div class="flex flex-col">
-        <mat-form-field class="flex-1">
-          <mat-label>E-Mail</mat-label>
-          <input formControlName="email" matInput required />
+    <div [formGroup]="form" class="login-form p-6 flex flex-col gap-4">
+      <!-- Campo de email -->
+      <div class="input-group">
+        <div class="input-icon">📧</div>
+        <mat-form-field class="flex-1 kids-input" appearance="outline">
+          <mat-label>Seu E-mail</mat-label>
+          <input
+            formControlName="email"
+            matInput
+            required
+            placeholder="seu.email@exemplo.com" />
           <mat-error *ngIf="form.controls.email.hasError('required')">
-            We need an email address to log you in
+            Ops! Preciso do seu e-mail para entrar
+          </mat-error>
+          <mat-error *ngIf="form.controls.email.hasError('email')">
+            Hmm, esse e-mail nao parece certo
           </mat-error>
         </mat-form-field>
-        <mat-form-field class="flex-1">
-          <mat-label>Password</mat-label>
+      </div>
+
+      <!-- Campo de senha -->
+      <div class="input-group">
+        <div class="input-icon">🔑</div>
+        <mat-form-field class="flex-1 kids-input" appearance="outline">
+          <mat-label>Sua Senha Secreta</mat-label>
           <input
             [type]="inputType"
             formControlName="password"
             matInput
-            required />
+            required
+            placeholder="Digite sua senha" />
           <button
             (click)="toggleVisibility()"
             mat-icon-button
             matIconSuffix
-            matTooltip="Toggle Visibility"
-            type="button">
+            matTooltip="Ver/Esconder senha"
+            type="button"
+            class="visibility-btn">
             <mat-icon *ngIf="visible" svgIcon="mat:visibility"></mat-icon>
             <mat-icon *ngIf="!visible" svgIcon="mat:visibility_off"></mat-icon>
           </button>
-          <mat-hint>Click the eye to toggle visibility</mat-hint>
+          <mat-hint>Clique no olhinho para ver a senha</mat-hint>
           <mat-error *ngIf="form.controls.password.hasError('required')">
-            We need a password to log you in
+            Ops! Preciso da sua senha secreta
           </mat-error>
         </mat-form-field>
       </div>
 
-      <div class="flex items-center justify-between">
-        <mat-checkbox class="caption" color="primary">Remember Me</mat-checkbox>
-        <a [routerLink]="['/forgot-password']" class="caption">
-          Forgot Password?
+      <!-- Checkbox lembrar -->
+      <div class="flex items-center justify-between remember-section">
+        <mat-checkbox class="kids-checkbox" color="primary">
+          <span class="checkbox-label">Lembrar de mim 🧠</span>
+        </mat-checkbox>
+        <a [routerLink]="['/forgot-password']" class="forgot-link">
+          Esqueci a senha 🤔
         </a>
       </div>
 
-      <button (click)="send()" color="primary" mat-raised-button type="button">
-        SIGN IN
+      <!-- Botao de entrar -->
+      <button
+        (click)="send()"
+        class="login-button"
+        mat-raised-button
+        type="button">
+        <span class="button-icon">🚀</span>
+        <span class="button-text">VAMOS LA!</span>
       </button>
 
-      <p class="text-secondary text-center">
-        Don't have an account?<br />
-        <a [routerLink]="['/register']">Click here to create one</a>
-      </p>
+      <!-- Link para registro -->
+      <div class="register-section text-center">
+        <p class="register-text">
+          Primeira vez aqui? 🌟
+        </p>
+        <a [routerLink]="['/register']" class="register-link">
+          Criar minha conta!
+        </a>
+      </div>
+    </div>
+
+    <!-- Rodape divertido -->
+    <div class="fun-footer">
+      <span>🎮</span>
+      <span>📚</span>
+      <span>🎨</span>
+      <span>🎵</span>
+      <span>🧩</span>
     </div>
   </div>
 </div>

@@ -1,56 +1,595 @@
-// Definindo as variáveis de cor
-$primary-color: #b5d1ec; // Blue
-$secondary-color: #d7d0b9; // Yellow
-$highlight-color: #f7a452; // Bright color for highlighting
+/* ================================================
+   TELA DE NOTAS - VERSÃO KIDS
+   ================================================ */
 
-.card {
-  background-color: $primary-color;
-  border: 1px solid #e2e8f0; // Lighter border
-  border-radius: 5px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-  padding: 15px;
-  margin-bottom: 10px;
-  display: flex; // Make cards flex containers
-  flex-direction: column; // Arrange content vertically
+// Importar Google Fonts
+@import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap');
 
-  // Optional subtle stripe pattern (adjust as needed)
-  background-image: linear-gradient(45deg, $primary-color 25%, $secondary-color 75%);
+// Variáveis de cores vibrantes para crianças
+$kids-red: #FF6B6B;
+$kids-orange: #FFA94D;
+$kids-yellow: #FFE066;
+$kids-green: #69DB7C;
+$kids-teal: #38D9A9;
+$kids-blue: #4DABF7;
+$kids-indigo: #748FFC;
+$kids-purple: #DA77F2;
+$kids-pink: #F783AC;
 
-  // Adjust content color for better contrast
-  .card-content {
-    color: black;
+// Cores por tag
+$tag-verb: $kids-orange;
+$tag-noun: $kids-blue;
+$tag-book: $kids-purple;
+$tag-class: $kids-green;
+$tag-game: $kids-red;
+$tag-music: $kids-pink;
 
-    // Cor branca apenas para a descrição
-    p.description {
-      color: white;
-    }
+// ================================================
+// PÁGINA PRINCIPAL
+// ================================================
 
-    // Estilo para destacar o campo "Permanent" se a nota for permanente
-    .highlight-permanent {
-      background-color: $highlight-color;
-      padding: 5px;
-      border-radius: 3px;
-      font-weight: bold;
+.kids-notes-page {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+  padding: 20px;
+  font-family: 'Nunito', sans-serif;
+  overflow-x: hidden;
+}
+
+// ================================================
+// CABEÇALHO
+// ================================================
+
+.kids-header {
+  text-align: center;
+  padding: 20px 0 30px;
+
+  .mascot-container {
+    margin-bottom: 10px;
+
+    .mascot {
+      display: inline-block;
+
+      .mascot-emoji {
+        font-size: 60px;
+        display: block;
+        filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2));
+      }
     }
   }
 
-  // Optional: Add a top header section with rounded corners
+  .kids-title {
+    font-family: 'Fredoka One', cursive;
+    font-size: 2.5rem;
+    color: white;
+    text-shadow: 3px 3px 0 rgba(0, 0, 0, 0.2);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+
+    .title-icon {
+      font-size: 1.5rem;
+      animation: sparkle 1.5s ease-in-out infinite;
+    }
+  }
+
+  .kids-subtitle {
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-top: 8px;
+  }
+}
+
+// ================================================
+// BOTÃO FLASHCARD
+// ================================================
+
+.flashcard-section {
+  text-align: center;
+  margin-bottom: 30px;
+
+  .flashcard-btn {
+    background: linear-gradient(135deg, $kids-red, $kids-orange);
+    border: none;
+    border-radius: 50px;
+    padding: 15px 40px;
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.3rem;
+    color: white;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4);
+    transition: all 0.3s ease;
+
+    &:hover {
+      transform: scale(1.05);
+      box-shadow: 0 8px 25px rgba(255, 107, 107, 0.5);
+    }
+
+    .btn-emoji {
+      font-size: 1.5rem;
+    }
+  }
+}
+
+// ================================================
+// GRID DE CARDS
+// ================================================
+
+.kids-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 25px;
+  padding: 0 10px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+// ================================================
+// CARD INDIVIDUAL
+// ================================================
+
+.kids-card {
+  background: white;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+  transition: all 0.3s ease;
+  position: relative;
+  cursor: grab;
+
+  &:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
+  }
+
+  &:active {
+    cursor: grabbing;
+  }
+
+  // Alça de arrastar
+  .drag-handle {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: rgba(255, 255, 255, 0.9);
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    cursor: move;
+    z-index: 10;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+
+    .handle-emoji {
+      font-size: 1rem;
+    }
+
+    .handle-text {
+      font-weight: 700;
+      color: #666;
+    }
+  }
+
+  // Cabeçalho do card
   .card-header {
-    background-color: $secondary-color;
-    border-top-left-radius: 5px;
-    border-top-right-radius: 5px;
-    padding: 10px; // Adjust padding as needed
+    padding: 20px 20px 15px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    &.tag-verb { background: linear-gradient(135deg, lighten($tag-verb, 15%), $tag-verb); }
+    &.tag-noun { background: linear-gradient(135deg, lighten($tag-noun, 15%), $tag-noun); }
+    &.tag-book { background: linear-gradient(135deg, lighten($tag-book, 15%), $tag-book); }
+    &.tag-class { background: linear-gradient(135deg, lighten($tag-class, 15%), $tag-class); }
+    &.tag-game { background: linear-gradient(135deg, lighten($tag-game, 15%), $tag-game); }
+    &.tag-music { background: linear-gradient(135deg, lighten($tag-music, 15%), $tag-music); }
+    &.tag-default { background: linear-gradient(135deg, #e0e0e0, #bdbdbd); }
+
+    .tag-emoji {
+      font-size: 2rem;
+      filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+    }
+
+    .card-title {
+      font-family: 'Fredoka One', cursive;
+      font-size: 1.2rem;
+      color: white;
+      text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+      margin: 0;
+      flex: 1;
+      word-break: break-word;
+    }
+  }
+
+  // Conteúdo do card
+  .card-content {
+    padding: 20px;
+
+    .description {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      font-size: 1rem;
+      color: #444;
+      line-height: 1.5;
+      margin: 0 0 15px;
+
+      .content-icon {
+        font-size: 1.3rem;
+        flex-shrink: 0;
+      }
+    }
+
+    .card-info {
+      .info-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 0;
+        border-bottom: 1px dashed #eee;
+
+        &:last-child {
+          border-bottom: none;
+        }
+
+        .info-icon {
+          font-size: 1.1rem;
+        }
+
+        .info-label {
+          font-weight: 700;
+          color: #666;
+          font-size: 0.9rem;
+        }
+
+        .info-value {
+          color: #333;
+          font-weight: 600;
+
+          &.level-badge {
+            padding: 3px 12px;
+            border-radius: 15px;
+            font-size: 0.85rem;
+            color: white;
+
+            &.level-easy { background: $kids-green; }
+            &.level-medium { background: $kids-orange; }
+            &.level-hard { background: $kids-red; }
+          }
+        }
+      }
+    }
+
+    .card-image {
+      margin-top: 15px;
+      border-radius: 12px;
+      overflow: hidden;
+
+      img {
+        width: 100%;
+        height: auto;
+        display: block;
+      }
+    }
+  }
+
+  // Ações do card
+  .card-actions {
+    display: flex;
+    justify-content: space-around;
+    padding: 15px;
+    background: #f8f9fa;
+    border-top: 2px dashed #eee;
+
+    .action-btn {
+      background: transparent;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 12px;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.2s ease;
+
+      &:hover {
+        transform: scale(1.1);
+      }
+
+      .action-emoji {
+        font-size: 1.5rem;
+      }
+
+      .action-text {
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: #666;
+      }
+
+      &.action-speak:hover {
+        background: rgba($kids-blue, 0.2);
+        .action-text { color: $kids-blue; }
+      }
+
+      &.action-star:hover {
+        background: rgba($kids-yellow, 0.3);
+        .action-text { color: darken($kids-yellow, 20%); }
+      }
+
+      &.action-delete:hover {
+        background: rgba($kids-red, 0.2);
+        .action-text { color: $kids-red; }
+      }
+    }
+  }
+
+  // Badge de tag
+  .tag-badge {
+    position: absolute;
+    bottom: 70px;
+    left: -30px;
+    transform: rotate(-45deg);
+    padding: 5px 40px;
+    font-size: 0.7rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    color: white;
+    text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.2);
+
+    &.tag-verb { background: $tag-verb; }
+    &.tag-noun { background: $tag-noun; }
+    &.tag-book { background: $tag-book; }
+    &.tag-class { background: $tag-class; }
+    &.tag-game { background: $tag-game; }
+    &.tag-music { background: $tag-music; }
+    &.tag-default { background: #999; }
   }
 }
 
-.drag-handle {
-  cursor: move; /* This will show a move cursor */
+// ================================================
+// ESTADO VAZIO
+// ================================================
+
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 30px;
+  max-width: 400px;
+  margin: 40px auto;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+
+  .empty-emoji {
+    font-size: 5rem;
+    display: block;
+    margin-bottom: 20px;
+  }
+
+  h3 {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.5rem;
+    color: #333;
+    margin: 0 0 10px;
+  }
+
+  p {
+    color: #666;
+    margin-bottom: 25px;
+  }
+
+  .create-btn {
+    background: linear-gradient(135deg, $kids-green, $kids-teal);
+    border: none;
+    border-radius: 50px;
+    padding: 15px 30px;
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.1rem;
+    color: white;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    transition: all 0.3s ease;
+
+    &:hover {
+      transform: scale(1.05);
+    }
+  }
 }
 
-cdk-drag-preview {
-  cursor: progress; /* This will show an hourglass cursor when dragging */
+// ================================================
+// NAVEGAÇÃO
+// ================================================
+
+.kids-navigation {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  flex-wrap: wrap;
+  margin-top: 40px;
+  padding: 0 20px;
+
+  .nav-btn {
+    background: white;
+    border: none;
+    border-radius: 20px;
+    padding: 15px 25px;
+    font-family: 'Fredoka One', cursive;
+    font-size: 1rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+
+    &:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+    }
+
+    .nav-emoji {
+      font-size: 1.3rem;
+    }
+
+    .nav-text {
+      color: #333;
+    }
+
+    &.nav-create {
+      background: linear-gradient(135deg, $kids-green, $kids-teal);
+      .nav-text { color: white; }
+    }
+
+    &.nav-list {
+      background: linear-gradient(135deg, $kids-blue, $kids-indigo);
+      .nav-text { color: white; }
+    }
+
+    &.nav-graph {
+      background: linear-gradient(135deg, $kids-purple, $kids-pink);
+      .nav-text { color: white; }
+    }
+  }
 }
 
-.example-handle {
-  cursor: move;
+// ================================================
+// DICA DO DIA
+// ================================================
+
+.kids-tip {
+  text-align: center;
+  margin-top: 30px;
+  padding: 15px 25px;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 50px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 500px;
+  margin-left: auto;
+  margin-right: auto;
+  display: block;
+  width: fit-content;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+
+  .tip-icon {
+    font-size: 1.5rem;
+  }
+
+  .tip-text {
+    color: #666;
+    font-weight: 600;
+  }
+}
+
+// ================================================
+// ANIMAÇÕES
+// ================================================
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-15px); }
+}
+
+@keyframes wiggle {
+  0%, 100% { transform: rotate(-3deg); }
+  50% { transform: rotate(3deg); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes sparkle {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.7; transform: scale(1.2); }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-bounce {
+  animation: bounce 2s ease-in-out infinite;
+}
+
+.animate-wiggle {
+  animation: wiggle 0.5s ease-in-out infinite;
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.5s ease-out;
+}
+
+// ================================================
+// CDK DRAG & DROP
+// ================================================
+
+.cdk-drag-preview {
+  box-sizing: border-box;
+  border-radius: 20px;
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+}
+
+.cdk-drag-placeholder {
+  opacity: 0.3;
+}
+
+.cdk-drag-animating {
+  transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+// ================================================
+// RESPONSIVIDADE
+// ================================================
+
+@media (max-width: 768px) {
+  .kids-header {
+    .kids-title {
+      font-size: 1.8rem;
+      flex-direction: column;
+      gap: 10px;
+    }
+  }
+
+  .kids-cards-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .kids-navigation {
+    flex-direction: column;
+    align-items: center;
+
+    .nav-btn {
+      width: 100%;
+      max-width: 250px;
+      justify-content: center;
+    }
+  }
+
+  .kids-card .tag-badge {
+    display: none;
+  }
 }

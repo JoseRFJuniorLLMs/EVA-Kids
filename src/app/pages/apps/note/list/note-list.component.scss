@@ -1,59 +1,581 @@
-.note-list {
-    max-width: 800px;
-    margin: auto;
-    padding: 20px;
-    background: #f9f9f9;
-    border-radius: 8px;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-  
-    h2 {
-      margin-bottom: 20px;
-      text-align: center;
-      color: #333;
-    }
-  
-    .search-bar {
-      text-align: center;
-      margin-bottom: 20px;
-  
-      input {
-        padding: 10px;
-        width: 100%;
-        max-width: 400px;
-        border: 1px solid #ccc;
-        border-radius: 4px;
-        font-size: 16px;
-      }
-    }
-  
-    .note {
-      background: white;
-      border: 1px solid #ddd;
-      padding: 15px;
-      border-radius: 8px;
-      margin-bottom: 20px;
-      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-  
-      h3 {
-        margin-bottom: 10px;
-        color: #007bff;
-      }
-  
-      p {
-        margin-bottom: 8px;
-        color: #555;
-      }
-  
-      button {
-        margin-top: 10px;
-        margin-right: 10px;
-        display: inline-flex;
-        align-items: center;
-  
-        mat-icon {
-          margin-right: 5px;
-        }
+/* ================================================
+   LISTA DE NOTAS - VERSÃO KIDS
+   ================================================ */
+
+// Importar Google Fonts
+@import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap');
+
+// Variáveis de cores vibrantes para crianças
+$kids-red: #FF6B6B;
+$kids-orange: #FFA94D;
+$kids-yellow: #FFE066;
+$kids-green: #69DB7C;
+$kids-teal: #38D9A9;
+$kids-blue: #4DABF7;
+$kids-indigo: #748FFC;
+$kids-purple: #DA77F2;
+$kids-pink: #F783AC;
+
+// Cores por tag
+$tag-verb: $kids-orange;
+$tag-noun: $kids-blue;
+$tag-book: $kids-purple;
+$tag-class: $kids-green;
+$tag-game: $kids-red;
+$tag-music: $kids-pink;
+
+// ================================================
+// PÁGINA PRINCIPAL
+// ================================================
+
+.kids-list-page {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #a8edea 0%, #fed6e3 50%, #ffecd2 100%);
+  padding: 20px;
+  font-family: 'Nunito', sans-serif;
+}
+
+// ================================================
+// CABEÇALHO
+// ================================================
+
+.kids-header {
+  text-align: center;
+  padding: 20px 0 30px;
+
+  .mascot-container {
+    margin-bottom: 10px;
+
+    .mascot {
+      display: inline-block;
+
+      .mascot-emoji {
+        font-size: 60px;
+        display: block;
+        filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2));
       }
     }
   }
-  
+
+  .kids-title {
+    font-family: 'Fredoka One', cursive;
+    font-size: 2.5rem;
+    color: #333;
+    text-shadow: 2px 2px 0 rgba(255, 255, 255, 0.8);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+
+    .title-icon {
+      font-size: 1.5rem;
+    }
+  }
+
+  .kids-subtitle {
+    color: #666;
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-top: 8px;
+  }
+}
+
+// ================================================
+// BARRA DE PESQUISA
+// ================================================
+
+.kids-search-container {
+  max-width: 600px;
+  margin: 0 auto 30px;
+
+  .search-box {
+    background: white;
+    border-radius: 50px;
+    padding: 10px 15px 10px 25px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+
+    .search-icon {
+      font-size: 1.5rem;
+    }
+
+    .kids-search-input {
+      flex: 1;
+      border: none;
+      outline: none;
+      font-size: 1.1rem;
+      font-family: 'Nunito', sans-serif;
+      background: transparent;
+
+      &::placeholder {
+        color: #aaa;
+      }
+    }
+
+    .search-btn {
+      background: linear-gradient(135deg, $kids-blue, $kids-indigo);
+      border: none;
+      border-radius: 50px;
+      padding: 12px 25px;
+      font-family: 'Fredoka One', cursive;
+      font-size: 1rem;
+      color: white;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.3s ease;
+
+      &:hover {
+        transform: scale(1.05);
+      }
+    }
+  }
+}
+
+// ================================================
+// AÇÕES RÁPIDAS
+// ================================================
+
+.quick-actions {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-bottom: 30px;
+
+  .action-bubble {
+    background: white;
+    border: none;
+    border-radius: 20px;
+    padding: 15px 25px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+
+    &:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    }
+
+    .bubble-emoji {
+      font-size: 2rem;
+    }
+
+    .bubble-text {
+      font-family: 'Fredoka One', cursive;
+      font-size: 0.9rem;
+      color: #333;
+    }
+
+    &.action-flashcard {
+      background: linear-gradient(135deg, lighten($kids-red, 20%), lighten($kids-orange, 20%));
+    }
+
+    &.action-rsvp {
+      background: linear-gradient(135deg, lighten($kids-yellow, 10%), lighten($kids-green, 15%));
+    }
+  }
+
+  .notes-counter {
+    background: white;
+    border-radius: 20px;
+    padding: 15px 25px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+
+    .counter-emoji {
+      font-size: 1.5rem;
+    }
+
+    .counter-number {
+      font-family: 'Fredoka One', cursive;
+      font-size: 1.8rem;
+      color: $kids-blue;
+    }
+
+    .counter-text {
+      font-weight: 700;
+      color: #666;
+    }
+  }
+}
+
+// ================================================
+// LISTA DE NOTAS
+// ================================================
+
+.notes-list {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.note-item {
+  background: white;
+  border-radius: 20px;
+  padding: 20px;
+  margin-bottom: 20px;
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+
+  &:hover {
+    transform: translateX(5px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+  }
+
+  // Ícone de Tag
+  .note-tag-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+
+    &.tag-verb { background: linear-gradient(135deg, lighten($tag-verb, 15%), $tag-verb); }
+    &.tag-noun { background: linear-gradient(135deg, lighten($tag-noun, 15%), $tag-noun); }
+    &.tag-book { background: linear-gradient(135deg, lighten($tag-book, 15%), $tag-book); }
+    &.tag-class { background: linear-gradient(135deg, lighten($tag-class, 15%), $tag-class); }
+    &.tag-game { background: linear-gradient(135deg, lighten($tag-game, 15%), $tag-game); }
+    &.tag-music { background: linear-gradient(135deg, lighten($tag-music, 15%), $tag-music); }
+    &.tag-default { background: linear-gradient(135deg, #e0e0e0, #bdbdbd); }
+
+    .tag-emoji {
+      font-size: 1.8rem;
+      filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+    }
+  }
+
+  // Conteúdo da Nota
+  .note-content {
+    flex: 1;
+
+    .note-title {
+      font-family: 'Fredoka One', cursive;
+      font-size: 1.3rem;
+      color: #333;
+      margin: 0 0 8px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+
+      .permanent-star {
+        font-size: 1rem;
+      }
+    }
+
+    .note-description {
+      color: #666;
+      font-size: 1rem;
+      line-height: 1.5;
+      margin: 0 0 12px;
+    }
+
+    .note-details {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+
+      .detail-item {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 0.85rem;
+        color: #888;
+        background: #f5f5f5;
+        padding: 5px 12px;
+        border-radius: 20px;
+
+        .detail-icon {
+          font-size: 1rem;
+        }
+
+        &.level-easy { background: rgba($kids-green, 0.2); color: darken($kids-green, 20%); }
+        &.level-medium { background: rgba($kids-orange, 0.2); color: darken($kids-orange, 20%); }
+        &.level-hard { background: rgba($kids-red, 0.2); color: darken($kids-red, 20%); }
+      }
+    }
+
+    .note-image {
+      margin-top: 15px;
+      border-radius: 12px;
+      overflow: hidden;
+      max-width: 200px;
+
+      img {
+        width: 100%;
+        height: auto;
+        display: block;
+      }
+    }
+  }
+
+  // Botões de Ação
+  .note-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+
+    .action-btn {
+      width: 45px;
+      height: 45px;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+      background: #f5f5f5;
+
+      &:hover {
+        transform: scale(1.1);
+      }
+
+      .action-emoji {
+        font-size: 1.3rem;
+      }
+
+      &.action-view:hover {
+        background: rgba($kids-blue, 0.2);
+      }
+
+      &.action-edit:hover {
+        background: rgba($kids-green, 0.2);
+      }
+
+      &.action-delete:hover {
+        background: rgba($kids-red, 0.2);
+      }
+    }
+  }
+}
+
+// ================================================
+// ESTADOS VAZIOS E CARREGAMENTO
+// ================================================
+
+.empty-state,
+.loading-state {
+  text-align: center;
+  padding: 60px 20px;
+  background: white;
+  border-radius: 30px;
+  max-width: 400px;
+  margin: 40px auto;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+
+  .empty-emoji,
+  .spinner-emoji {
+    font-size: 4rem;
+    display: block;
+    margin-bottom: 20px;
+  }
+
+  h3 {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.5rem;
+    color: #333;
+    margin: 0 0 10px;
+  }
+
+  p,
+  .loading-text {
+    color: #666;
+    margin-bottom: 25px;
+  }
+
+  .create-btn {
+    background: linear-gradient(135deg, $kids-green, $kids-teal);
+    border: none;
+    border-radius: 50px;
+    padding: 15px 30px;
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.1rem;
+    color: white;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    transition: all 0.3s ease;
+
+    &:hover {
+      transform: scale(1.05);
+    }
+  }
+}
+
+// ================================================
+// NAVEGAÇÃO
+// ================================================
+
+.kids-navigation {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  flex-wrap: wrap;
+  margin-top: 40px;
+  padding: 0 20px;
+
+  .nav-btn {
+    background: white;
+    border: none;
+    border-radius: 20px;
+    padding: 15px 25px;
+    font-family: 'Fredoka One', cursive;
+    font-size: 1rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+
+    &:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+    }
+
+    .nav-emoji {
+      font-size: 1.3rem;
+    }
+
+    .nav-text {
+      color: #333;
+    }
+
+    &.nav-create {
+      background: linear-gradient(135deg, $kids-green, $kids-teal);
+      .nav-text { color: white; }
+    }
+
+    &.nav-cards {
+      background: linear-gradient(135deg, $kids-purple, $kids-pink);
+      .nav-text { color: white; }
+    }
+
+    &.nav-graph {
+      background: linear-gradient(135deg, $kids-blue, $kids-indigo);
+      .nav-text { color: white; }
+    }
+  }
+}
+
+// ================================================
+// DICA DO DIA
+// ================================================
+
+.kids-tip {
+  text-align: center;
+  margin-top: 30px;
+  padding: 15px 25px;
+  background: white;
+  border-radius: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  max-width: 500px;
+  margin-left: auto;
+  margin-right: auto;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+
+  .tip-icon {
+    font-size: 1.5rem;
+  }
+
+  .tip-text {
+    color: #666;
+    font-weight: 600;
+  }
+}
+
+// ================================================
+// ANIMAÇÕES
+// ================================================
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-15px); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-bounce {
+  animation: bounce 2s ease-in-out infinite;
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.5s ease-out both;
+}
+
+// ================================================
+// RESPONSIVIDADE
+// ================================================
+
+@media (max-width: 768px) {
+  .kids-header {
+    .kids-title {
+      font-size: 1.8rem;
+      flex-direction: column;
+      gap: 10px;
+    }
+  }
+
+  .note-item {
+    flex-direction: column;
+
+    .note-tag-icon {
+      width: 50px;
+      height: 50px;
+    }
+
+    .note-actions {
+      flex-direction: row;
+      justify-content: flex-end;
+      width: 100%;
+    }
+  }
+
+  .kids-navigation {
+    flex-direction: column;
+    align-items: center;
+
+    .nav-btn {
+      width: 100%;
+      max-width: 250px;
+      justify-content: center;
+    }
+  }
+}

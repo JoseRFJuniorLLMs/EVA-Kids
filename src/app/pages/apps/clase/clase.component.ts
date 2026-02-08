@@ -5,7 +5,9 @@ import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatCardModule } from '@angular/material/card';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { NgxExtendedPdfViewerModule } from 'ngx-extended-pdf-viewer';
-import { VoiceRecognitionService } from '../voice-comand/voice-recognition.service';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
+import { UnifiedVoiceService } from 'src/app/core/services/voice/unified-voice.service';
 import { VexLayoutService } from '@vex/services/vex-layout.service';
 import screenfull from 'screenfull';
 import { MatDialog } from '@angular/material/dialog';
@@ -34,22 +36,25 @@ interface Ebook {
   schemas: [CUSTOM_ELEMENTS_SCHEMA]
 })
 export class ClaseComponent implements AfterViewInit, OnDestroy, OnInit {
+  private destroy$ = new Subject<void>();
   selectedEbook: Ebook | null = null;
   ebookCompletionStatus: { [key: string]: boolean } = {};
-  isDialogOpen: boolean = false; 
-  
+  isDialogOpen: boolean = false;
+
   constructor(
     public pdfLoaderService: PdfService,
-    private voiceRecognitionService: VoiceRecognitionService,
+    private voiceService: UnifiedVoiceService,
     private layoutService: VexLayoutService,
     public dialog: MatDialog
   ) {}
 
   ngOnInit() {
-    this.pdfLoaderService.ebooks$.subscribe(ebooks => {
-      this.pdfLoaderService.getEbooks().subscribe(ebooks => {
+    this.voiceService.usePreset('book');
+
+    this.pdfLoaderService.ebooks$.pipe(takeUntil(this.destroy$)).subscribe(ebooks => {
+      this.pdfLoaderService.getEbooks().pipe(takeUntil(this.destroy$)).subscribe(ebooks => {
         ebooks.forEach(ebook => {
-          this.pdfLoaderService.getCompletionStatus(ebook.title).subscribe(status => {
+          this.pdfLoaderService.getCompletionStatus(ebook.title).pipe(takeUntil(this.destroy$)).subscribe(status => {
             this.ebookCompletionStatus[ebook.title] = status;
           });
         });
@@ -99,6 +104,9 @@ export class ClaseComponent implements AfterViewInit, OnDestroy, OnInit {
   }
 
   ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
+
     document.removeEventListener('mouseup', this.handleMouseUp.bind(this));
   }
 

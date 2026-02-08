@@ -1,6 +1,7 @@
 import { Component, ElementRef, Inject, Input, OnInit, ViewChild, NgZone, ChangeDetectorRef, AfterViewInit, OnDestroy, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Observable, Subscription } from 'rxjs'; // Importando Subscription
+import { Observable, Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 import { Firestore, collection, collectionData } from '@angular/fire/firestore';
 import { MatDialog } from '@angular/material/dialog';
 import { MatExpansionModule } from '@angular/material/expansion';
@@ -18,10 +19,10 @@ import { FormsModule } from '@angular/forms';
 import { SoundService } from 'src/app/layouts/components/footer/sound.service';
 import { fadeInUp400ms } from '@vex/animations/fade-in-up.animation';
 import { stagger40ms } from '@vex/animations/stagger.animation';
-import { Voice3RecognitionService } from './voice3-recognition.service';
+import { UnifiedVoiceService } from 'src/app/core/services/voice/unified-voice.service';
 import WaveSurfer from 'wavesurfer.js';
 import screenfull from 'screenfull';
-import { SatoshiService } from '../note/satoshi.service'; // Verifique o caminho correto
+import { SatoshiService } from '../note/satoshi.service';
 
 @Component({
   selector: 'game3-component',
@@ -47,8 +48,9 @@ import { SatoshiService } from '../note/satoshi.service'; // Verifique o caminho
   ]
 })
 export class Game3Component implements OnInit, AfterViewInit, OnDestroy {
+  private destroy$ = new Subject<void>();
+  private playbackWavesurfer: WaveSurfer | null = null;
   student$!: Observable<any[]>;
-  private satoshiSubscription: Subscription | null = null; // Para acompanhar as assinaturas
 
   @ViewChild('mic') micElement!: ElementRef<HTMLDivElement>;
   @ViewChild('micSelect') micSelectElement!: ElementRef<HTMLSelectElement>;
@@ -96,8 +98,8 @@ export class Game3Component implements OnInit, AfterViewInit, OnDestroy {
     @Inject(Firestore) private firestore: Firestore,
     private zone: NgZone,
     private soundService: SoundService,
-    private voiceRecognitionService: Voice3RecognitionService,
-    @Inject(SatoshiService) private satoshiService: SatoshiService // Adicionando o SatoshiService
+    private voiceService: UnifiedVoiceService,
+    @Inject(SatoshiService) private satoshiService: SatoshiService
   ) {
     const student = collection(this.firestore, 'StudentCollection');
     this.student$ = collectionData(student) as Observable<any[]>;
@@ -111,39 +113,45 @@ export class Game3Component implements OnInit, AfterViewInit, OnDestroy {
     if (screenfull.isEnabled) {
       screenfull.request();
     }
-    this.voiceRecognitionService.init();
-    this.voiceRecognitionService.command$.subscribe(command => {
+
+    this.voiceService.usePreset('game');
+
+    this.voiceService.command$.pipe(takeUntil(this.destroy$)).subscribe(command => {
       this.zone.run(() => this.executeVoiceCommand(command));
     });
 
-    this.voiceRecognitionService.recordingEnded$.subscribe(url => {
+    this.voiceService.recordingEnded$.pipe(takeUntil(this.destroy$)).subscribe(url => {
       this.recordedUrl = url;
       this.createWaveSurferPlay(url);
     });
 
     this.startVoiceRecognition();
-    this.updateSatoshiBalance(); // Atualiza o saldo de satoshi ao iniciar o componente
+    this.updateSatoshiBalance();
   }
 
   ngAfterViewInit(): void {
-    this.voiceRecognitionService.setupWaveSurfer(this.micElement);
+    this.voiceService.setupWaveSurfer(this.micElement);
     this.startRecording();
   }
 
   ngOnDestroy(): void {
-    if (this.voiceRecognitionService.wavesurfer) {
-      this.voiceRecognitionService.wavesurfer.destroy();
+    this.destroy$.next();
+    this.destroy$.complete();
+
+    if (this.playbackWavesurfer) {
+      this.playbackWavesurfer.destroy();
     }
-    this.voiceRecognitionService.stopListening();
-    this.voiceRecognitionService.stopRecording();
-    this.soundService.playErro();
-    if (this.satoshiSubscription) {
-      this.satoshiSubscription.unsubscribe(); // Cancelar a assinatura ao destruir o componente
+
+    this.voiceService.stopListening();
+    this.voiceService.stopRecording();
+
+    if (typeof speechSynthesis !== 'undefined') {
+      speechSynthesis.cancel();
     }
   }
 
   updateSatoshiBalance() {
-    this.satoshiSubscription = this.satoshiService.getSatoshiBalance(this.studentId).subscribe(
+    this.satoshiService.getSatoshiBalance(this.studentId).pipe(takeUntil(this.destroy$)).subscribe(
       (balance: number) => {
         this.totalSatoshis = balance;
       },
@@ -181,7 +189,7 @@ export class Game3Component implements OnInit, AfterViewInit, OnDestroy {
   }
 
   startVoiceRecognition(): void {
-    this.voiceRecognitionService.startListening();
+    this.voiceService.startListening();
   }
 
   cleanCommand(command: string): string {
@@ -240,7 +248,7 @@ export class Game3Component implements OnInit, AfterViewInit, OnDestroy {
   }
 
   startRecording(): void {
-    this.voiceRecognitionService.startRecording();
+    this.voiceService.startRecording();
   }
 
   createWaveSurferPlay(url: string): void {
@@ -248,7 +256,11 @@ export class Game3Component implements OnInit, AfterViewInit, OnDestroy {
       return;
     }
 
-    const wavesurferPlay = WaveSurfer.create({
+    if (this.playbackWavesurfer) {
+      this.playbackWavesurfer.destroy();
+    }
+
+    this.playbackWavesurfer = WaveSurfer.create({
       container: this.waveformPlay.nativeElement,
       waveColor: 'black',
       progressColor: 'gray',
@@ -259,7 +271,7 @@ export class Game3Component implements OnInit, AfterViewInit, OnDestroy {
       backend: 'WebAudio',
     });
 
-    wavesurferPlay.load(url);
+    this.playbackWavesurfer.load(url);
   }
 
   playBiNeural(): void {

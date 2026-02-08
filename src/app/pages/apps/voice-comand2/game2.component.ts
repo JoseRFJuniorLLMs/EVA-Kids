@@ -12,13 +12,15 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSlideToggleChange, MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatSliderModule } from '@angular/material/slider';
 import { FormsModule } from '@angular/forms';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 import { SoundService } from 'src/app/layouts/components/footer/sound.service';
 import { fadeInUp400ms } from '@vex/animations/fade-in-up.animation';
 import { stagger40ms } from '@vex/animations/stagger.animation';
+import { UnifiedVoiceService } from 'src/app/core/services/voice/unified-voice.service';
 import WaveSurfer from 'wavesurfer.js';
 import screenfull from 'screenfull';
 import { VexLayoutService } from '@vex/services/vex-layout.service';
-import { Voice2RecognitionService } from './voice2-recognition.service';
 import { VexConfigService } from '@vex/config/vex-config.service';
 
 @Component({
@@ -45,6 +47,8 @@ import { VexConfigService } from '@vex/config/vex-config.service';
   ]
 })
 export class Game2Component implements OnInit, AfterViewInit, OnDestroy {
+  private destroy$ = new Subject<void>();
+  private playbackWavesurfer: WaveSurfer | null = null;
 
   questions: string[] = [
     "What is your name?", "How are you?", "Where are you from?", "What do you do?", "How old are you?",
@@ -220,33 +224,34 @@ export class Game2Component implements OnInit, AfterViewInit, OnDestroy {
     private cdRef: ChangeDetectorRef,
     private soundService: SoundService,
     private readonly configService: VexConfigService,
-    private voiceRecognitionService: Voice2RecognitionService,
+    private voiceService: UnifiedVoiceService,
     private layoutService: VexLayoutService,
     private renderer: Renderer2,
     private changeDetectorRef: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
+    this.voiceService.usePreset('game');
 
     this.startVoiceRecognition();
     this.askNextQuestion();
 
     setTimeout(() => {
       this.layoutService.collapseSidenav();
-      this.changeDetectorRef.detectChanges(); // Forçar a detecção de mudanças
+      this.changeDetectorRef.detectChanges();
     });
-    
+
     this.changeBackgroundImage();
 
     if (screenfull.isEnabled) {
       screenfull.request();
     }
-    this.voiceRecognitionService.init();
-    this.voiceRecognitionService.command$.subscribe(command => {
+
+    this.voiceService.command$.pipe(takeUntil(this.destroy$)).subscribe(command => {
       this.zone.run(() => this.executeVoiceCommand(command));
     });
 
-    this.voiceRecognitionService.recordingEnded$.subscribe(url => {
+    this.voiceService.recordingEnded$.pipe(takeUntil(this.destroy$)).subscribe(url => {
       this.createWaveSurferPlay(url);
     });
 
@@ -255,7 +260,7 @@ export class Game2Component implements OnInit, AfterViewInit, OnDestroy {
   }
 
   ngAfterViewInit(): void {
-    this.voiceRecognitionService.setupWaveSurfer(this.micElement);
+    this.voiceService.setupWaveSurfer(this.micElement);
     this.startRecording();
     this.changeBackgroundImage();
   }
@@ -269,11 +274,11 @@ export class Game2Component implements OnInit, AfterViewInit, OnDestroy {
   }
 
   startVoiceRecognition(): void {
-    this.voiceRecognitionService.startListening();
+    this.voiceService.startListening();
   }
 
   startRecording(): void {
-    this.voiceRecognitionService.startRecording();
+    this.voiceService.startRecording();
   }
 
   askNextQuestion(): void {
@@ -362,7 +367,11 @@ export class Game2Component implements OnInit, AfterViewInit, OnDestroy {
       return;
     }
 
-    const wavesurferPlay = WaveSurfer.create({
+    if (this.playbackWavesurfer) {
+      this.playbackWavesurfer.destroy();
+    }
+
+    this.playbackWavesurfer = WaveSurfer.create({
       container: this.waveformPlay.nativeElement,
       waveColor: 'black',
       progressColor: 'gray',
@@ -373,7 +382,7 @@ export class Game2Component implements OnInit, AfterViewInit, OnDestroy {
       backend: 'WebAudio',
     });
 
-    wavesurferPlay.load(url);
+    this.playbackWavesurfer.load(url);
   }
 
   changeBackgroundImage(): void {
@@ -398,12 +407,20 @@ export class Game2Component implements OnInit, AfterViewInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    if (this.voiceRecognitionService.wavesurfer) {
-      this.voiceRecognitionService.wavesurfer.destroy();
+    this.destroy$.next();
+    this.destroy$.complete();
+
+    if (this.playbackWavesurfer) {
+      this.playbackWavesurfer.destroy();
     }
-    this.voiceRecognitionService.stopListening();
-    this.voiceRecognitionService.stopRecording();
-    this.soundService.playErro();
+
+    this.voiceService.stopListening();
+    this.voiceService.stopRecording();
+
+    if (typeof speechSynthesis !== 'undefined') {
+      speechSynthesis.cancel();
+    }
+
     const mockEvent = { checked: true } as MatSlideToggleChange;
     this.footerVisibleChange(mockEvent);
   }

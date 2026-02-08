@@ -1,89 +1,166 @@
-<div class="note-list">
-  <div class="container">
-    <h2 @fadeInUp class="display-2 mt-16 mb-8">Search Your Notes Zettel</h2>
-    <div
-      @fadeInUp
-      class="border rounded-full bg-foreground py-2 ltr:pl-6 rtl:pr-6 ltr:pr-3 rtl:pl-3 text-secondary max-w-xl mx-auto shadow-xl flex items-center">
-      <mat-icon class="flex-none" svgIcon="mat:search"></mat-icon>
-      <input
-        class="border-0 ltr:ml-4 rtl:mr-4 placeholder:text-secondary subheading-2 outline-none font-medium w-0 bg-foreground flex-auto"
-        placeholder="Search for title..."
-        type="text"
-        [(ngModel)]="searchTerm"
-        (input)="searchNotes()" />
-      <button
-        class="rounded-full flex-none"
-        color="primary"
-        mat-raised-button
-        type="button"
-        (click)="searchNotes()">
-        Search
-      </button>
-    </div>
-  </div>
-  
-  <div class="search-bar">
-    <button matTooltip="View FlashCard" (click)="openFlashcard()" type="button">
-      <span class="material-symbols-outlined" style="font-size: 50px; color: rgb(254, 1, 1);">
-        extension
-      </span>
-    </button>
-    <button disabled matTooltip="View Done" (click)="openFlashcard()" type="button">
-      <span class="material-symbols-outlined" style="font-size: 50px; color: rgb(249, 228, 3);">
-        grade
-      </span>
-    </button>
-    <button matTooltip="RSVP, the technique of : Rapid Serial Visual Presentation, is a method used to present visual information, such as words or images, in a quick sequence, one after the other, at the same visual fixation point. This technique is often used in psychological research on visual processing and attention, as well as in practical applications to improve speed." (click)="openSRVP()" type="button">
-      <span class="material-symbols-outlined" style="font-size: 50px; color: rgb(249, 228, 3);">
-        offline_bolt
-      </span>
-    </button>
-    <button disabled matTooltip="View AudioCard" (click)="openFlashcard()" type="button">
-      <span class="material-symbols-outlined" style="font-size: 50px; color: rgb(74, 59, 239);">
-        record_voice_over
-      </span>
-    </button>
+<!-- LISTA DE NOTAS - VERSÃO KIDS -->
+<div class="kids-list-page">
 
-    <!-- Badge for total notes -->
-    <span matBadge="{{ (totalNotes$ | async) ?? 0 }}" matBadgeOverlap="false" matBadgeColor="primary" class="total-notes-badge">
-      <button matTooltip="Total Notes" type="button">
-        <span class="material-symbols-outlined" style="font-size: 50px; color: rgb(0, 0, 0);">
-          notes
-        </span>
-      </button>
-    </span>
-  </div>
-
-  <div *ngIf="filteredNotes$ | async as notes; else loading">
-    <div *ngIf="notes.length > 0; else noNotes">
-      <div *ngFor="let note of notes">
-        <div class="note">
-          <h3><strong>Title:</strong>{{ note.title }}</h3>
-          <p><strong>Description:</strong>{{ note.description }}</p>
-          <p><strong>Answer:</strong> {{ note.answer }}</p>
-          <p><strong>Tags:</strong> {{ note.tags }}</p>
-          <p><strong>Level:</strong> {{ note.level }}</p>
-          <p><strong>Permanent:</strong> {{ note.permanent ? 'Yes' : 'No' }}</p>
-          <p><strong>Last Revision:</strong> {{ note.last_revision_date }}</p>
-          <p><strong>Next Revision:</strong> {{ note.next_revision_date }}</p>
-          <p><strong>Image:</strong> <img *ngIf="note.image" [src]="note.image" alt="Note Image" /></p>
-          <button matTooltip="Edit" (click)="editNote(note)">
-            <i class="fas fa-edit" style="font-size: 25px;color: rgb(67, 218, 150);"></i> Edit
-          </button>
-          <button matTooltip="View" (click)="viewNote(note)">
-            <i class="fas fa-eye" style="font-size: 25px;color: rgb(67, 218, 150);"></i> View
-          </button>
-          <button matTooltip="Delete" (click)="deleteNote(note._id)">
-            <i class="fas fa-trash" style="font-size: 25px; color: rgb(241, 4, 4);" ></i> Delete
-          </button>
-        </div>
+  <!-- Cabeçalho Divertido -->
+  <div class="kids-header">
+    <div class="mascot-container">
+      <div class="mascot animate-bounce">
+        <span class="mascot-emoji">🔍</span>
       </div>
     </div>
-    <ng-template #noNotes>
-      <p>No notes found.</p>
-    </ng-template>
+    <h1 class="kids-title">
+      <span class="title-icon">📚</span>
+      Minhas Anotações
+      <span class="title-icon">📚</span>
+    </h1>
+    <p class="kids-subtitle">Encontre suas notas favoritas!</p>
   </div>
+
+  <!-- Barra de Pesquisa Kids -->
+  <div class="kids-search-container animate-slide-up">
+    <div class="search-box">
+      <span class="search-icon">🔎</span>
+      <input
+        type="text"
+        class="kids-search-input"
+        placeholder="Digite para buscar..."
+        [(ngModel)]="searchTerm"
+        (input)="searchNotes()"
+      />
+      <button class="search-btn" (click)="searchNotes()">
+        <span class="btn-emoji">✨</span>
+        Buscar!
+      </button>
+    </div>
+  </div>
+
+  <!-- Botões de Ação Rápida -->
+  <div class="quick-actions animate-slide-up">
+    <button class="action-bubble action-flashcard" matTooltip="Jogar Flashcards!" (click)="openFlashcard()">
+      <span class="bubble-emoji">🃏</span>
+      <span class="bubble-text">Flashcards</span>
+    </button>
+
+    <button class="action-bubble action-rsvp" matTooltip="Leitura Rápida!" (click)="openSRVP()">
+      <span class="bubble-emoji">⚡</span>
+      <span class="bubble-text">Leitura Rápida</span>
+    </button>
+
+    <div class="notes-counter">
+      <span class="counter-emoji">📝</span>
+      <span class="counter-number">{{ (totalNotes$ | async) ?? 0 }}</span>
+      <span class="counter-text">notas</span>
+    </div>
+  </div>
+
+  <!-- Lista de Notas -->
+  <div class="notes-list" *ngIf="filteredNotes$ | async as notes; else loading">
+
+    <div *ngIf="notes.length > 0; else noNotes">
+      <div class="note-item animate-slide-up" *ngFor="let note of notes; let i = index" [style.animation-delay]="(i * 0.1) + 's'">
+
+        <!-- Ícone de Tag -->
+        <div class="note-tag-icon" [ngClass]="getTagClass(note.tags)">
+          <span class="tag-emoji">{{ getTagEmoji(note.tags) }}</span>
+        </div>
+
+        <!-- Conteúdo da Nota -->
+        <div class="note-content">
+          <h3 class="note-title">
+            {{ note.title }}
+            <span class="permanent-star" *ngIf="note.permanent">⭐</span>
+          </h3>
+
+          <p class="note-description">{{ note.description }}</p>
+
+          <div class="note-details">
+            <span class="detail-item" *ngIf="note.answer">
+              <span class="detail-icon">💡</span>
+              {{ note.answer }}
+            </span>
+
+            <span class="detail-item detail-tag">
+              <span class="detail-icon">🏷️</span>
+              {{ getTagText(note.tags) }}
+            </span>
+
+            <span class="detail-item detail-level" [ngClass]="'level-' + note.level">
+              <span class="detail-icon">{{ getLevelEmoji(note.level) }}</span>
+              {{ getLevelText(note.level) }}
+            </span>
+          </div>
+
+          <!-- Imagem (se houver) -->
+          <div class="note-image" *ngIf="note.image">
+            <img [src]="note.image" alt="Imagem da nota" (error)="handleImageError($event)">
+          </div>
+        </div>
+
+        <!-- Botões de Ação -->
+        <div class="note-actions">
+          <button class="action-btn action-view" matTooltip="Ver nota" (click)="viewNote(note)">
+            <span class="action-emoji">👁️</span>
+          </button>
+
+          <button class="action-btn action-edit" matTooltip="Editar nota" (click)="editNote(note)">
+            <span class="action-emoji">✏️</span>
+          </button>
+
+          <button class="action-btn action-delete" matTooltip="Apagar nota" (click)="deleteNote(note._id)">
+            <span class="action-emoji">🗑️</span>
+          </button>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Estado: Nenhuma nota encontrada -->
+    <ng-template #noNotes>
+      <div class="empty-state">
+        <span class="empty-emoji animate-float">🔍</span>
+        <h3>Nenhuma nota encontrada!</h3>
+        <p>Tente buscar com outras palavras</p>
+        <button class="create-btn" [routerLink]="['/apps/noteinsert']">
+          <span class="btn-emoji">✨</span>
+          Criar Nova Nota
+        </button>
+      </div>
+    </ng-template>
+
+  </div>
+
+  <!-- Estado: Carregando -->
   <ng-template #loading>
-    <p>Loading...</p>
+    <div class="loading-state">
+      <div class="loading-spinner animate-bounce">
+        <span class="spinner-emoji">⏳</span>
+      </div>
+      <p class="loading-text">Carregando suas notas...</p>
+    </div>
   </ng-template>
+
+  <!-- Navegação -->
+  <div class="kids-navigation">
+    <button class="nav-btn nav-create" [routerLink]="['/apps/noteinsert']" matTooltip="Criar nova nota">
+      <span class="nav-emoji">➕</span>
+      <span class="nav-text">Nova Nota</span>
+    </button>
+
+    <button class="nav-btn nav-cards" [routerLink]="['/apps/notes']" matTooltip="Ver em cards">
+      <span class="nav-emoji">🃏</span>
+      <span class="nav-text">Cards</span>
+    </button>
+
+    <button class="nav-btn nav-graph" [routerLink]="['/apps/graph']" matTooltip="Ver mapa mental">
+      <span class="nav-emoji">🗺️</span>
+      <span class="nav-text">Mapa</span>
+    </button>
+  </div>
+
+  <!-- Dica do dia -->
+  <div class="kids-tip animate-float">
+    <span class="tip-icon">💡</span>
+    <span class="tip-text">Dica: Use palavras-chave para encontrar suas notas mais rápido!</span>
+  </div>
+
 </div>

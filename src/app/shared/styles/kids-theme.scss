@@ -1,0 +1,443 @@
+/**
+ * PRIMING KIDS THEME
+ * Cores vibrantes e amigáveis para crianças com deficiência
+ * Design acessível, lúdico e estimulante
+ */
+
+// ========================================
+// PALETA DE CORES PRINCIPAL - ARCO-ÍRIS
+// ========================================
+
+$kids-red: #FF6B6B;        // Vermelho alegre
+$kids-orange: #FFA94D;     // Laranja vibrante
+$kids-yellow: #FFE066;     // Amarelo sol
+$kids-green: #69DB7C;      // Verde natureza
+$kids-teal: #38D9A9;       // Verde-água
+$kids-blue: #4DABF7;       // Azul céu
+$kids-purple: #B197FC;     // Roxo mágico
+$kids-pink: #F783AC;       // Rosa doce
+
+// ========================================
+// CORES DE FUNDO SUAVES
+// ========================================
+
+$kids-bg-cream: #FFF9E6;       // Creme suave
+$kids-bg-mint: #E6FFF4;        // Menta clara
+$kids-bg-lavender: #F3E8FF;    // Lavanda
+$kids-bg-peach: #FFF0E6;       // Pêssego
+$kids-bg-sky: #E6F4FF;         // Céu claro
+$kids-bg-pink: #FFE6F0;        // Rosa bebê
+
+// ========================================
+// GRADIENTES DIVERTIDOS
+// ========================================
+
+$gradient-rainbow: linear-gradient(135deg, $kids-red, $kids-orange, $kids-yellow, $kids-green, $kids-blue, $kids-purple);
+$gradient-sunset: linear-gradient(135deg, $kids-orange, $kids-pink, $kids-purple);
+$gradient-ocean: linear-gradient(135deg, $kids-teal, $kids-blue, $kids-purple);
+$gradient-forest: linear-gradient(135deg, $kids-green, $kids-teal, $kids-blue);
+$gradient-candy: linear-gradient(135deg, $kids-pink, $kids-purple, $kids-blue);
+$gradient-sunshine: linear-gradient(135deg, $kids-yellow, $kids-orange, $kids-red);
+
+// ========================================
+// SOMBRAS SUAVES
+// ========================================
+
+$shadow-soft: 0 4px 15px rgba(0, 0, 0, 0.1);
+$shadow-medium: 0 8px 25px rgba(0, 0, 0, 0.15);
+$shadow-lifted: 0 12px 35px rgba(0, 0, 0, 0.2);
+$shadow-glow-blue: 0 0 20px rgba(77, 171, 247, 0.4);
+$shadow-glow-green: 0 0 20px rgba(105, 219, 124, 0.4);
+$shadow-glow-pink: 0 0 20px rgba(247, 131, 172, 0.4);
+
+// ========================================
+// TIPOGRAFIA INFANTIL
+// ========================================
+
+$font-display: 'Fredoka One', 'Comic Sans MS', cursive;
+$font-body: 'Nunito', 'Comic Sans MS', sans-serif;
+$font-mono: 'Fira Code', monospace;
+
+// Tamanhos grandes para acessibilidade
+$text-xs: 14px;
+$text-sm: 16px;
+$text-md: 18px;
+$text-lg: 22px;
+$text-xl: 28px;
+$text-2xl: 36px;
+$text-3xl: 48px;
+$text-4xl: 64px;
+
+// ========================================
+// BORDAS ARREDONDADAS
+// ========================================
+
+$radius-sm: 8px;
+$radius-md: 16px;
+$radius-lg: 24px;
+$radius-xl: 32px;
+$radius-full: 50%;
+$radius-pill: 999px;
+
+// ========================================
+// ESPAÇAMENTO GENEROSO
+// ========================================
+
+$space-xs: 8px;
+$space-sm: 12px;
+$space-md: 16px;
+$space-lg: 24px;
+$space-xl: 32px;
+$space-2xl: 48px;
+$space-3xl: 64px;
+
+// ========================================
+// ANIMAÇÕES
+// ========================================
+
+$transition-fast: 0.15s ease;
+$transition-normal: 0.3s ease;
+$transition-slow: 0.5s ease;
+$transition-bounce: 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+
+// ========================================
+// CLASSES UTILITÁRIAS
+// ========================================
+
+// Fundos coloridos
+.bg-kids-red { background-color: $kids-red !important; }
+.bg-kids-orange { background-color: $kids-orange !important; }
+.bg-kids-yellow { background-color: $kids-yellow !important; }
+.bg-kids-green { background-color: $kids-green !important; }
+.bg-kids-teal { background-color: $kids-teal !important; }
+.bg-kids-blue { background-color: $kids-blue !important; }
+.bg-kids-purple { background-color: $kids-purple !important; }
+.bg-kids-pink { background-color: $kids-pink !important; }
+
+// Fundos suaves
+.bg-cream { background-color: $kids-bg-cream !important; }
+.bg-mint { background-color: $kids-bg-mint !important; }
+.bg-lavender { background-color: $kids-bg-lavender !important; }
+.bg-peach { background-color: $kids-bg-peach !important; }
+.bg-sky { background-color: $kids-bg-sky !important; }
+.bg-pink-light { background-color: $kids-bg-pink !important; }
+
+// Gradientes
+.gradient-rainbow { background: $gradient-rainbow !important; }
+.gradient-sunset { background: $gradient-sunset !important; }
+.gradient-ocean { background: $gradient-ocean !important; }
+.gradient-forest { background: $gradient-forest !important; }
+.gradient-candy { background: $gradient-candy !important; }
+.gradient-sunshine { background: $gradient-sunshine !important; }
+
+// Texto colorido
+.text-kids-red { color: $kids-red !important; }
+.text-kids-orange { color: $kids-orange !important; }
+.text-kids-yellow { color: $kids-yellow !important; }
+.text-kids-green { color: $kids-green !important; }
+.text-kids-teal { color: $kids-teal !important; }
+.text-kids-blue { color: $kids-blue !important; }
+.text-kids-purple { color: $kids-purple !important; }
+.text-kids-pink { color: $kids-pink !important; }
+
+// Bordas arredondadas
+.rounded-kids { border-radius: $radius-lg !important; }
+.rounded-kids-xl { border-radius: $radius-xl !important; }
+.rounded-kids-full { border-radius: $radius-full !important; }
+.rounded-kids-pill { border-radius: $radius-pill !important; }
+
+// Sombras
+.shadow-kids { box-shadow: $shadow-soft !important; }
+.shadow-kids-medium { box-shadow: $shadow-medium !important; }
+.shadow-kids-lifted { box-shadow: $shadow-lifted !important; }
+
+// ========================================
+// ANIMAÇÕES DIVERTIDAS
+// ========================================
+
+@keyframes bounce {
+  0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+  40% { transform: translateY(-20px); }
+  60% { transform: translateY(-10px); }
+}
+
+@keyframes wiggle {
+  0%, 100% { transform: rotate(-3deg); }
+  50% { transform: rotate(3deg); }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 5px rgba(77, 171, 247, 0.5); }
+  50% { box-shadow: 0 0 20px rgba(77, 171, 247, 0.8); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes sparkle {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(1.2); }
+}
+
+@keyframes rainbow-shift {
+  0% { filter: hue-rotate(0deg); }
+  100% { filter: hue-rotate(360deg); }
+}
+
+@keyframes slide-in-up {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pop-in {
+  0% { opacity: 0; transform: scale(0.5); }
+  70% { transform: scale(1.1); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+// Classes de animação
+.animate-bounce { animation: bounce 1s infinite; }
+.animate-wiggle { animation: wiggle 0.5s infinite; }
+.animate-pulse-glow { animation: pulse-glow 2s infinite; }
+.animate-float { animation: float 3s ease-in-out infinite; }
+.animate-sparkle { animation: sparkle 1.5s ease-in-out infinite; }
+.animate-rainbow { animation: rainbow-shift 5s linear infinite; }
+.animate-slide-up { animation: slide-in-up 0.4s ease-out; }
+.animate-pop { animation: pop-in 0.3s ease-out; }
+
+// Hover animations
+.hover-bounce:hover { animation: bounce 0.5s; }
+.hover-wiggle:hover { animation: wiggle 0.3s; }
+.hover-grow:hover { transform: scale(1.05); transition: transform $transition-bounce; }
+.hover-lift:hover { transform: translateY(-5px); box-shadow: $shadow-lifted; transition: all $transition-normal; }
+
+// ========================================
+// COMPONENTES KIDS
+// ========================================
+
+// Botões grandes e coloridos
+.btn-kids {
+  font-family: $font-body;
+  font-size: $text-lg;
+  font-weight: 700;
+  padding: $space-md $space-xl;
+  border-radius: $radius-pill;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: $space-sm;
+  transition: all $transition-bounce;
+  box-shadow: $shadow-soft;
+
+  &:hover {
+    transform: translateY(-3px) scale(1.02);
+    box-shadow: $shadow-medium;
+  }
+
+  &:active {
+    transform: translateY(0) scale(0.98);
+  }
+
+  // Variantes de cor
+  &.btn-red { background: $kids-red; color: white; }
+  &.btn-orange { background: $kids-orange; color: white; }
+  &.btn-yellow { background: $kids-yellow; color: #333; }
+  &.btn-green { background: $kids-green; color: white; }
+  &.btn-blue { background: $kids-blue; color: white; }
+  &.btn-purple { background: $kids-purple; color: white; }
+  &.btn-pink { background: $kids-pink; color: white; }
+  &.btn-rainbow { background: $gradient-rainbow; color: white; }
+}
+
+// Ícone grande
+.icon-kids {
+  font-size: 32px !important;
+  width: 48px !important;
+  height: 48px !important;
+}
+
+.icon-kids-lg {
+  font-size: 48px !important;
+  width: 64px !important;
+  height: 64px !important;
+}
+
+// Cards infantis
+.card-kids {
+  background: white;
+  border-radius: $radius-xl;
+  padding: $space-xl;
+  box-shadow: $shadow-soft;
+  transition: all $transition-normal;
+  border: 3px solid transparent;
+
+  &:hover {
+    transform: translateY(-5px);
+    box-shadow: $shadow-lifted;
+    border-color: $kids-blue;
+  }
+
+  &.card-red { border-left: 6px solid $kids-red; }
+  &.card-orange { border-left: 6px solid $kids-orange; }
+  &.card-yellow { border-left: 6px solid $kids-yellow; }
+  &.card-green { border-left: 6px solid $kids-green; }
+  &.card-blue { border-left: 6px solid $kids-blue; }
+  &.card-purple { border-left: 6px solid $kids-purple; }
+  &.card-pink { border-left: 6px solid $kids-pink; }
+}
+
+// Input fields grandes
+.input-kids {
+  font-family: $font-body;
+  font-size: $text-lg;
+  padding: $space-md $space-lg;
+  border-radius: $radius-lg;
+  border: 3px solid #E0E0E0;
+  transition: all $transition-normal;
+  width: 100%;
+
+  &:focus {
+    outline: none;
+    border-color: $kids-blue;
+    box-shadow: $shadow-glow-blue;
+  }
+
+  &::placeholder {
+    color: #BDBDBD;
+  }
+}
+
+// Labels amigáveis
+.label-kids {
+  font-family: $font-body;
+  font-size: $text-md;
+  font-weight: 700;
+  color: #555;
+  margin-bottom: $space-sm;
+  display: flex;
+  align-items: center;
+  gap: $space-xs;
+}
+
+// Emojis como ícones
+.emoji-icon {
+  font-size: 28px;
+  line-height: 1;
+}
+
+// Container de página
+.page-kids {
+  background: $kids-bg-cream;
+  min-height: 100vh;
+  padding: $space-xl;
+}
+
+// Título divertido
+.title-kids {
+  font-family: $font-display;
+  font-size: $text-3xl;
+  color: $kids-purple;
+  text-align: center;
+  margin-bottom: $space-xl;
+  text-shadow: 2px 2px 0 $kids-pink;
+}
+
+// Subtítulo
+.subtitle-kids {
+  font-family: $font-body;
+  font-size: $text-xl;
+  color: #666;
+  text-align: center;
+  margin-bottom: $space-lg;
+}
+
+// Mascote/Avatar
+.mascot {
+  width: 120px;
+  height: 120px;
+  border-radius: $radius-full;
+  background: $gradient-candy;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 60px;
+  box-shadow: $shadow-medium;
+  animation: float 3s ease-in-out infinite;
+}
+
+// Badge/Tag colorido
+.badge-kids {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 16px;
+  border-radius: $radius-pill;
+  font-size: $text-sm;
+  font-weight: 700;
+
+  &.badge-easy { background: $kids-green; color: white; }
+  &.badge-medium { background: $kids-orange; color: white; }
+  &.badge-hard { background: $kids-red; color: white; }
+  &.badge-verb { background: $kids-blue; color: white; }
+  &.badge-noun { background: $kids-purple; color: white; }
+  &.badge-book { background: $kids-teal; color: white; }
+}
+
+// Progress bar colorido
+.progress-kids {
+  height: 20px;
+  background: #E0E0E0;
+  border-radius: $radius-pill;
+  overflow: hidden;
+
+  .progress-bar {
+    height: 100%;
+    background: $gradient-rainbow;
+    border-radius: $radius-pill;
+    transition: width $transition-slow;
+  }
+}
+
+// Estrelas de recompensa
+.stars-container {
+  display: flex;
+  gap: $space-xs;
+
+  .star {
+    font-size: 32px;
+    color: #E0E0E0;
+    transition: all $transition-normal;
+
+    &.filled {
+      color: $kids-yellow;
+      text-shadow: 0 0 10px rgba(255, 224, 102, 0.5);
+    }
+
+    &.animated {
+      animation: pop-in 0.3s ease-out, sparkle 1s ease-in-out 0.3s;
+    }
+  }
+}
+
+// Confetti burst (para celebrações)
+.confetti {
+  position: fixed;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  animation: confetti-fall 3s ease-out forwards;
+}
+
+@keyframes confetti-fall {
+  0% {
+    opacity: 1;
+    transform: translateY(0) rotate(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(100vh) rotate(720deg);
+  }
+}

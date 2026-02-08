@@ -29,6 +29,9 @@ speed-measure-plugin.json
 # GPT4
 gpt4.json
 /gpt4
+
+# Firebase Admin SDK credentials
+priming-ia-edu-firebase-adminsdk-*.json
 # IDE - VSCode
 .vscode/*
 !.vscode/settings.json

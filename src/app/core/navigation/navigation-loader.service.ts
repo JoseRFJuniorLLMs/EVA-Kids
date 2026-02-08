@@ -34,17 +34,17 @@ export class NavigationLoaderService {
     this._items.next([
       {
         type: 'link',
-        label: 'Login',
+        label: 'Entrar',
         route: '/login',
         icon: 'mat:login'
       },
       {
         type: 'subheading',
-        label: 'Dashboards',
+        label: 'Início',
         children: [
           {
             type: 'link',
-            label: 'Start',
+            label: 'Começar a Aprender',
             route: '/',
             icon: 'mat:rocket_launch',
             routerLinkActiveOptions: { exact: true }
@@ -53,85 +53,85 @@ export class NavigationLoaderService {
       },
       {
         type: 'subheading',
-        label: 'Apps',
+        label: 'Atividades',
         children: [
           {
             type: 'dropdown',
-            label: 'Games',
-            icon: 'mat:gamepad',
+            label: 'Jogos',
+            icon: 'mat:sports_esports',
             children: [
               {
                 type: 'link',
-                label: 'Priming Sticky Game',
+                label: 'Jogo das Frases',
                 route: '/apps/voicegame',
-                icon: 'mat:gamepad'
+                icon: 'mat:mic'
               },
               {
                 type: 'link',
-                label: 'Priming Dialog Game',
+                label: 'Jogo do Diálogo',
                 route: '/apps/voicegame2',
-                icon: 'mat:speaker_notes'
+                icon: 'mat:chat'
               },
               {
                 type: 'link',
-                label: 'Priming Hidden Game',
+                label: 'Jogo Escondido',
                 route: '/apps/voicegame3',
-                icon: 'mat:speaker_notes'
+                icon: 'mat:visibility_off'
               },
               {
                 type: 'link',
-                label: 'Priming Fragment Game',
+                label: 'Jogo dos Fragmentos',
                 route: '/apps/voicegame4',
-                icon: 'mat:speaker_notes'
+                icon: 'mat:extension'
               },
               {
                 type: 'link',
-                label: 'Priming RC7 Game',
+                label: 'Jogo Avançado',
                 route: '/apps/voicegame5',
-                icon: 'mat:speaker_notes'
+                icon: 'mat:star'
               },
               {
                 type: 'link',
-                label: 'Priming Memory Game',
+                label: 'Jogo da Memória',
                 route: '/apps/card',
-                icon: 'mat:speaker_notes'
+                icon: 'mat:grid_view'
               },
               {
                 type: 'link',
-                label: 'Priming Tetris Game',
+                label: 'Tetris',
                 route: '/apps/teris',
-                icon: 'mat:speaker_notes'
+                icon: 'mat:view_module'
               },
               {
                 type: 'link',
-                label: 'Priming Dino Game',
+                label: 'Dinossauro',
                 route: '/apps/dino',
-                icon: 'mat:speaker_notes'
+                icon: 'mat:pets'
               },
               {
                 type: 'link',
-                label: 'Priming Word-Search Game',
+                label: 'Caça-Palavras',
                 route: '/apps/word-search',
-                icon: 'mat:speaker_notes'
+                icon: 'mat:search'
               },
               {
                 type: 'link',
-                label: 'Priming Puzzle',
+                label: 'Quebra-Cabeça',
                 route: '/apps/quebra-cabeca',
-                icon: 'mat:speaker_notes'
+                icon: 'mat:dashboard'
               }
             ]
           },
           {
             type: 'dropdown',
-            label: 'Notes',
-            icon: 'mat:bubble_chart',
+            label: 'Minhas Notas',
+            icon: 'mat:sticky_note_2',
             children: [
               {
                 type: 'link',
-                label: 'List Notes',
+                label: 'Ver Notas',
                 route: '/apps/list',
-                icon: 'mat:gamepad',
+                icon: 'mat:list_alt',
                 badge: {
                   value: this.totalNotesSubject.getValue().toString(),
                   bgClass: 'bg-purple-600',
@@ -140,127 +140,108 @@ export class NavigationLoaderService {
               },
               {
                 type: 'link',
-                label: 'Graph Notes',
+                label: 'Mapa das Notas',
                 route: '/apps/graph',
                 icon: 'mat:bubble_chart'
               },
               {
                 type: 'link',
-                label: 'Configure Notes',
+                label: 'Criar Nota',
                 route: '/apps/notes',
-                icon: 'mat:speaker_notes'
+                icon: 'mat:add_circle'
               }
             ]
           },
           {
             type: 'dropdown',
-            label: 'Books',
-            icon: 'mat:menu_book',
+            label: 'Livros',
+            icon: 'mat:auto_stories',
             children: [
               {
                 type: 'link',
-                label: 'Books EPUB',
+                label: 'Ler Livros',
                 route: '/apps/book2',
                 icon: 'mat:menu_book'
               },
               {
                 type: 'link',
-                label: 'Books Text',
+                label: 'Histórias',
                 route: '/apps/book3',
-                icon: 'mat:text_rotate_up'
+                icon: 'mat:library_books'
               },
               {
                 type: 'link',
-                label: 'Books Grammatics',
+                label: 'Aprender Gramática',
                 route: '/apps/grammar-analyzer',
-                icon: 'mat:text_rotate_up'
+                icon: 'mat:spellcheck'
               },
               {
                 type: 'link',
-                label: 'Books OpenAI',
+                label: 'Livro Interativo',
                 route: '/apps/book',
-                icon: 'mat:text_rotate_up'
+                icon: 'mat:record_voice_over'
               }
             ]
           },
           {
             type: 'link',
-            label: 'Clases',
+            label: 'Aulas',
             route: '/apps/clase',
-            icon: 'mat:library_books'
+            icon: 'mat:school'
           },
           {
             type: 'link',
-            label: 'Student Rank',
+            label: 'Meus Amigos',
             route: '/apps/aio-table',
-            icon: 'mat:assignment'
+            icon: 'mat:groups'
           },
-  /*         {
-            type: 'link',
-            label: 'chat-video',
-            route: '/apps/chat-video',
-            icon: 'mat:assignment'
-          }, */
           {
             type: 'link',
-            label: 'Series',
+            label: 'Vídeos',
             route: '/apps/editor',
-            icon: 'mat:movie'
+            icon: 'mat:play_circle'
           }
         ]
       },
       {
         type: 'subheading',
-        label: 'Pages',
+        label: 'Ajuda',
         children: [
           {
             type: 'link',
-            label: 'FAQ',
+            label: 'Perguntas',
             route: '/pages/faq',
-            icon: 'mat:help'
-          },
-          {
-            type: 'link',
-            label: 'Invoice',
-            route: '/pages/invoice',
-            icon: 'mat:receipt'
+            icon: 'mat:help_outline'
           }
         ]
       },
       {
         type: 'subheading',
-        label: 'Customize',
+        label: 'Configurar',
         children: []
       },
       {
         type: 'link',
-        label: 'Configuration',
+        label: 'Configurações',
         route: () => this.layoutService.openConfigpanel(),
-        icon: 'mat:book'
+        icon: 'mat:settings'
       },
       {
         type: 'link',
-        label: 'Register',
+        label: 'Criar Conta',
         route: '/register',
         icon: 'mat:person_add'
-      },
-      {
-        type: 'link',
-        label: 'Forgot Password',
-        route: '/forgot-password',
-        icon: 'mat:lock_open'
       }
     ]);
   }
 
-  // Método para atualizar o badge de "Shared Notes"
   updateNotesBadges(totalNotes: number): void {
     const updatedItems = this._items.getValue().map(item => {
-      if (item.type === 'subheading' && item.label === 'Apps') {
-        item.children = item.children.map(child => {
-          if (child.type === 'dropdown' && child.label === 'Notes') {
-            child.children = child.children.map(noteChild => {
-              if (noteChild.type === 'link' && (noteChild.label === 'List Notes')) {
+      if (item.type === 'subheading' && item.label === 'Atividades') {
+        item.children = item.children?.map(child => {
+          if (child.type === 'dropdown' && child.label === 'Minhas Notas') {
+            child.children = child.children?.map(noteChild => {
+              if (noteChild.type === 'link' && (noteChild.label === 'Ver Notas')) {
                 return {
                   ...noteChild,
                   badge: {

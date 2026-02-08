@@ -1,108 +1,317 @@
-/* Estilos Globais para Mensagens e Outros Componentes */
-.user-message, .assistant-message {
-  padding: 10px;
-  margin-bottom: 5px;
-  border-radius: 5px;
-  color: #000; /* Cor do texto para todas as mensagens */
-}
+/* ================================================
+   DASHBOARD - VERSÃO SIMPLIFICADA
+   ================================================ */
 
-.user-message {
-  background-color: #e0f2f1; /* Cor de fundo para mensagens do usuário */
-}
+@import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap');
 
-.assistant-message {
-  background-color: #fce4ec; /* Cor de fundo para mensagens do assistente */
-}
+// Variáveis de cores
+$kids-red: #FF6B6B;
+$kids-orange: #FFA94D;
+$kids-yellow: #FFE066;
+$kids-green: #69DB7C;
+$kids-teal: #38D9A9;
+$kids-blue: #4DABF7;
+$kids-indigo: #748FFC;
+$kids-purple: #DA77F2;
+$kids-pink: #F783AC;
 
-.conversation-history {
-  max-height: 300px;
-  overflow-y: auto; /* Barra de rolagem vertical quando necessário */
-}
-
-/* Ajustes para mat-form-field e outros elementos */
-mat-form-field {
-  margin-right: 12px;
-}
-
-.hand-cursor {
-  cursor: pointer;
-}
-
-/* Ajustes para o layout do vex e outros componentes específicos */
 :host {
   display: block;
 }
 
-/* Foco na expansão do layout e componentes para ocupar todo o espaço */
-.vex-page-layout-content, .container, .card, .mat-slider {
-  width: 100%; /* Garante que ocupem todo o espaço disponível */
-  margin: 0;
-  padding: 0;
-}
+// ================================================
+// PÁGINA PRINCIPAL
+// ================================================
 
-/* Refatoração para Text Display e Quick Line Chart */
-#textDisplay, vex-widget-quick-line-chart {
-  overflow-wrap: break-word; /* Para quebra automática de texto */
-  white-space: pre-wrap; /* Mantém o espaçamento e quebras de linha */
-  font-size: 2em; /* Ajusta o tamanho da fonte se necessário */
-  line-height: 1.5; /* Melhora o espaçamento entre linhas */
-}
-
-/* Animação e Destaque */
-@keyframes wordAppear {
-  0% { opacity: 0; }
-  100% { opacity: 1; }
-}
-
-.highlight {
-  background-color: yellow; /* Estilo de destaque */
-}
-
-
-
-.audio-container {
-  display: flex; /* Use flexbox para alinhar os itens horizontalmente */
-  align-items: center; /* Alinhe os itens verticalmente ao centro */
-}
-
-.audio-container button {
-  margin-right: 10px; /* Ajuste o espaçamento à direita conforme necessário */
-}
-
-.waveform-container {
-  flex: 1; /* Ocupa todo o espaço disponível restante */
-}
-
-.buttons-container {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
+.kids-dashboard {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 50%, #ffecd2 100%);
   padding: 20px;
+  font-family: 'Nunito', sans-serif;
 }
 
-.section-title {
-  grid-column: 1 / -1; /* Faz o título abranger todas as colunas */
-  font-size: 20px;
-  font-weight: bold;
-  text-align: center;
-  margin: 20px 0;
-}
+// ================================================
+// LOADING
+// ================================================
 
-.phonetic-panel {
+.kids-loading {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.95);
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
+  z-index: 1000;
+
+  .loading-spinner {
+    .spinner-emoji {
+      font-size: 5rem;
+      display: block;
+    }
+  }
+
+  .loading-text {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.5rem;
+    color: $kids-purple;
+    margin-top: 20px;
+  }
+}
+
+// ================================================
+// CABEÇALHO
+// ================================================
+
+.kids-header {
   text-align: center;
-  padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
+  padding: 20px 0 40px;
+
+  .mascot-container {
+    .mascot {
+      display: inline-block;
+
+      .mascot-emoji {
+        font-size: 80px;
+        display: block;
+        filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2));
+      }
+    }
+  }
+
+  .kids-title {
+    font-family: 'Fredoka One', cursive;
+    font-size: 2.5rem;
+    color: #333;
+    text-shadow: 2px 2px 0 rgba(255, 255, 255, 0.8);
+    margin: 10px 0 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+
+    .title-icon {
+      font-size: 1.5rem;
+      animation: sparkle 1.5s ease-in-out infinite;
+    }
+  }
 }
 
-.phonetic {
-  font-size: 40px;
-  margin-bottom: 5px;
+// ================================================
+// CARDS DE NAVEGAÇÃO
+// ================================================
+
+.dashboard-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
 }
 
-.word {
-  font-size: 16px;
+.nav-card {
+  background: white;
+  border-radius: 24px;
+  padding: 30px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 6px;
+  }
+
+  &:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.15);
+  }
+
+  &:active {
+    transform: translateY(-4px);
+  }
+
+  .card-icon {
+    font-size: 4rem;
+    margin-bottom: 15px;
+    display: block;
+  }
+
+  .card-title {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.5rem;
+    color: #333;
+    margin: 0 0 15px;
+  }
+
+  .card-actions {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .card-badge {
+    background: #f0f0f0;
+    color: #666;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+  }
+
+  .card-action {
+    color: #999;
+    font-size: 0.85rem;
+    font-weight: 600;
+  }
+
+  .card-count {
+    background: linear-gradient(135deg, $kids-blue, $kids-indigo);
+    color: white;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.1rem;
+  }
+}
+
+// Card específicos
+.card-palavras {
+  &::before {
+    background: linear-gradient(90deg, $kids-purple, $kids-pink);
+  }
+
+  &:hover {
+    border-color: $kids-purple;
+  }
+}
+
+.card-frases {
+  &::before {
+    background: linear-gradient(90deg, $kids-blue, $kids-teal);
+  }
+
+  &:hover {
+    border-color: $kids-blue;
+  }
+}
+
+.card-textos {
+  &::before {
+    background: linear-gradient(90deg, $kids-orange, $kids-yellow);
+  }
+
+  &:hover {
+    border-color: $kids-orange;
+  }
+}
+
+.card-notas {
+  &::before {
+    background: linear-gradient(90deg, $kids-green, $kids-teal);
+  }
+
+  &:hover {
+    border-color: $kids-green;
+  }
+}
+
+// ================================================
+// ANIMAÇÕES
+// ================================================
+
+@keyframes sparkle {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(1.2);
+  }
+}
+
+@keyframes bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.animate-bounce {
+  animation: bounce 2s ease-in-out infinite;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.5s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// ================================================
+// RESPONSIVO
+// ================================================
+
+@media (max-width: 768px) {
+  .kids-header {
+    .mascot-emoji {
+      font-size: 60px !important;
+    }
+
+    .kids-title {
+      font-size: 1.8rem;
+    }
+  }
+
+  .dashboard-cards {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    padding: 10px;
+  }
+
+  .nav-card {
+    padding: 20px;
+
+    .card-icon {
+      font-size: 3rem;
+    }
+
+    .card-title {
+      font-size: 1.2rem;
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .dashboard-cards {
+    grid-template-columns: 1fr;
+  }
 }

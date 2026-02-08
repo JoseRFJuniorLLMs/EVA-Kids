@@ -37,7 +37,7 @@ import { VexSecondaryToolbarComponent } from '@vex/components/vex-secondary-tool
 
 import WaveSurfer from 'wavesurfer.js';
 import RecordPlugin from 'wavesurfer.js/dist/plugins/record.js';
-import gpt4 from '../../../../../gpt4.json';
+import { UnifiedAIService } from 'src/app/core/services/ai/unified-ai.service';
 
 //import * as WebSocket from 'websocket';
 import { CdkDrag, CdkDropList } from '@angular/cdk/drag-drop';
@@ -152,7 +152,8 @@ export class PuzzleBlockComponent implements OnInit {
     private cdRef: ChangeDetectorRef,
     private zone: NgZone,
     private _bottomSheet: MatBottomSheet,
-    private soundService: SoundService
+    private soundService: SoundService,
+    private aiService: UnifiedAIService
   ) {
     const studentCollection = collection(this.firestore, 'StudentCollection');
     this.studentCollection$ = collectionData(studentCollection) as Observable<
@@ -567,27 +568,43 @@ export class PuzzleBlockComponent implements OnInit {
     this.progressElement.nativeElement.textContent = formattedTime;
   } //fim
 
-  /* ==================Transcribe Audio==================== */
+  /* ==================Transcribe Audio with Gemini==================== */
   transcribeAudio(audioPath: string) {
     console.log('Caminho do arquivo de áudio:', audioPath);
-    const openAIKey = gpt4.apiKey;
-    const url = 'https://api.openai.com/v1/audio/transcriptions';
-    const formData = new FormData();
-    formData.append('file', audioPath);
-    formData.append('model', 'whisper-1');
 
-    let headers = new HttpHeaders({
-      Authorization: `Bearer ${openAIKey}`
-    });
+    // For file-based transcription, we need to convert to blob first
+    // If audioPath is a URL, fetch it first
+    if (audioPath.startsWith('blob:') || audioPath.startsWith('data:')) {
+      fetch(audioPath)
+        .then(response => response.blob())
+        .then(audioBlob => {
+          this.aiService.transcribe({ audioBlob }).subscribe({
+            next: (response) => {
+              this.transcribedText = response.text;
+            },
+            error: (error) => {
+              console.log('Error transcribing audio:', error);
+            }
+          });
+        })
+        .catch(error => {
+          console.log('Error fetching audio:', error);
+        });
+    } else {
+      // For direct blob/file input
+      console.log('Audio transcription requires blob input');
+    }
+  } //fim
 
-    this.http.post(url, formData, { headers, observe: 'response' }).subscribe(
-      (response: any) => {
-        // Acessa o texto transcrito na resposta
-        this.transcribedText = response.body.text;
+  /* ==================Transcribe Audio Blob==================== */
+  transcribeAudioBlob(audioBlob: Blob) {
+    this.aiService.transcribe({ audioBlob }).subscribe({
+      next: (response) => {
+        this.transcribedText = response.text;
       },
-      (error) => {
+      error: (error) => {
         console.log('Error transcribing audio:', error);
       }
-    );
+    });
   } //fim
 } //fim

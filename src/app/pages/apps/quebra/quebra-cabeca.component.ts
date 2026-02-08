@@ -1,7 +1,8 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { DragDropModule, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
-import { VoiceCabRecognitionService } from './voice-cab-recognition.service';
+import { Subject } from 'rxjs';
+import { UnifiedVoiceService } from 'src/app/core/services/voice/unified-voice.service';
 import { AngularFireDatabase } from '@angular/fire/compat/database';
 import { AuthService } from '../../pages/auth/login/auth.service';
 import { SoundService } from 'src/app/layouts/components/footer/sound.service';
@@ -18,7 +19,8 @@ interface PuzzlePiece {
   templateUrl: './quebra-cabeca.component.html',
   styleUrls: ['./quebra-cabeca.component.scss']
 })
-export class QuebraCabecaComponent implements OnInit {
+export class QuebraCabecaComponent implements OnInit, OnDestroy {
+  private destroy$ = new Subject<void>();
   imageUrls = [
     '../../../../assets/img/game/q0.png',
     '../../../../assets/img/game/q1.png',
@@ -32,15 +34,21 @@ export class QuebraCabecaComponent implements OnInit {
   completionCount = 0;
 
   constructor(
-    private voiceService: VoiceCabRecognitionService,
+    private voiceService: UnifiedVoiceService,
     private soundService: SoundService,
     private db: AngularFireDatabase,
     private authService: AuthService
   ) {}
 
   ngOnInit() {
+    this.voiceService.usePreset('simple');
     this.soundService.playBiNeural();
     this.initializePuzzle();
+  }
+
+  ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   initializePuzzle() {

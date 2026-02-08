@@ -1,50 +1,138 @@
+// === FOOTER COMPACTO ===
+
+$kids-purple: #8B5CF6;
+$kids-pink: #EC4899;
+$kids-green: #10B981;
+
 :host {
-  @apply bg-foreground dark:bg-base border-t text-default flex w-full bottom-0 relative;
-  height: var(--vex-footer-height);
-  z-index: var(--vex-footer-z-index);
-}
-
-// footer.component.scss
-
-button.mat-raised-button {
-  &.playing {
-    background-color: green; // Cor quando estiver tocando
-    color: white; // Cor do ícone quando estiver tocando
-  }
-
-  &.not-playing {
-    background-color: red; // Cor quando não estiver tocando
-    color: black; // Cor do ícone quando não estiver tocando
-  }
-}
-
-
-button.mat-raised-button {
-  &.playing {
-    background-color: green; // Cor quando estiver tocando
-    color: white; // Cor do ícone quando estiver tocando
-  }
-
-  &.not-playing {
-    background-color: red; // Cor quando não estiver tocando
-    color: black; // Cor do ícone quando não estiver tocando
-  }
-}
-
-.waveform-container {
-  /* position: absolute;  */
-  /* bottom: 0;  */
-  /* left: 0;  */
+  display: block;
   width: 100%;
-  height: 128px;
- /*  margin-top: 20px; */
- /*  z-index: 9999; */
+  height: var(--vex-footer-height, 56px);
+  background: var(--vex-footer-background, #2D1B4E);
+  color: var(--vex-footer-color, white);
 }
 
-.progress-ba-container {
-  /* position: absolute;  */
-  /* bottom: 0;  */
-  /* left: 0;  */
-  margin-top: 20px;
- /*  z-index: 9999; */
+.footer-bar {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #2D1B4E 0%, #1a1a2e 100%);
+  padding: 8px 20px;
+  border-top: 3px solid $kids-purple;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.footer-buttons {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: nowrap;
+}
+
+.footer-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background: rgba(255, 255, 255, 0.15);
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  .btn-icon {
+    font-size: 1.3rem;
+  }
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.25);
+    transform: translateY(-2px);
+  }
+
+  &.active {
+    background: $kids-purple;
+    border-color: $kids-pink;
+    box-shadow: 0 0 10px rgba($kids-purple, 0.5);
+  }
+
+  &.unicorn {
+    width: 44px;
+    height: 44px;
+    background: linear-gradient(135deg, $kids-purple, $kids-pink);
+    border: none;
+    box-shadow: 0 2px 8px rgba($kids-purple, 0.4);
+
+    .btn-icon {
+      font-size: 1.5rem;
+    }
+
+    &:hover {
+      transform: scale(1.08);
+      box-shadow: 0 4px 12px rgba($kids-purple, 0.5);
+    }
+  }
+}
+
+.pomodoro-timer {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(255, 255, 255, 0.15);
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  border-radius: 16px;
+  padding: 6px 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  .timer-icon {
+    font-size: 1.1rem;
+  }
+
+  .timer-value {
+    font-family: 'Segoe UI', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: white;
+  }
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.25);
+  }
+}
+
+// Responsivo
+@media (max-width: 600px) {
+  .footer-bar {
+    padding: 6px 10px;
+  }
+
+  .footer-buttons {
+    gap: 8px;
+  }
+
+  .footer-btn {
+    width: 36px;
+    height: 36px;
+
+    .btn-icon {
+      font-size: 1.1rem;
+    }
+
+    &.unicorn {
+      width: 40px;
+      height: 40px;
+    }
+  }
+
+  .pomodoro-timer {
+    padding: 5px 8px;
+
+    .timer-value {
+      font-size: 0.8rem;
+    }
+  }
 }

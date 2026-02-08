@@ -1,8 +1,7 @@
 import { Component, ElementRef, Inject, Input, OnInit, ViewChild, NgZone, ChangeDetectorRef, AfterViewInit, OnDestroy, CUSTOM_ELEMENTS_SCHEMA, Renderer2 } from '@angular/core';
-import { CommonModule } from '@angular/common'; // Importando CommonModule
-import { Observable, Subscription } from 'rxjs';
-import { Firestore, collection, collectionData } from '@angular/fire/firestore';
-import { MatDialog } from '@angular/material/dialog';
+import { CommonModule } from '@angular/common';
+import { Observable, Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatBadgeModule } from '@angular/material/badge';
@@ -21,10 +20,10 @@ import WaveSurfer from 'wavesurfer.js';
 import screenfull from 'screenfull';
 
 import { SoundService } from 'src/app/layouts/components/footer/sound.service';
-import { Voice5RecognitionService } from './voice5-recognition.service';
+import { UnifiedVoiceService } from 'src/app/core/services/voice/unified-voice.service';
 import { vocabulary } from './vocabulary';
 import { VEX_THEMES } from '@vex/config/config.token';
-import { SatoshiService } from '../note/satoshi.service'; // Importando o SatoshiService
+import { SatoshiService } from '../note/satoshi.service';
 
 @Component({
   selector: 'app-game5',
@@ -50,19 +49,19 @@ import { SatoshiService } from '../note/satoshi.service'; // Importando o Satosh
   ]
 })
 export class Game5Component implements OnInit, AfterViewInit, OnDestroy {
+  private destroy$ = new Subject<void>();
 
   @ViewChild('mic') micElement!: ElementRef<HTMLDivElement>;
-  @ViewChild('tableContainer') tableContainer!: ElementRef<HTMLDivElement>; // Add reference to the container
+  @ViewChild('tableContainer') tableContainer!: ElementRef<HTMLDivElement>;
 
   student$!: Observable<any[]>;
-  private satoshiSubscription: Subscription | null = null; // Adicionado para acompanhar as assinaturas
 
   constructor(
     @Inject(VEX_THEMES) public readonly themes: any[],
-    public voiceRecognitionService: Voice5RecognitionService,
+    public voiceService: UnifiedVoiceService,
     public soundService: SoundService,
     private renderer: Renderer2,
-    private satoshiService: SatoshiService // Injetando o SatoshiService
+    private satoshiService: SatoshiService
   ) {}
 
   vocabulary = this.shuffleArray(vocabulary); // Embaralhar o vocabulário ao inicializar
@@ -80,38 +79,38 @@ export class Game5Component implements OnInit, AfterViewInit, OnDestroy {
   showSatoshiAlert = false;
 
   ngOnInit(): void {
+    this.voiceService.usePreset('game');
     this.correctEnglish = new Array(this.vocabulary.length).fill(false);
     this.correctPronunciation = new Array(this.vocabulary.length).fill(false);
-    this.voiceRecognitionService.startListening();
-    this.voiceRecognitionService.setupVoice();
+    this.voiceService.startListening();
 
-    this.voiceRecognitionService.onResult.subscribe((transcript: string) => {
+    this.voiceService.command$.pipe(takeUntil(this.destroy$)).subscribe((transcript: string) => {
       const currentWord = this.vocabulary[this.currentIndex].english;
       if (transcript.trim().toLowerCase() === currentWord.toLowerCase() && !this.correctEnglish[this.currentIndex]) {
         this.correctEnglish[this.currentIndex] = true;
         this.soundService.playDone();
         this.markRowAsCorrect(this.currentIndex);
-        this.score++; // Atualizar a pontuação em caso de acerto
-        this.incrementSatoshi(); // Incrementa o saldo de Satoshis
+        this.score++;
+        this.incrementSatoshi();
         this.next();
       } else {
         this.soundService.playErro();
         this.markError(this.currentIndex);
-        this.score--; // Atualizar a pontuação em caso de erro
+        this.score--;
         this.next();
       }
     });
 
     if (this.currentPhase === 'english') {
       const currentWord = this.vocabulary[this.currentIndex].english;
-      this.voiceRecognitionService.speak(currentWord);
+      this.voiceService.speak(currentWord);
     }
 
-    this.updateSatoshiBalance(); // Atualiza o saldo de satoshi ao iniciar o componente
+    this.updateSatoshiBalance();
   }
 
   updateSatoshiBalance() {
-    this.satoshiSubscription = this.satoshiService.getSatoshiBalance(this.studentId).subscribe(
+    this.satoshiService.getSatoshiBalance(this.studentId).pipe(takeUntil(this.destroy$)).subscribe(
       balance => {
         this.totalSatoshis = balance;
       },
@@ -146,7 +145,7 @@ export class Game5Component implements OnInit, AfterViewInit, OnDestroy {
     }
     this.currentPhase = this.phases[0]; // Reinicia a fase
     const currentWord = this.vocabulary[this.currentIndex].english;
-    this.voiceRecognitionService.speak(currentWord);
+    this.voiceService.speak(currentWord);
     this.scrollToCurrentElement();
   }
 
@@ -181,11 +180,11 @@ export class Game5Component implements OnInit, AfterViewInit, OnDestroy {
 
   onVoiceChange(event: Event): void {
     const selectedVoiceName = (event.target as HTMLSelectElement).value;
-    this.voiceRecognitionService.selectedVoice = this.voiceRecognitionService.voices.find(voice => voice.name === selectedVoiceName) || null;
+    this.voiceService.setVoice(selectedVoiceName);
   }
 
   ngAfterViewInit(): void {
-    this.voiceRecognitionService.setupWaveSurfer(this.micElement);
+    this.voiceService.setupWaveSurfer(this.micElement);
     this.addClickEventToCells();
   }
 
@@ -213,6 +212,14 @@ export class Game5Component implements OnInit, AfterViewInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    this.voiceRecognitionService.stopListening();
+    this.destroy$.next();
+    this.destroy$.complete();
+
+    this.voiceService.stopListening();
+    this.voiceService.stopRecording();
+
+    if (typeof speechSynthesis !== 'undefined') {
+      speechSynthesis.cancel();
+    }
   }
 }

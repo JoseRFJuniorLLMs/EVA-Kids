@@ -5,8 +5,9 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatIconModule } from '@angular/material/icon';
 import { MatDialogModule, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { Voice5RecognitionService } from './voice5-recognition.service';
-import { Subscription } from 'rxjs';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
+import { UnifiedVoiceService } from 'src/app/core/services/voice/unified-voice.service';
 import { MatBadgeModule } from '@angular/material/badge';
 import { MatBottomSheetModule } from '@angular/material/bottom-sheet';
 import { MatChipsModule } from '@angular/material/chips';
@@ -15,7 +16,7 @@ import { NoteService } from '../note/note.service';
 import { NoteCollection } from '../note/note-collection';
 import { Student } from 'src/app/model/student/student';
 import { AuthService } from '../../pages/auth/login/auth.service';
-import { GrammarService } from './grammar.service'; // Ensure GrammarService is correctly imported
+import { GrammarService } from './grammar.service';
 
 @Component({
   selector: 'dialogbook3',
@@ -36,9 +37,10 @@ import { GrammarService } from './grammar.service'; // Ensure GrammarService is 
  
 })
 export class DialogComponent implements OnInit, OnDestroy, AfterViewInit {
+  private destroy$ = new Subject<void>();
 
   @ViewChild('dialogContent') dialogContent: ElementRef | undefined;
-  
+
   sentences: string[];
   nlpResults: any[];
   spokenText: string = '';
@@ -50,18 +52,17 @@ export class DialogComponent implements OnInit, OnDestroy, AfterViewInit {
 
   voices: SpeechSynthesisVoice[] = [];
   selectedVoice: SpeechSynthesisVoice | null = null;
-  studentId: string = ''; 
+  studentId: string = '';
   totalSatoshis = 0;
   showSatoshiAlert = false;
-  private satoshiSubscription: Subscription | null = null;
 
   constructor(
     public dialogRef: MatDialogRef<DialogComponent>,
     @Inject(MAT_DIALOG_DATA) public data: { sentences: string[], nlpResults: any },
-    private voiceRecognitionService: Voice5RecognitionService,
+    private voiceService: UnifiedVoiceService,
     private satoshiService: SatoshiService,
-    private authService: AuthService, // Inject AuthService here
-    private noteService: NoteService, // Inject NoteService here
+    private authService: AuthService,
+    private noteService: NoteService,
     private cdr: ChangeDetectorRef
   ) {
     this.sentences = data.sentences;
@@ -71,14 +72,15 @@ export class DialogComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   async ngOnInit(): Promise<void> {
-    // Obtain the logged-in user's ID
+    this.voiceService.usePreset('book');
+
     const currentUser = await this.authService.getCurrentUser();
     if (currentUser) {
       this.studentId = currentUser.uid;
       this.updateSatoshiBalance();
     }
 
-    this.voiceRecognitionService.spokenText$.subscribe(spokenText => {
+    this.voiceService.command$.pipe(takeUntil(this.destroy$)).subscribe(spokenText => {
       this.spokenText = spokenText;
     });
 
@@ -90,13 +92,18 @@ export class DialogComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   ngOnDestroy(): void {
-    if (this.satoshiSubscription) {
-      this.satoshiSubscription.unsubscribe();
+    this.destroy$.next();
+    this.destroy$.complete();
+
+    this.voiceService.stopListening();
+
+    if (typeof speechSynthesis !== 'undefined') {
+      speechSynthesis.cancel();
     }
   }
 
   updateSatoshiBalance() {
-    this.satoshiSubscription = this.satoshiService.getSatoshiBalance(this.studentId).subscribe(
+    this.satoshiService.getSatoshiBalance(this.studentId).pipe(takeUntil(this.destroy$)).subscribe(
       balance => {
         this.totalSatoshis = balance;
       },
@@ -172,16 +179,16 @@ export class DialogComponent implements OnInit, OnDestroy, AfterViewInit {
   toggleSpeakSentence(index: number): void {
     this.speakClicked[index] = !this.speakClicked[index];
     if (this.speakClicked[index]) {
-      this.voiceRecognitionService.startListening(); 
+      this.voiceService.startListening();
     } else {
-      this.voiceRecognitionService.stopListening(); 
+      this.voiceService.stopListening();
     }
   }
 
   speakSentence(index: number): void {
     if (!this.canSpeak) return;
 
-    this.voiceRecognitionService.startListening();
+    this.voiceService.startListening();
   }
 
   highlightWord(charIndex: number, sentence: string): void {

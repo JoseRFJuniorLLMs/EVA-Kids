@@ -87,6 +87,10 @@
   .vex-footer {
     box-shadow: var(--vex-footer-elevation);
     position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: var(--vex-footer-z-index);
   }
 
   .vex-layout-content {

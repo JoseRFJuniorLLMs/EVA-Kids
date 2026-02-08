@@ -1,141 +1,804 @@
-#waveform {
-  background: linear-gradient(to right, #ffffff, #ffffff);
-  border-radius: 5px; // Arredondar os cantos para uma aparência suave
-}
+// === KIDS COLOR PALETTE ===
+$kids-purple: #DA77F2;
+$kids-pink: #F783AC;
+$kids-teal: #38D9A9;
+$kids-green: #69DB7C;
+$kids-orange: #FFA94D;
+$kids-yellow: #FFE066;
+$kids-blue: #74C0FC;
+$kids-red: #FF6B6B;
 
-// Container do Waveform
-.waveform-container {
-  position: relative;
-  width: 100%; // ou a largura desejada
-  height: auto; // ou a altura desejada
-  // Outros estilos necessários para o container
-}
+// === BOOKS CONTAINER ===
+.books-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f8f9ff 0%, #fff5f8 50%, #f0fff4 100%);
+  padding: 16px;
+  padding-bottom: 120px; // Space for footer
 
-// Waveform
-#waveform {
-  cursor: pointer;
-  // Estilos específicos para o waveform
-}
-
-// Tooltip
-.tooltip-meu-tooltip {
-  position: absolute;
-  bottom: 100%; // Coloca o tooltip acima do elemento trigger
-  left: 50%;
-  transform: translateX(-50%);
-  background-color: black;
-  color: white;
-  padding: 5px;
-  border-radius: 4px;
-  font-size: 12px;
-  display: none; // Inicialmente oculto, mostre via JS ou evento
-  z-index: 1000; // Garante que o tooltip apareça sobre outros elementos
-  white-space: nowrap; // Previne quebra de linha no texto do tooltip
-
-  // Adiciona uma pequena seta ou "ponta" ao tooltip, se desejar
-  &:after {
-    content: "";
-    position: absolute;
-    top: 100%;
-    left: 50%;
-    margin-left: -5px;
-    border-width: 5px;
-    border-style: solid;
-    border-color: black transparent transparent transparent;
+  &.dark-mode {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
   }
 }
 
-// Exemplo de classe adicional para mostrar o tooltip (adicione esta classe via JavaScript)
-.tooltip-visible {
-  display: block;
-}
-
-
-
-/* book.scss */
-#area-de-exibicao {
-  width: 100vw; /* 100% da largura da viewport */
-  height: 100vh; /* 100% da altura da viewport */
-  overflow: hidden; /* Esconde o scrollbar, se necessário */
-  border: 1px solid #ccc; // Apenas para visualização, pode ser removido depois
-  background-color: #fff; // Fundo branco para melhorar a legibilidade
-}
-
-.ebook-gallery {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-}
-
-.ebook-item {
-  margin: 10px;
-  cursor: pointer;
-}
-
-.ebook-cover {
-  width: 100px; // Ajuste conforme necessário
-  height: 150px; // Ajuste conforme necessário
-  object-fit: cover;
-}
-
-.ebook-title {
+// === HEADER ===
+.books-header {
   text-align: center;
-  margin-top: 5px;
+  padding: 16px 0;
+
+  .header-mascot {
+    .mascot-emoji {
+      font-size: 48px;
+      display: inline-block;
+
+      &.bounce {
+        animation: bounce 2s ease-in-out infinite;
+      }
+    }
+  }
+
+  .header-title {
+    font-family: 'Fredoka One', cursive, sans-serif;
+    font-size: 28px;
+    background: linear-gradient(135deg, $kids-purple, $kids-pink, $kids-teal);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin: 8px 0;
+  }
+
+  .header-subtitle {
+    font-family: 'Nunito', sans-serif;
+    color: #666;
+    font-size: 14px;
+    margin: 0;
+  }
+
+  .dark-mode & {
+    .header-subtitle {
+      color: #aaa;
+    }
+  }
 }
 
-.ebook-gallery {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 20px; // Espaçamento entre os itens
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
 
-  .ebook-item {
-    width: 200px; // Define uma largura fixa para os itens para manter a consistência
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+// === TABS ===
+.kids-tabs {
+  ::ng-deep {
+    .mat-mdc-tab-header {
+      background: rgba(255, 255, 255, 0.9);
+      border-radius: 16px;
+      padding: 8px;
+      margin-bottom: 16px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    }
 
-    .example-card {
-      width: 100%; // Faz o card ocupar todo o espaço disponível do .ebook-item
-      display: flex;
-      flex-direction: column;
+    .mat-mdc-tab {
+      border-radius: 12px;
+      margin: 0 4px;
 
-      mat-card-header {
-        // Centra o conteúdo do cabeçalho
-        text-align: center;
+      &.mdc-tab--active {
+        background: linear-gradient(135deg, $kids-purple, $kids-pink);
 
-        mat-card-title-group {
-          flex-direction: column;
-
-          img[mat-card-xl-image] {
-            // Ajusta o tamanho da imagem para caber bem no card
-            max-width: 100%; // Limita a largura da imagem para não exceder o card
-            height: auto; // Mantém a proporção da imagem
-            border-radius: 5px; // Arredonda os cantos da imagem
-          }
+        .mdc-tab__text-label {
+          color: white !important;
         }
       }
+    }
 
-      mat-card-content {
-        padding-top: 10px; // Adiciona um espaçamento entre o cabeçalho e o conteúdo
+    .mat-mdc-tab-body-content {
+      padding: 0;
+    }
+
+    .mdc-tab-indicator__content--underline {
+      display: none;
+    }
+  }
+
+  .tab-emoji {
+    font-size: 20px;
+    margin-right: 8px;
+  }
+
+  .tab-text {
+    font-family: 'Nunito', sans-serif;
+    font-weight: 700;
+    font-size: 14px;
+  }
+}
+
+// === TAB CONTENT ===
+.tab-content {
+  padding: 8px;
+}
+
+// === CONTROLS BAR ===
+.controls-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  margin-bottom: 16px;
+
+  .dark-mode & {
+    background: rgba(255, 255, 255, 0.1);
+  }
+}
+
+.filter-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  .filter-emoji {
+    font-size: 20px;
+  }
+
+  label {
+    font-family: 'Nunito', sans-serif;
+    font-weight: 600;
+    color: #666;
+  }
+}
+
+.kids-select {
+  padding: 8px 16px;
+  border: 2px solid #e0e0e0;
+  border-radius: 12px;
+  font-family: 'Nunito', sans-serif;
+  font-size: 14px;
+  background: white;
+  cursor: pointer;
+  transition: all 0.3s ease;
+
+  &:focus {
+    outline: none;
+    border-color: $kids-purple;
+    box-shadow: 0 0 0 3px rgba($kids-purple, 0.2);
+  }
+}
+
+.nav-buttons {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  .page-indicator {
+    font-family: 'Nunito', sans-serif;
+    font-weight: 600;
+    color: #666;
+    padding: 0 12px;
+  }
+}
+
+.nav-btn {
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(135deg, $kids-blue, $kids-teal);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  transition: all 0.3s ease;
+
+  &:hover:not(:disabled) {
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba($kids-blue, 0.3);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.action-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.action-btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 12px;
+  font-family: 'Nunito', sans-serif;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.3s ease;
+
+  &.upload-btn {
+    background: linear-gradient(135deg, $kids-orange, $kids-yellow);
+    color: #333;
+  }
+
+  &.saved-btn {
+    background: linear-gradient(135deg, $kids-teal, $kids-green);
+    color: white;
+  }
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+}
+
+// === SAVED TEXTS PANEL ===
+.saved-texts-panel {
+  background: white;
+  border-radius: 16px;
+  padding: 16px;
+  margin-bottom: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+
+  h3 {
+    font-family: 'Fredoka One', cursive;
+    color: $kids-purple;
+    margin: 0 0 12px 0;
+    font-size: 18px;
+
+    span {
+      margin-right: 8px;
+    }
+  }
+}
+
+.saved-texts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 12px;
+}
+
+.saved-text-card {
+  background: linear-gradient(135deg, #f8f9ff, #fff5f8);
+  border-radius: 12px;
+  padding: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+
+  .card-emoji {
+    font-size: 24px;
+    margin-bottom: 8px;
+  }
+
+  .card-title {
+    font-family: 'Nunito', sans-serif;
+    font-weight: 700;
+    font-size: 12px;
+    color: #333;
+    margin-bottom: 4px;
+  }
+
+  .card-progress {
+    font-size: 11px;
+    color: #888;
+  }
+
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 20px rgba($kids-purple, 0.2);
+  }
+}
+
+.empty-message {
+  text-align: center;
+  color: #888;
+  font-family: 'Nunito', sans-serif;
+  padding: 20px;
+}
+
+// === BOOKS GRID ===
+.books-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.book-card {
+  background: white;
+  border-radius: 20px;
+  padding: 16px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  border: 3px solid transparent;
+
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 24px rgba($kids-purple, 0.15);
+    border-color: $kids-purple;
+  }
+
+  .book-level {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+
+    .level-emoji {
+      font-size: 24px;
+    }
+
+    .level-text {
+      font-family: 'Fredoka One', cursive;
+      font-size: 14px;
+      color: $kids-purple;
+      background: rgba($kids-purple, 0.1);
+      padding: 4px 12px;
+      border-radius: 20px;
+    }
+  }
+
+  .book-info {
+    margin-bottom: 8px;
+
+    .book-prime {
+      font-family: 'Fredoka One', cursive;
+      font-size: 16px;
+      color: #333;
+      margin: 0 0 4px 0;
+    }
+
+    .book-target {
+      font-family: 'Nunito', sans-serif;
+      font-size: 13px;
+      color: $kids-teal;
+      margin: 0;
+      font-weight: 600;
+    }
+  }
+
+  .book-preview {
+    font-family: 'Nunito', sans-serif;
+    font-size: 12px;
+    color: #888;
+    line-height: 1.4;
+    max-height: 40px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .dark-mode & {
+    background: rgba(255, 255, 255, 0.1);
+
+    .book-info .book-prime {
+      color: white;
+    }
+  }
+}
+
+// === READING VIEW ===
+.reading-view {
+  min-height: 70vh;
+}
+
+.reading-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  padding: 12px 16px;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  margin-bottom: 16px;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+
+  .dark-mode & {
+    background: rgba(30, 30, 50, 0.95);
+  }
+}
+
+.control-btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 16px;
+  font-family: 'Nunito', sans-serif;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.3s ease;
+
+  &.back-btn {
+    background: linear-gradient(135deg, #f0f0f0, #e0e0e0);
+    color: #666;
+
+    &:hover {
+      background: linear-gradient(135deg, #e0e0e0, #d0d0d0);
+    }
+  }
+
+  &.play-btn {
+    background: linear-gradient(135deg, $kids-green, $kids-teal);
+    color: white;
+    min-width: 120px;
+    justify-content: center;
+
+    &.playing {
+      background: linear-gradient(135deg, $kids-orange, $kids-yellow);
+      color: #333;
+    }
+
+    &:hover {
+      transform: scale(1.05);
+      box-shadow: 0 6px 16px rgba($kids-teal, 0.3);
+    }
+  }
+
+  span:first-child {
+    font-size: 18px;
+  }
+}
+
+.accessibility-controls {
+  display: flex;
+  gap: 6px;
+}
+
+.acc-btn {
+  width: 40px;
+  height: 40px;
+  border: 2px solid #e0e0e0;
+  border-radius: 12px;
+  background: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  transition: all 0.3s ease;
+
+  &:hover {
+    border-color: $kids-purple;
+    transform: scale(1.1);
+  }
+
+  &.active {
+    background: linear-gradient(135deg, $kids-purple, $kids-pink);
+    border-color: transparent;
+  }
+}
+
+.voice-selector {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  span {
+    font-size: 20px;
+  }
+}
+
+// === TEXT CONTAINER ===
+.text-container {
+  background: white;
+  border-radius: 20px;
+  padding: 24px;
+  min-height: 400px;
+  font-family: 'Nunito', sans-serif;
+  font-size: 20px;
+  line-height: 2;
+  color: #333;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+
+  &.dark-mode {
+    background: #1a1a2e;
+    color: #f0f0f0;
+  }
+
+  &.dyslexic-mode {
+    font-family: 'OpenDyslexic', 'Comic Sans MS', sans-serif;
+    letter-spacing: 0.1em;
+    word-spacing: 0.3em;
+  }
+
+  .word {
+    display: inline;
+    padding: 2px 4px;
+    border-radius: 4px;
+    transition: background-color 0.2s ease;
+  }
+
+  .current-sentence {
+    background-color: rgba($kids-purple, 0.15) !important;
+    border-radius: 8px;
+  }
+
+  // Sentence colors for BeeLine
+  .sentence-0 { color: $kids-purple; }
+  .sentence-1 { color: $kids-teal; }
+  .sentence-2 { color: $kids-pink; }
+}
+
+// === CAPTIONS ===
+.caption-container {
+  position: fixed;
+  bottom: 140px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.85);
+  color: white;
+  padding: 16px 32px;
+  border-radius: 16px;
+  font-family: 'Nunito', sans-serif;
+  font-size: 18px;
+  font-weight: 600;
+  max-width: 80%;
+  text-align: center;
+  z-index: 100;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+
+  .highlighted-word {
+    background: $kids-orange;
+    color: #333;
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+
+  &.dark-mode {
+    background: rgba($kids-purple, 0.9);
+  }
+}
+
+// === EPUB GALLERY ===
+.epub-gallery {
+  .gallery-header {
+    text-align: center;
+    margin-bottom: 20px;
+
+    h2 {
+      font-family: 'Fredoka One', cursive;
+      font-size: 24px;
+      color: $kids-purple;
+
+      span {
+        margin-right: 8px;
       }
     }
   }
 }
 
-// Media queries para responsividade
-@media (max-width: 768px) {
-  .ebook-gallery {
-    .ebook-item {
-      width: 150px; // Reduz o tamanho dos itens em telas menores
+.ebooks-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 20px;
+}
+
+.ebook-card {
+  background: white;
+  border-radius: 20px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  border: 3px solid transparent;
+
+  &:hover {
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: 0 16px 32px rgba($kids-purple, 0.2);
+    border-color: $kids-purple;
+  }
+
+  .ebook-cover {
+    height: 200px;
+    overflow: hidden;
+    background: linear-gradient(135deg, #f0f0f0, #e8e8e8);
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.3s ease;
     }
+  }
+
+  &:hover .ebook-cover img {
+    transform: scale(1.1);
+  }
+
+  .ebook-info {
+    padding: 16px;
+    text-align: center;
+
+    .ebook-title {
+      font-family: 'Fredoka One', cursive;
+      font-size: 14px;
+      color: #333;
+      margin: 0 0 4px 0;
+      line-height: 1.2;
+    }
+
+    .ebook-author {
+      font-family: 'Nunito', sans-serif;
+      font-size: 12px;
+      color: #888;
+      margin: 0 0 8px 0;
+    }
+
+    .ebook-pages {
+      font-family: 'Nunito', sans-serif;
+      font-size: 11px;
+      color: $kids-teal;
+      font-weight: 700;
+      background: rgba($kids-teal, 0.1);
+      padding: 4px 12px;
+      border-radius: 20px;
+    }
+  }
+}
+
+.empty-library {
+  text-align: center;
+  padding: 60px 20px;
+
+  .empty-emoji {
+    font-size: 64px;
+    display: block;
+    margin-bottom: 16px;
+  }
+
+  p {
+    font-family: 'Nunito', sans-serif;
+    color: #888;
+    margin: 4px 0;
+  }
+
+  .empty-hint {
+    font-size: 12px;
+    color: #aaa;
+  }
+}
+
+// === EPUB READER ===
+.epub-reader {
+  min-height: 80vh;
+}
+
+.epub-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  margin-bottom: 16px;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.epub-title-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  justify-content: center;
+
+  .book-emoji {
+    font-size: 20px;
+  }
+
+  .epub-current-title {
+    font-family: 'Fredoka One', cursive;
+    font-size: 16px;
+    color: $kids-purple;
+  }
+
+  .page-info {
+    font-family: 'Nunito', sans-serif;
+    font-size: 12px;
+    color: #888;
+    background: rgba($kids-purple, 0.1);
+    padding: 4px 12px;
+    border-radius: 20px;
+  }
+}
+
+.epub-nav {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.epub-display {
+  background: white;
+  border-radius: 20px;
+  min-height: 70vh;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+
+  iframe {
+    border: none;
+    width: 100%;
+    min-height: 70vh;
+  }
+}
+
+// === RESPONSIVE ===
+@media (max-width: 768px) {
+  .books-header {
+    .header-title {
+      font-size: 22px;
+    }
+  }
+
+  .controls-bar {
+    flex-direction: column;
+    align-items: stretch;
+
+    .filter-group,
+    .nav-buttons,
+    .action-buttons {
+      justify-content: center;
+    }
+  }
+
+  .books-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .ebooks-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+
+  .reading-controls {
+    flex-direction: column;
+
+    .accessibility-controls {
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+  }
+
+  .caption-container {
+    bottom: 100px;
+    font-size: 14px;
+    padding: 12px 20px;
+    max-width: 90%;
   }
 }
 
 @media (max-width: 480px) {
-  .ebook-gallery {
-    .ebook-item {
-      width: 100%; // Faz os itens ocuparem toda a largura da tela em dispositivos muito pequenos
-    }
+  .ebooks-grid {
+    grid-template-columns: 1fr;
   }
+
+  .ebook-card .ebook-cover {
+    height: 160px;
+  }
+}
+
+// === FONT FACES ===
+@font-face {
+  font-family: 'OpenDyslexic';
+  src: url('/assets/fonts/OpenDyslexic-Regular.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
 }

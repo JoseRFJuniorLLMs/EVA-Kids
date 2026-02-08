@@ -3,33 +3,517 @@
 // Vex Core
 @import "./@vex/styles/core";
 
-/* styles.css */
+/* Font Awesome */
 @import '~font-awesome/css/font-awesome.min.css';
 
+/* Google Fonts - Kids Friendly */
+@import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap');
+
+/* Kids Theme */
+@import "./app/shared/styles/kids-theme.scss";
 
 /*
-  You can override any CSS Variable or style here
-  Example:
-
-  :root {
-   --vex-sidenav-background: #333333;
-  }
-
-  All possible variables can be found in @vex/styles/core or by simply inspecting the element you want to change
-  in Chrome/Firefox DevTools
+  ==============================================
+  TEMA KIDS - PRIMING EDUCACIONAL
+  Cores vibrantes e amigáveis para crianças
+  ==============================================
 */
 
-/**
-  Uncomment the below code and adjust the values to fit your colors, the application will automatically adjust
- */
+// Cores Kids
+$kids-red: #FF6B6B;
+$kids-orange: #FFA94D;
+$kids-yellow: #FFE066;
+$kids-green: #69DB7C;
+$kids-teal: #38D9A9;
+$kids-blue: #4DABF7;
+$kids-purple: #DA77F2;
+$kids-pink: #F783AC;
+
 html {
-  // --vex-color-primary: blue;
-  // --vex-color-primary-contrast: white;
+  // Primary - Purple (amigável para crianças)
+  --vex-color-primary: #{$kids-purple};
+  --vex-color-primary-rgb: 218, 119, 242;
+  --vex-color-primary-contrast: white;
 
-  // --vex-color-accent: yellow;
-  // --vex-color-accent-contrast: black;
+  // Accent - Teal
+  --vex-color-accent: #{$kids-teal};
+  --vex-color-accent-rgb: 56, 217, 169;
+  --vex-color-accent-contrast: white;
 
-  // --vex-color-warn: yellow;
-  // --vex-color-warn-contrast: black;
+  // Warn - Orange (mais amigável que vermelho)
+  --vex-color-warn: #{$kids-orange};
+  --vex-color-warn-rgb: 255, 169, 77;
+  --vex-color-warn-contrast: white;
+
+  // Tipografia Kids
+  --vex-font: 'Nunito', sans-serif;
+  --vex-font-weight-medium: 700;
+
+  // Toolbar - Gradiente colorido
+  --vex-toolbar-background: linear-gradient(135deg, #{$kids-purple} 0%, #{$kids-pink} 50%, #{$kids-orange} 100%);
+  --vex-toolbar-height: 72px;
+
+  // Sidenav - Fundo escuro suave com gradiente
+  --vex-sidenav-background: linear-gradient(180deg, #2D1B4E 0%, #1A1A2E 100%);
+  --vex-sidenav-color: white;
+  --vex-sidenav-item-background-hover: rgba(255, 255, 255, 0.1);
+  --vex-sidenav-item-background-active: linear-gradient(135deg, #{$kids-purple}, #{$kids-pink});
+  --vex-sidenav-item-color: rgba(255, 255, 255, 0.8);
+  --vex-sidenav-item-color-hover: white;
+  --vex-sidenav-item-color-active: white;
+  --vex-sidenav-item-dropdown-background: rgba(0, 0, 0, 0.2);
+  --vex-sidenav-item-icon-color: #{$kids-pink};
+  --vex-sidenav-item-icon-color-hover: white;
+  --vex-sidenav-item-icon-color-active: white;
+
+  // Page background - Creme suave
+  --vex-page-layout-header-background: linear-gradient(135deg, #FFF9E6 0%, #FFE6F0 100%);
+
+  // Footer
+  --vex-footer-background: #2D1B4E;
+  --vex-footer-color: white;
+
+  // Scrollbar colorido
+  --vex-scrollbar-color: #{$kids-purple};
+
+  // Border radius mais arredondado
+  --vex-border-radius: 16px;
 }
 
+/*
+  ==============================================
+  OVERRIDES GLOBAIS PARA TEMA KIDS
+  ==============================================
+*/
+
+/* Toolbar Kids */
+vex-toolbar,
+.vex-toolbar {
+  background: linear-gradient(135deg, $kids-purple 0%, $kids-pink 50%, $kids-orange 100%) !important;
+  color: white !important;
+  border-bottom: none !important;
+
+  .mat-mdc-icon-button {
+    color: white !important;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.2) !important;
+    }
+  }
+
+  // Logo/Title
+  a {
+    color: white !important;
+    font-family: 'Fredoka One', cursive !important;
+    font-size: 1.5rem !important;
+  }
+}
+
+/* Sidenav Kids */
+vex-sidenav,
+.vex-sidenav {
+  background: linear-gradient(180deg, #2D1B4E 0%, #1A1A2E 100%) !important;
+
+  // Logo
+  .sidenav-title {
+    font-family: 'Fredoka One', cursive !important;
+    color: white !important;
+  }
+
+  // Menu items
+  .vex-sidenav-item {
+    border-radius: 12px !important;
+    margin: 4px 8px !important;
+    transition: all 0.3s ease !important;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.1) !important;
+      transform: translateX(5px);
+    }
+
+    &.active {
+      background: linear-gradient(135deg, $kids-purple, $kids-pink) !important;
+      box-shadow: 0 4px 15px rgba(218, 119, 242, 0.4) !important;
+    }
+
+    .mat-icon {
+      color: $kids-pink !important;
+    }
+
+    &.active .mat-icon,
+    &:hover .mat-icon {
+      color: white !important;
+    }
+  }
+}
+
+/* Material Icons - Usar emojis quando possível */
+.mat-icon {
+  font-size: 24px !important;
+}
+
+/* Botões coloridos */
+.mat-mdc-raised-button,
+.mat-mdc-flat-button {
+  border-radius: 50px !important;
+  font-family: 'Nunito', sans-serif !important;
+  font-weight: 700 !important;
+  padding: 8px 24px !important;
+  transition: all 0.3s ease !important;
+
+  &:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2) !important;
+  }
+
+  &.mat-primary {
+    background: linear-gradient(135deg, $kids-purple, $kids-pink) !important;
+    color: white !important;
+  }
+
+  &.mat-accent {
+    background: linear-gradient(135deg, $kids-teal, $kids-blue) !important;
+    color: white !important;
+  }
+
+  &.mat-warn {
+    background: linear-gradient(135deg, $kids-orange, $kids-red) !important;
+    color: white !important;
+  }
+}
+
+/* FABs */
+.mat-mdc-fab,
+.mat-mdc-mini-fab {
+  background: linear-gradient(135deg, $kids-green, $kids-teal) !important;
+  color: white !important;
+  box-shadow: 0 4px 15px rgba(105, 219, 124, 0.4) !important;
+
+  &:hover {
+    transform: scale(1.1) !important;
+  }
+}
+
+/* Cards */
+.mat-mdc-card {
+  border-radius: 24px !important;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1) !important;
+  border: 3px solid transparent !important;
+  transition: all 0.3s ease !important;
+
+  &:hover {
+    transform: translateY(-5px) !important;
+    border-color: $kids-purple !important;
+    box-shadow: 0 12px 35px rgba(0, 0, 0, 0.15) !important;
+  }
+}
+
+/* Inputs */
+.mat-mdc-form-field {
+  .mdc-text-field {
+    border-radius: 16px !important;
+  }
+
+  .mdc-floating-label {
+    font-family: 'Nunito', sans-serif !important;
+    font-weight: 600 !important;
+  }
+
+  &.mat-focused {
+    .mdc-text-field {
+      border-color: $kids-purple !important;
+    }
+  }
+}
+
+/* Chips/Tags */
+.mat-mdc-chip {
+  border-radius: 50px !important;
+  font-family: 'Nunito', sans-serif !important;
+  font-weight: 700 !important;
+}
+
+/* Dialogs */
+.mat-mdc-dialog-container {
+  border-radius: 24px !important;
+
+  .mat-mdc-dialog-title {
+    font-family: 'Fredoka One', cursive !important;
+    color: $kids-purple !important;
+  }
+}
+
+/* Snackbar */
+.mat-mdc-snack-bar-container {
+  border-radius: 16px !important;
+
+  &.mat-mdc-snack-bar-container {
+    background: linear-gradient(135deg, $kids-purple, $kids-pink) !important;
+    color: white !important;
+  }
+}
+
+/* Tables */
+.mat-mdc-table {
+  border-radius: 16px !important;
+  overflow: hidden !important;
+
+  .mat-mdc-header-row {
+    background: linear-gradient(135deg, $kids-purple, $kids-pink) !important;
+
+    .mat-mdc-header-cell {
+      color: white !important;
+      font-family: 'Fredoka One', cursive !important;
+      font-weight: 400 !important;
+    }
+  }
+
+  .mat-mdc-row {
+    &:hover {
+      background: rgba(218, 119, 242, 0.1) !important;
+    }
+  }
+}
+
+/* Tabs */
+.mat-mdc-tab-group {
+  .mat-mdc-tab-header {
+    background: white !important;
+    border-radius: 16px 16px 0 0 !important;
+  }
+
+  .mat-mdc-tab {
+    font-family: 'Nunito', sans-serif !important;
+    font-weight: 700 !important;
+
+    &.mdc-tab--active {
+      background: linear-gradient(135deg, $kids-purple, $kids-pink) !important;
+      color: white !important;
+      border-radius: 12px 12px 0 0 !important;
+    }
+  }
+
+  .mat-mdc-tab-body-wrapper {
+    border-radius: 0 0 16px 16px !important;
+  }
+}
+
+/* Steppers */
+.mat-stepper-horizontal,
+.mat-stepper-vertical {
+  background: transparent !important;
+
+  .mat-step-header {
+    border-radius: 50px !important;
+    margin: 4px !important;
+
+    &:hover {
+      background: rgba(218, 119, 242, 0.1) !important;
+    }
+
+    .mat-step-icon {
+      background: $kids-purple !important;
+      color: white !important;
+    }
+
+    .mat-step-icon-selected {
+      background: linear-gradient(135deg, $kids-green, $kids-teal) !important;
+    }
+
+    .mat-step-label {
+      font-family: 'Nunito', sans-serif !important;
+      font-weight: 700 !important;
+    }
+  }
+}
+
+/* Progress bars */
+.mat-mdc-progress-bar {
+  border-radius: 50px !important;
+  height: 12px !important;
+
+  .mdc-linear-progress__bar-inner {
+    background: linear-gradient(135deg, $kids-purple, $kids-pink, $kids-orange) !important;
+    border-radius: 50px !important;
+  }
+}
+
+/* Spinners */
+.mat-mdc-progress-spinner {
+  circle {
+    stroke: $kids-purple !important;
+  }
+}
+
+/* Tooltips */
+.mat-mdc-tooltip {
+  font-family: 'Nunito', sans-serif !important;
+  font-size: 14px !important;
+  background: $kids-purple !important;
+  border-radius: 12px !important;
+  padding: 8px 16px !important;
+}
+
+/* Menu */
+.mat-mdc-menu-panel {
+  border-radius: 16px !important;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15) !important;
+
+  .mat-mdc-menu-item {
+    border-radius: 8px !important;
+    margin: 4px 8px !important;
+    font-family: 'Nunito', sans-serif !important;
+
+    &:hover {
+      background: rgba(218, 119, 242, 0.1) !important;
+    }
+  }
+}
+
+/* Select */
+.mat-mdc-select-panel {
+  border-radius: 16px !important;
+}
+
+/* Checkbox & Radio */
+.mat-mdc-checkbox,
+.mat-mdc-radio-button {
+  .mdc-checkbox__background,
+  .mdc-radio__background {
+    border-color: $kids-purple !important;
+  }
+
+  &.mat-mdc-checkbox-checked,
+  &.mat-mdc-radio-checked {
+    .mdc-checkbox__background,
+    .mdc-radio__background {
+      background: $kids-purple !important;
+      border-color: $kids-purple !important;
+    }
+  }
+}
+
+/* Expansion Panel */
+.mat-expansion-panel {
+  border-radius: 16px !important;
+  margin: 8px 0 !important;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1) !important;
+
+  .mat-expansion-panel-header {
+    font-family: 'Nunito', sans-serif !important;
+    font-weight: 700 !important;
+    border-radius: 16px !important;
+
+    &:hover {
+      background: rgba(218, 119, 242, 0.1) !important;
+    }
+  }
+
+  &.mat-expanded {
+    .mat-expansion-panel-header {
+      background: linear-gradient(135deg, $kids-purple, $kids-pink) !important;
+      color: white !important;
+    }
+  }
+}
+
+/* Slider */
+.mat-mdc-slider {
+  .mdc-slider__track--active {
+    background: $kids-purple !important;
+  }
+
+  .mdc-slider__thumb-knob {
+    background: $kids-purple !important;
+    border-color: $kids-purple !important;
+  }
+}
+
+/* Paginator */
+.mat-mdc-paginator {
+  border-radius: 16px !important;
+  background: white !important;
+
+  .mat-mdc-paginator-container {
+    font-family: 'Nunito', sans-serif !important;
+  }
+}
+
+/* List */
+.mat-mdc-list-item {
+  border-radius: 12px !important;
+  margin: 4px 0 !important;
+
+  &:hover {
+    background: rgba(218, 119, 242, 0.1) !important;
+  }
+
+  &.mat-mdc-list-item-interactive:focus {
+    background: rgba(218, 119, 242, 0.2) !important;
+  }
+}
+
+/*
+  ==============================================
+  GLOBAL BODY & PAGE STYLES
+  ==============================================
+*/
+
+body {
+  font-family: 'Nunito', sans-serif !important;
+  background: linear-gradient(135deg, #FFF9E6 0%, #FFE6F0 50%, #E6F4FF 100%) !important;
+}
+
+/* Page container */
+.vex-page-layout-content {
+  background: transparent !important;
+}
+
+/* Scrollbar estilizado */
+::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, $kids-purple, $kids-pink);
+  border-radius: 10px;
+  border: 2px solid #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, darken($kids-purple, 10%), darken($kids-pink, 10%));
+}
+
+/* Selection */
+::selection {
+  background: rgba(218, 119, 242, 0.3);
+  color: inherit;
+}
+
+/* Links */
+a {
+  color: $kids-purple;
+  transition: color 0.3s ease;
+
+  &:hover {
+    color: $kids-pink;
+  }
+}
+
+/* Headings */
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Fredoka One', cursive !important;
+  color: #333 !important;
+}
+
+/* Focus outline para acessibilidade */
+*:focus-visible {
+  outline: 3px solid $kids-purple !important;
+  outline-offset: 2px !important;
+}

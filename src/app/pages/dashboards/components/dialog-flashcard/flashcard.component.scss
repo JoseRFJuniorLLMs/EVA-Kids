@@ -1,49 +1,326 @@
-.audio-container {
+// === VARIAVEIS KIDS ===
+$kids-purple: #DA77F2;
+$kids-pink: #F783AC;
+$kids-teal: #38D9A9;
+$kids-green: #69DB7C;
+$kids-orange: #FFA94D;
+$kids-yellow: #FFE066;
+$kids-blue: #74C0FC;
+$kids-red: #FF6B6B;
+
+// === DIALOG PRINCIPAL ===
+.flashcard-dialog {
+  padding: 0 !important;
+  background: linear-gradient(135deg, #f8f9ff 0%, #fff5f8 100%);
+  border-radius: 24px;
+  min-width: 380px;
+  max-width: 480px;
+}
+
+// === CABECALHO ===
+.flashcard-header {
+  background: linear-gradient(135deg, $kids-purple 0%, $kids-pink 100%);
+  padding: 20px;
   display: flex;
   align-items: center;
+  gap: 12px;
+  border-radius: 24px 24px 0 0;
 }
 
-.audio-container button {
-  margin-right: 10px;
+.header-emoji {
+  font-size: 2rem;
 }
 
-.waveform-container {
+.header-title {
+  font-family: 'Fredoka One', cursive, sans-serif;
+  font-size: 1.5rem;
+  color: white;
+  margin: 0;
   flex: 1;
 }
 
-.mat-card-actions {
-  display: flex;
-  justify-content: center; // Centraliza os botões horizontalmente
-  align-items: center; // Centraliza os botões verticalmente
-  width: 100%; // Ocupa toda a largura do contêiner pai
+.header-progress {
+  background: rgba(255, 255, 255, 0.3);
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-family: 'Nunito', sans-serif;
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: white;
 }
 
-.flex {
-  display: flex;
-  justify-content: center; // Centraliza os botões horizontalmente dentro de .flex
-  align-items: center; // E verticalmente
-  width: 100%; // Garante que .flex ocupa toda a largura disponível
-}
-
+// === CONTAINER DO FLASHCARD ===
 .flashcard-container {
+  padding: 20px;
+}
+
+// === VISUALIZADOR DE AUDIO ===
+.audio-visualizer {
+  background: linear-gradient(135deg, #2D1B4E 0%, #1a1a2e 100%);
+  border-radius: 16px;
+  padding: 10px;
+  margin-bottom: 16px;
+  position: relative;
+  overflow: hidden;
+
+  canvas {
+    width: 100%;
+    height: 100px;
+    border-radius: 12px;
+  }
+}
+
+.visualizer-status {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+}
+
+.speaking-icon {
+  font-size: 1.5rem;
+  animation: pulse-icon 1s ease-in-out infinite;
+}
+
+@keyframes pulse-icon {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+}
+
+// === CARD DO FLASHCARD ===
+.flashcard-card {
+  background: white !important;
+  border-radius: 20px !important;
+  box-shadow: 0 8px 24px rgba($kids-purple, 0.15) !important;
+  overflow: hidden;
+  min-height: 180px;
   display: flex;
   align-items: center;
-  justify-content: center; // Centraliza verticalmente e horizontalmente
-  height: 100vh; // Ajuste conforme necessário para o tamanho desejado
-  background-color: #f5f5f5; // Cor de fundo para o contêiner do flashcard
+  justify-content: center;
+  transition: all 0.3s ease;
+
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 32px rgba($kids-purple, 0.2) !important;
+  }
+
+  mat-card-content {
+    width: 100%;
+    text-align: center;
+    padding: 30px 20px !important;
+  }
 }
 
-.flashcard {
-  background-color: #fff;
-  border-radius: 10px; // Bordas arredondadas
+// === SECAO DA PALAVRA ===
+.word-section,
+.translation-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.flag-emoji {
+  font-size: 2.5rem;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+}
+
+.word-text {
+  font-family: 'Fredoka One', cursive, sans-serif;
+  font-size: 3rem;
+  color: $kids-purple;
+  margin: 10px 0;
+  text-transform: capitalize;
+  text-shadow: 2px 2px 0 rgba($kids-purple, 0.1);
+}
+
+.translation-text {
+  font-family: 'Fredoka One', cursive, sans-serif;
+  font-size: 2.5rem;
+  color: $kids-teal;
+  margin: 10px 0;
+  text-transform: capitalize;
+}
+
+.repeat-btn {
+  background: rgba($kids-purple, 0.1);
+  border: none;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  cursor: pointer;
+  font-size: 1.5rem;
+  transition: all 0.3s ease;
+
+  &:hover:not(:disabled) {
+    background: rgba($kids-purple, 0.2);
+    transform: scale(1.1);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+// === AREA DE STATUS ===
+.status-area {
+  margin-top: 16px;
+  min-height: 30px;
+
+  mat-progress-bar {
+    border-radius: 8px;
+    height: 8px;
+  }
+}
+
+.error-text {
+  color: $kids-red;
+  font-family: 'Nunito', sans-serif;
+  font-weight: 600;
+  font-size: 0.9rem;
+  text-align: center;
+  margin: 8px 0;
+}
+
+// === CONTROLES ===
+.flashcard-controls {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
   padding: 20px;
-  text-align: center; // Centraliza o texto horizontalmente
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); // Adiciona uma sombra para o cartão
-  margin: 20px; // Espaçamento ao redor do flashcard
+  flex-wrap: wrap;
 }
 
-.word, .translation {
-  font-size: 3em; // Tamanho das letras aumentado
-  font-weight: bold; // Texto em negrito
-  color: #333; // Cor do texto
+.control-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 20px;
+  border: none;
+  border-radius: 16px;
+  cursor: pointer;
+  font-family: 'Nunito', sans-serif;
+  font-weight: 700;
+  transition: all 0.3s ease;
+
+  .btn-emoji {
+    font-size: 1.8rem;
+  }
+
+  .btn-label {
+    font-size: 0.8rem;
+  }
+
+  &:hover:not(:disabled) {
+    transform: translateY(-3px);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.show-translation-btn {
+  background: linear-gradient(135deg, $kids-teal, darken($kids-teal, 10%));
+  color: white;
+  box-shadow: 0 4px 12px rgba($kids-teal, 0.3);
+
+  &:hover:not(:disabled) {
+    box-shadow: 0 6px 16px rgba($kids-teal, 0.4);
+  }
+}
+
+.next-btn {
+  background: linear-gradient(135deg, $kids-blue, darken($kids-blue, 10%));
+  color: white;
+  box-shadow: 0 4px 12px rgba($kids-blue, 0.3);
+
+  &:hover:not(:disabled) {
+    box-shadow: 0 6px 16px rgba($kids-blue, 0.4);
+  }
+}
+
+.auto-btn {
+  background: linear-gradient(135deg, $kids-orange, darken($kids-orange, 10%));
+  color: white;
+  box-shadow: 0 4px 12px rgba($kids-orange, 0.3);
+
+  &.active {
+    background: linear-gradient(135deg, $kids-green, darken($kids-green, 10%));
+    box-shadow: 0 4px 12px rgba($kids-green, 0.3);
+  }
+
+  &:hover:not(:disabled) {
+    box-shadow: 0 6px 16px rgba($kids-orange, 0.4);
+  }
+}
+
+.stop-btn {
+  background: linear-gradient(135deg, $kids-red, darken($kids-red, 10%));
+  color: white;
+  box-shadow: 0 4px 12px rgba($kids-red, 0.3);
+  padding: 12px;
+
+  &:hover:not(:disabled) {
+    box-shadow: 0 6px 16px rgba($kids-red, 0.4);
+  }
+}
+
+// === AREA DE DICA ===
+.tip-area {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 16px 20px;
+  background: linear-gradient(135deg, rgba($kids-yellow, 0.3), rgba($kids-orange, 0.2));
+  border-radius: 0 0 24px 24px;
+}
+
+.tip-icon {
+  font-size: 1.3rem;
+}
+
+.tip-text {
+  font-family: 'Nunito', sans-serif;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: #555;
+}
+
+// === RESPONSIVIDADE ===
+@media (max-width: 480px) {
+  .flashcard-dialog {
+    min-width: 320px;
+  }
+
+  .header-title {
+    font-size: 1.2rem;
+  }
+
+  .word-text {
+    font-size: 2.5rem;
+  }
+
+  .translation-text {
+    font-size: 2rem;
+  }
+
+  .flashcard-controls {
+    gap: 8px;
+  }
+
+  .control-btn {
+    padding: 10px 14px;
+
+    .btn-emoji {
+      font-size: 1.5rem;
+    }
+
+    .btn-label {
+      font-size: 0.7rem;
+    }
+  }
 }

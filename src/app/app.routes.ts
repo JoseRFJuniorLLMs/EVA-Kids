@@ -171,14 +171,19 @@ export const appRoutes: VexRoutes = [
             }
           },
           {
-            path: 'book3',
+            path: 'books',
             loadComponent: () =>
-              import('./pages/apps/book3/book3.component').then(
-                (m) => m.Book3Component
+              import('./pages/apps/books/books.component').then(
+                (m) => m.BooksComponent
               ),
             data: {
               toolbarShadowEnabled: false
             }
+          },
+          {
+            path: 'book3',
+            redirectTo: 'books',
+            pathMatch: 'full'
           },
           {
             path: 'grammar-analyzer',
@@ -222,23 +227,13 @@ export const appRoutes: VexRoutes = [
           },
           {
             path: 'book',
-            loadComponent: () =>
-              import('./pages/apps/book/book.component').then(
-                (m) => m.BookComponent
-              ),
-            data: {
-              toolbarShadowEnabled: false
-            }
+            redirectTo: 'books',
+            pathMatch: 'full'
           },
           {
             path: 'book2',
-            loadComponent: () =>
-              import('./pages/apps/book2/book2.component').then(
-                (m) => m.Book2Component
-              ),
-            data: {
-              toolbarShadowEnabled: false
-            }
+            redirectTo: 'books',
+            pathMatch: 'full'
           },
           {
             path: 'clase',

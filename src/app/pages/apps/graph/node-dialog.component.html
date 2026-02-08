@@ -1,30 +1,77 @@
-<h1 mat-dialog-title>Node Details</h1>
-<div mat-dialog-content>
-  <p><strong>ID:</strong> {{data.node.id}}</p>
-  <p><strong>Title:</strong> {{data.node.label}}</p>
-  <p><strong>Created At:</strong> {{data.node.created_at | date:'short'}}</p>
-  <p><strong>Description:</strong> {{data.node.description}}</p>
-  <p><strong>TAG:</strong> {{data.node.tag}}</p>
-
-  <div *ngIf="data.node.student">
-<!--     <h2>Student Information</h2>
-    <p><strong>Student ID:</strong> {{data.node.student._id}}</p>
-    <p><strong>Student Name:</strong> {{data.node.student.name}}</p> -->
-    <!-- Add other student properties here if needed -->
+<div class="word-dialog">
+  <!-- Cabecalho -->
+  <div class="dialog-header">
+    <span class="header-emoji">📖</span>
+    <h2 class="header-title">Detalhes da Palavra</h2>
+    <button class="close-btn" (click)="close()" matTooltip="Fechar">
+      ✕
+    </button>
   </div>
 
-  <div *ngIf="data.node.tags && data.node.tags.length">
-    <h2>Tags</h2>
-    <ul>
-      <li *ngFor="let tag of data.node.tags">{{ tag }}</li>
-    </ul>
+  <!-- Conteudo -->
+  <div class="dialog-content">
+    <!-- Palavra Principal -->
+    <div class="word-card">
+      <span class="word-emoji">🌟</span>
+      <p class="word-text">{{ data.node?.label }}</p>
+      <button
+        class="speak-btn"
+        (click)="speakWord()"
+        [disabled]="isSpeaking"
+        matTooltip="Ouvir palavra">
+        <span>{{ isSpeaking ? '🔊' : '🔈' }}</span>
+      </button>
+    </div>
+
+    <!-- Palavra Relacionada -->
+    <div class="related-card" *ngIf="relatedWord">
+      <div class="related-header">
+        <span class="related-emoji">🔗</span>
+        <span class="related-label">Palavra Relacionada</span>
+      </div>
+      <div class="related-content">
+        <span class="arrow">➡️</span>
+        <span class="related-word">{{ relatedWord }}</span>
+      </div>
+      <p class="related-tip">
+        Quando voce pensa em "{{ data.node?.label }}", lembre de "{{ relatedWord }}"!
+      </p>
+    </div>
+
+    <!-- Informacoes Adicionais -->
+    <div class="info-section" *ngIf="data.node?.description || data.node?.tag">
+      <div class="info-item" *ngIf="data.node?.tag">
+        <span class="info-emoji">🏷️</span>
+        <span class="info-label">Categoria:</span>
+        <span class="info-value">{{ data.node.tag }}</span>
+      </div>
+
+      <div class="info-item" *ngIf="data.node?.description">
+        <span class="info-emoji">📝</span>
+        <span class="info-label">Descricao:</span>
+        <span class="info-value">{{ data.node.description }}</span>
+      </div>
+    </div>
+
+    <!-- Tags -->
+    <div class="tags-section" *ngIf="data.node?.tags?.length">
+      <span class="tags-emoji">🎨</span>
+      <span class="tags-label">Tags:</span>
+      <div class="tags-list">
+        <span class="tag-chip" *ngFor="let tag of data.node.tags">{{ tag }}</span>
+      </div>
+    </div>
   </div>
 
-  <p><strong>Permanent:</strong> {{data.node.permanent ? 'Yes' : 'No'}}</p>
-</div>
-<div mat-dialog-actions>
-  <button mat-icon-button mat-dialog-close matTooltip="Close" aria-label="Close">
-    <mat-icon svgIcon="mat:close"></mat-icon>
-  </button>
-  
+  <!-- Acoes -->
+  <div class="dialog-actions">
+    <button class="action-btn primary" (click)="speakWord()" [disabled]="isSpeaking">
+      <span class="btn-emoji">{{ isSpeaking ? '🔊' : '🎤' }}</span>
+      <span class="btn-text">{{ isSpeaking ? 'Falando...' : 'Ouvir' }}</span>
+    </button>
+    <button class="action-btn secondary" (click)="close()">
+      <span class="btn-emoji">✅</span>
+      <span class="btn-text">Entendi!</span>
+    </button>
+  </div>
 </div>

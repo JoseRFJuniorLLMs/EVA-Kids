@@ -7,11 +7,12 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { MatBadgeModule } from '@angular/material/badge'; 
+import { MatBadgeModule } from '@angular/material/badge';
+import { RouterModule } from '@angular/router';
 
 import { FlashcardComponent } from './flashcard.component';
 import { NoteDialogComponent } from './note-dialog.component';
-import { VoiceCardRecognitionService } from './voice-card-recognition.service';
+import { UnifiedVoiceService } from 'src/app/core/services/voice/unified-voice.service';
 import { RsvpreaderComponent } from '../../../dashboards/components/dialog-rsvpreader/rsvpreader.component';
 import { NoteDialogEditComponent } from './note-dialog-edit.component';
 
@@ -30,7 +31,8 @@ import { NoteCollection } from '../../note/note-collection';
     MatButtonModule,
     MatDialogModule,
     MatTooltipModule,
-    MatBadgeModule 
+    MatBadgeModule,
+    RouterModule
   ]
 })
 export class NoteListComponent implements OnInit, OnDestroy {
@@ -43,11 +45,11 @@ export class NoteListComponent implements OnInit, OnDestroy {
   private srvpDialogRef: any;
 
   constructor(
-    private dataListService: DataListService, 
+    private dataListService: DataListService,
     public dialog: MatDialog,
-    private voiceRecognitionService: VoiceCardRecognitionService
+    private voiceService: UnifiedVoiceService
   ) {
-    this.totalNotes$ = this.dataListService.getTotalNotesOfTheDay(); 
+    this.totalNotes$ = this.dataListService.getTotalNotesOfTheDay();
   }
 
   ngOnInit(): void {
@@ -56,10 +58,13 @@ export class NoteListComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    if (this.voiceRecognitionService && this.voiceRecognitionService.wavesurfer) {
-      this.voiceRecognitionService.wavesurfer.destroy();
+    if (this.voiceService && this.voiceService.wavesurfer) {
+      this.voiceService.wavesurfer.destroy();
     }
-    // Adicione qualquer outra limpeza necessária aqui
+    // Additional cleanup - stop any speech synthesis
+    if (typeof speechSynthesis !== 'undefined') {
+      speechSynthesis.cancel();
+    }
   }
 
   searchNotes(): void {
@@ -135,5 +140,89 @@ export class NoteListComponent implements OnInit, OnDestroy {
         });
       }
     });
+  }
+
+  // ==================== HELPER METHODS FOR KIDS UI ====================
+
+  /**
+   * Get CSS class based on tag type
+   */
+  getTagClass(tags: string | undefined): string {
+    if (!tags) return 'tag-default';
+    const tagMap: Record<string, string> = {
+      'VERB': 'tag-verb',
+      'NOUN': 'tag-noun',
+      'BOOK': 'tag-book',
+      'CLASS': 'tag-class',
+      'GAME': 'tag-game',
+      'MUSIC': 'tag-music'
+    };
+    return tagMap[tags.toUpperCase()] || 'tag-default';
+  }
+
+  /**
+   * Get emoji based on tag type
+   */
+  getTagEmoji(tags: string | undefined): string {
+    if (!tags) return '📝';
+    const emojiMap: Record<string, string> = {
+      'VERB': '🏃',
+      'NOUN': '🎁',
+      'BOOK': '📚',
+      'CLASS': '🏫',
+      'GAME': '🎮',
+      'MUSIC': '🎵'
+    };
+    return emojiMap[tags.toUpperCase()] || '📝';
+  }
+
+  /**
+   * Get human-readable text for tag
+   */
+  getTagText(tags: string | undefined): string {
+    if (!tags) return 'Nota';
+    const textMap: Record<string, string> = {
+      'VERB': 'Verbo',
+      'NOUN': 'Nome',
+      'BOOK': 'Livro',
+      'CLASS': 'Aula',
+      'GAME': 'Jogo',
+      'MUSIC': 'Música'
+    };
+    return textMap[tags.toUpperCase()] || tags || 'Nota';
+  }
+
+  /**
+   * Get emoji based on difficulty level
+   */
+  getLevelEmoji(level: string | undefined): string {
+    if (!level) return '⭐';
+    const emojiMap: Record<string, string> = {
+      'easy': '😊',
+      'medium': '🤔',
+      'hard': '🧠'
+    };
+    return emojiMap[level.toLowerCase()] || '⭐';
+  }
+
+  /**
+   * Get human-readable text for level
+   */
+  getLevelText(level: string | undefined): string {
+    if (!level) return 'Normal';
+    const textMap: Record<string, string> = {
+      'easy': 'Fácil',
+      'medium': 'Médio',
+      'hard': 'Difícil'
+    };
+    return textMap[level.toLowerCase()] || level || 'Normal';
+  }
+
+  /**
+   * Handle image loading error
+   */
+  handleImageError(event: Event): void {
+    const img = event.target as HTMLImageElement;
+    img.style.display = 'none';
   }
 }

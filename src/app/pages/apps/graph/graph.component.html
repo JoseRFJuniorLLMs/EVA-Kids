@@ -1,130 +1,172 @@
-<div class="container">
-  <div class="network-container" #network style="width: 100%; height: 600px; border: 1px solid lightgray;"></div>
-  <div class="settings-panel" [class.minimized]="isMinimized">
-    <button class="toggle-button" (click)="toggleSettings()">⚙️</button>
-    <div class="settings-content" *ngIf="!isMinimized">
-      <h3>== Edges ==</h3>
-      <div>
-        <label>
-          <strong>Smooth:</strong>
-          <input type="checkbox" [(ngModel)]="edgesOptions.smooth.enabled" (change)="updateOptions()">
-        </label>
+<div class="graph-page">
+  <!-- Tela de Loading Divertida -->
+  <div class="loading-screen" *ngIf="isLoading">
+    <div class="loading-content">
+      <div class="loading-emoji">🌈</div>
+      <div class="loading-spinner">
+        <span class="spinner-dot"></span>
+        <span class="spinner-dot"></span>
+        <span class="spinner-dot"></span>
       </div>
-      <div>
-        <label>
-          <strong>Type:</strong>
-          <select [(ngModel)]="edgesOptions.smooth.type" (change)="updateOptions()">
-            <option value="dynamic">Dynamic</option>
-            <option value="continuous">Continuous</option>
-          </select>
-        </label>
+      <p class="loading-text">{{ loadingMessage }}</p>
+      <div class="loading-emojis">
+        <span>📚</span>
+        <span>✨</span>
+        <span>🎯</span>
+        <span>🌟</span>
       </div>
-      <div>
-        <label>
-          <strong>Force Direction:</strong>
-          <select [(ngModel)]="edgesOptions.smooth.forceDirection" (change)="updateOptions()">
-            <option value="none">None</option>
-            <option value="horizontal">Horizontal</option>
-            <option value="vertical">Vertical</option>
-          </select>
-        </label>
-      </div>
-      <div>
-        <label>
-          <strong>Roundness:</strong>
-          <input type="range" min="0" max="1" step="0.1" [(ngModel)]="edgesOptions.smooth.roundness" (change)="updateOptions()">
-        </label>
+    </div>
+  </div>
+
+  <!-- Conteudo Principal -->
+  <div class="main-content" *ngIf="!isLoading" @fadeIn>
+    <!-- Cabecalho com Estatisticas -->
+    <header class="graph-header">
+      <div class="header-left">
+        <span class="header-emoji">🗺️</span>
+        <h1 class="header-title">Mapa de Palavras</h1>
       </div>
 
-      <h3>=== Physics ===</h3>
-      <div>
-        <label>
-          <strong>Enabled:</strong>
-          <input type="checkbox" [(ngModel)]="physicsOptions.enabled" (change)="updateOptions()">
-        </label>
+      <div class="stats-container">
+        <!-- Palavras Conhecidas -->
+        <div class="stat-card known">
+          <span class="stat-emoji">⭐</span>
+          <div class="stat-info">
+            <span class="stat-value">{{ knownWords }}</span>
+            <span class="stat-label">Sei</span>
+          </div>
+        </div>
+
+        <!-- Palavras para Aprender -->
+        <div class="stat-card tolearn">
+          <span class="stat-emoji">🎯</span>
+          <div class="stat-info">
+            <span class="stat-value">{{ wordsToLearn }}</span>
+            <span class="stat-label">Vou aprender</span>
+          </div>
+        </div>
+
+        <!-- Progresso -->
+        <div class="progress-section">
+          <div class="progress-label">
+            <span>🏆 Meu Progresso</span>
+            <span class="progress-percent">{{ progressPercent }}%</span>
+          </div>
+          <mat-progress-bar
+            mode="determinate"
+            [value]="progressPercent"
+            color="accent">
+          </mat-progress-bar>
+        </div>
       </div>
-      <div>
-        <label>
-          <strong>Theta:</strong>
-          <input type="range" min="0" max="1" step="0.1" [(ngModel)]="physicsOptions.barnesHut.theta" (change)="updateOptions()">
-        </label>
+    </header>
+
+    <!-- Area do Grafo -->
+    <div class="graph-container">
+      <div class="network-wrapper" #network></div>
+
+      <!-- Dica de Ajuda -->
+      <div class="help-tip" *ngIf="showHelpTip" @fadeIn>
+        <span class="tip-emoji">💡</span>
+        <p class="tip-text">
+          Clique em uma palavra para ouvir!<br>
+          Clique duas vezes para ver mais detalhes.
+        </p>
+        <button class="tip-close" (click)="dismissHelpTip()">✕</button>
       </div>
-      <div>
-        <label>
-          <strong>Gravitational Constant:</strong>
-          <input type="range" min="-20000" max="0" step="100" [(ngModel)]="physicsOptions.barnesHut.gravitationalConstant" (change)="updateOptions()">
-        </label>
+
+      <!-- Info da Palavra Selecionada -->
+      <div class="selected-word-panel" *ngIf="selectedNode" @fadeIn>
+        <div class="selected-header">
+          <span class="selected-emoji">📖</span>
+          <span class="selected-title">Palavra Selecionada</span>
+        </div>
+        <p class="selected-word">{{ selectedNode.label }}</p>
+        <div class="selected-actions">
+          <button
+            class="action-btn listen"
+            (click)="speakWord(selectedNode.label)"
+            [disabled]="isSpeaking"
+            matTooltip="Ouvir palavra">
+            <span class="btn-emoji">{{ isSpeaking ? '🔊' : '🔈' }}</span>
+            <span class="btn-text">Ouvir</span>
+          </button>
+          <button
+            class="action-btn relation"
+            (click)="speakWordWithRelation(selectedNode.label)"
+            [disabled]="isSpeaking"
+            matTooltip="Ouvir com relacao">
+            <span class="btn-emoji">🔗</span>
+            <span class="btn-text">Relacao</span>
+          </button>
+        </div>
       </div>
-      <div>
-        <label>
-          <strong>Central Gravity:</strong>
-          <input type="range" min="0" max="1" step="0.1" [(ngModel)]="physicsOptions.barnesHut.centralGravity" (change)="updateOptions()">
-        </label>
+
+      <!-- Indicador de Audio -->
+      <div class="speaking-indicator" *ngIf="isSpeaking">
+        <span class="speaking-emoji">🔊</span>
+        <span class="speaking-text">Falando: {{ currentWord }}</span>
+        <button class="stop-btn" (click)="stopAudio()" matTooltip="Parar">
+          🛑
+        </button>
       </div>
-      <div>
-        <label>
-          <strong>Spring Length:</strong>
-          <input type="range" min="0" max="200" step="1" [(ngModel)]="physicsOptions.barnesHut.springLength" (change)="updateOptions()">
-        </label>
+    </div>
+
+    <!-- Barra de Controles -->
+    <footer class="graph-controls">
+      <button
+        class="control-btn primary"
+        (click)="speakRandomWord()"
+        [disabled]="isSpeaking"
+        matTooltip="Aprender palavra nova!">
+        <span class="btn-emoji">🎲</span>
+        <span class="btn-label">Palavra Nova</span>
+      </button>
+
+      <button
+        class="control-btn secondary"
+        (click)="centerGraph()"
+        matTooltip="Centralizar mapa">
+        <span class="btn-emoji">🎯</span>
+        <span class="btn-label">Centralizar</span>
+      </button>
+
+      <button
+        class="control-btn"
+        [class.active]="physicsEnabled"
+        (click)="togglePhysics()"
+        matTooltip="{{ physicsEnabled ? 'Parar movimento' : 'Animar' }}">
+        <span class="btn-emoji">{{ physicsEnabled ? '⏸️' : '▶️' }}</span>
+        <span class="btn-label">{{ physicsEnabled ? 'Parar' : 'Animar' }}</span>
+      </button>
+
+      <button
+        class="control-btn stop"
+        (click)="stopAudio()"
+        *ngIf="isSpeaking"
+        matTooltip="Parar audio">
+        <span class="btn-emoji">🛑</span>
+        <span class="btn-label">Parar</span>
+      </button>
+    </footer>
+
+    <!-- Legenda -->
+    <div class="legend-panel">
+      <h4 class="legend-title">🎨 Legenda</h4>
+      <div class="legend-items">
+        <div class="legend-item">
+          <span class="legend-shape star"></span>
+          <span class="legend-text">Palavra Priming</span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-shape diamond"></span>
+          <span class="legend-text">Palavra Alvo</span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-shape circle"></span>
+          <span class="legend-text">Outras Palavras</span>
+        </div>
       </div>
-      <div>
-        <label>
-          <strong>Spring Constant:</strong>
-          <input type="range" min="0" max="1" step="0.01" [(ngModel)]="physicsOptions.barnesHut.springConstant" (change)="updateOptions()">
-        </label>
-      </div>
-      <div>
-        <label>
-          <strong>Damping:</strong>
-          <input type="range" min="0" max="1" step="0.01" [(ngModel)]="physicsOptions.barnesHut.damping" (change)="updateOptions()">
-        </label>
-      </div>
-      <div>
-        <label>
-          <strong>Avoid Overlap:</strong>
-          <input type="range" min="0" max="1" step="0.1" [(ngModel)]="physicsOptions.barnesHut.avoidOverlap" (change)="updateOptions()">
-        </label>
-      </div>
-      <div>
-        <label>
-          <strong>Max Velocity:</strong>
-          <input type="range" min="0" max="100" step="1" [(ngModel)]="physicsOptions.maxVelocity" (change)="updateOptions()">
-        </label>
-      </div>
-      <div>
-        <label>
-          <strong>Min Velocity:</strong>
-          <input type="range" min="0" max="10" step="0.1" [(ngModel)]="physicsOptions.minVelocity" (change)="updateOptions()">
-        </label>
-      </div>
-      <div>
-        <label>
-          <strong>Solver:</strong>
-          <select [(ngModel)]="physicsOptions.solver" (change)="updateOptions()">
-            <option value="barnesHut">BarnesHut</option>
-            <option value="repulsion">Repulsion</option>
-          </select>
-        </label>
-      </div>
-      <div>
-        <label>
-          <strong>Timestep:</strong>
-          <input type="range" min="0" max="1" step="0.01" [(ngModel)]="physicsOptions.timestep" (change)="updateOptions()">
-        </label>
-      </div>
-      <div>
-        <label>
-          <strong>Wind X:</strong>
-          <input type="range" min="-10" max="10" step="1" [(ngModel)]="windOptions.x" (change)="updateOptions()">
-        </label>
-      </div>
-      <div>
-        <label>
-          <strong>Wind Y:</strong>
-          <input type="range" min="-10" max="10" step="1" [(ngModel)]="windOptions.y" (change)="updateOptions()">
-        </label>
-      </div>
-      <button (click)="generateOptions()">Generate Options</button>
     </div>
   </div>
 </div>

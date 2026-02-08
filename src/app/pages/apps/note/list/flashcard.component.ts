@@ -7,7 +7,7 @@ import { MatDialogModule } from '@angular/material/dialog';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { VoiceCardRecognitionService } from './voice-card-recognition.service';
+import { UnifiedVoiceService } from 'src/app/core/services/voice/unified-voice.service';
 import { DataListService } from './data-list.service';
 import { format } from 'date-fns';
 import { animate, style, transition, trigger } from '@angular/animations';
@@ -53,7 +53,7 @@ export class FlashcardComponent implements AfterViewInit, OnDestroy {
     public dialogRef: MatDialogRef<FlashcardComponent>,
     @Inject(MAT_DIALOG_DATA) public data: { notes: NoteCollection[] },
     private dataService: DataListService,
-    private voiceRecognitionService: VoiceCardRecognitionService
+    private voiceService: UnifiedVoiceService
   ) {
     console.log('FlashcardComponent initialized');
     this.loadNotesOfTheDay();
@@ -100,17 +100,17 @@ export class FlashcardComponent implements AfterViewInit, OnDestroy {
   }
 
   ngAfterViewInit(): void {
-    if (this.voiceRecognitionService) {
+    if (this.voiceService) {
       console.log('Setting up WaveSurfer');
-      this.voiceRecognitionService.setupWaveSurfer(this.waveformElement);
+      this.voiceService.setupWaveSurfer(this.waveformElement);
     } else {
-      console.error('voiceRecognitionService is not initialized');
+      console.error('voiceService is not initialized');
     }
   }
   
   ngOnDestroy(): void {
-    if (this.voiceRecognitionService && this.voiceRecognitionService.wavesurfer) {
-      this.voiceRecognitionService.wavesurfer.destroy();
+    if (this.voiceService && this.voiceService.wavesurfer) {
+      this.voiceService.wavesurfer.destroy();
     }
   }
 
@@ -120,7 +120,7 @@ export class FlashcardComponent implements AfterViewInit, OnDestroy {
     
     if (this.currentNote && this.currentNote.description) {
       console.log('Attempting to speak and visualize:', this.currentNote.description);
-      this.voiceRecognitionService.speakAndVisualize(this.currentNote.description, this.waveformElement, this.selectedVoice);
+      this.voiceService.speakAndVisualize(this.currentNote.description, this.waveformElement, this.selectedVoice);
     } else {
       console.log('Not speaking. currentNote:', this.currentNote);
     }
@@ -179,8 +179,8 @@ export class FlashcardComponent implements AfterViewInit, OnDestroy {
   }
 
   playAudio(): void {
-    if (this.voiceRecognitionService.wavesurfer) {
-      this.voiceRecognitionService.wavesurfer.playPause();
+    if (this.voiceService.wavesurfer) {
+      this.voiceService.wavesurfer.playPause();
     }
   }
 

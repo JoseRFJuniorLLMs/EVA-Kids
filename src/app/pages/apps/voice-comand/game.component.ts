@@ -1,6 +1,7 @@
 import { Component, ElementRef, Inject, Input, OnInit, ViewChild, NgZone, ChangeDetectorRef, AfterViewInit, OnDestroy, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Observable, Subscription } from 'rxjs';
+import { Observable, Subject, Subscription } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 import { Firestore, collection, collectionData } from '@angular/fire/firestore';
 import { MatDialog } from '@angular/material/dialog';
 import { MatExpansionModule } from '@angular/material/expansion';
@@ -18,7 +19,7 @@ import { FormsModule } from '@angular/forms';
 import { SoundService } from 'src/app/layouts/components/footer/sound.service';
 import { fadeInUp400ms } from '@vex/animations/fade-in-up.animation';
 import { stagger40ms } from '@vex/animations/stagger.animation';
-import { VoiceRecognitionService } from './voice-recognition.service';
+import { UnifiedVoiceService } from 'src/app/core/services/voice/unified-voice.service';
 import WaveSurfer from 'wavesurfer.js';
 import screenfull from 'screenfull';
 import { FlashcardComponent } from '../note/list/flashcard.component';
@@ -50,6 +51,8 @@ import { NoteCollection } from '../note/note-collection';
   ]
 })
 export class GameComponent implements OnInit, AfterViewInit, OnDestroy {
+  // Cleanup subject for memory leak prevention
+  private destroy$ = new Subject<void>();
 
   student$!: Observable<any[]>;
   private satoshiSubscription: Subscription | null = null;
@@ -91,15 +94,18 @@ export class GameComponent implements OnInit, AfterViewInit, OnDestroy {
   totalSatoshis = 0;
   showSatoshiAlert = false;
 
+  // Local WaveSurfer for playback
+  private playbackWavesurfer: WaveSurfer | null = null;
+
   constructor(
-    private cdr: ChangeDetectorRef, // Mudança de cdRef para cdr para manter consistência
+    private cdr: ChangeDetectorRef,
     public dialog: MatDialog,
     private elementRef: ElementRef,
     @Inject(Firestore) private firestore: Firestore,
     private zone: NgZone,
     private soundService: SoundService,
-    private voiceRecognitionService: VoiceRecognitionService,
-    @Inject(SatoshiService) private satoshiService: SatoshiService // Adicionando o SatoshiService
+    private voiceService: UnifiedVoiceService,
+    @Inject(SatoshiService) private satoshiService: SatoshiService
   ) {
     const student = collection(this.firestore, 'StudentCollection'); // Verifique o nome correto da coleção
     this.student$ = collectionData(student) as Observable<any[]>;
@@ -113,42 +119,53 @@ export class GameComponent implements OnInit, AfterViewInit, OnDestroy {
     if (screenfull.isEnabled) {
       screenfull.request();
     }
-    this.voiceRecognitionService.init();
-    this.voiceRecognitionService.command$.subscribe(command => {
+
+    // Configure voice service for game mode
+    this.voiceService.usePreset('game');
+
+    this.voiceService.command$.pipe(takeUntil(this.destroy$)).subscribe(command => {
       this.zone.run(() => this.executeVoiceCommand(command));
     });
 
-    this.voiceRecognitionService.recordingEnded$.subscribe(url => {
+    this.voiceService.recordingEnded$.pipe(takeUntil(this.destroy$)).subscribe(url => {
       this.recordedUrl = url;
       this.createWaveSurferPlay(url);
     });
 
     this.startVoiceRecognition();
-    this.updateSatoshiBalance(); // Atualiza o saldo de satoshi ao iniciar o componente
+    this.updateSatoshiBalance();
   }
 
   ngAfterViewInit(): void {
-    this.voiceRecognitionService.setupWaveSurfer(this.micElement);
+    this.voiceService.setupWaveSurfer(this.micElement);
     this.startRecording();
   }
 
   ngOnDestroy(): void {
-    if (this.voiceRecognitionService.wavesurfer) {
-      this.voiceRecognitionService.wavesurfer.destroy();
+    // Complete destroy$ to unsubscribe all subscriptions
+    this.destroy$.next();
+    this.destroy$.complete();
+
+    // Clean up local playback WaveSurfer
+    if (this.playbackWavesurfer) {
+      this.playbackWavesurfer.destroy();
     }
-    this.voiceRecognitionService.stopListening();
-    this.voiceRecognitionService.stopRecording();
-    this.soundService.playErro();
-    if (this.satoshiSubscription) {
-      this.satoshiSubscription.unsubscribe(); // Cancelar a assinatura ao destruir o componente
+
+    // Stop voice services
+    this.voiceService.stopListening();
+    this.voiceService.stopRecording();
+
+    // Cancel any browser speech synthesis
+    if (typeof speechSynthesis !== 'undefined') {
+      speechSynthesis.cancel();
     }
   }
 
   updateSatoshiBalance() {
-    this.satoshiSubscription = this.satoshiService.getSatoshiBalance(this.studentId).subscribe(
+    this.satoshiService.getSatoshiBalance(this.studentId).pipe(takeUntil(this.destroy$)).subscribe(
       (balance: number) => {
         this.totalSatoshis = balance;
-        this.cdr.detectChanges(); // Forçar a detecção de mudanças
+        this.cdr.detectChanges();
       },
       (error: any) => console.error('Error fetching satoshi balance:', error)
     );
@@ -184,7 +201,7 @@ export class GameComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   startVoiceRecognition(): void {
-    this.voiceRecognitionService.startListening();
+    this.voiceService.startListening();
   }
 
   cleanCommand(command: string): string {
@@ -239,15 +256,15 @@ export class GameComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   incrementSatoshi(): void {
-    this.satoshiService.incrementSatoshi(this.studentId, 1).subscribe(
+    this.satoshiService.incrementSatoshi(this.studentId, 1).pipe(takeUntil(this.destroy$)).subscribe(
       () => {
         this.totalSatoshis++;
         this.showSatoshiAlert = true;
 
-        this.cdr.detectChanges(); 
+        this.cdr.detectChanges();
         setTimeout(() => {
           this.showSatoshiAlert = false;
-          this.cdr.detectChanges(); 
+          this.cdr.detectChanges();
         }, 3000);
       },
       (error: any) => console.error('Error incrementing satoshi:', error)
@@ -255,10 +272,13 @@ export class GameComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   createWaveSurferPlay(url: string): void {
-    if (this.voiceRecognitionService.wavesurfer) {
-      this.voiceRecognitionService.wavesurfer.destroy();
+    // Destroy existing playback wavesurfer
+    if (this.playbackWavesurfer) {
+      this.playbackWavesurfer.destroy();
     }
-    this.voiceRecognitionService.wavesurfer = WaveSurfer.create({
+
+    // Create local wavesurfer for playback
+    this.playbackWavesurfer = WaveSurfer.create({
       container: this.waveformPlay.nativeElement,
       waveColor: '#6c63ff',
       progressColor: '#FE7F9C',
@@ -268,11 +288,11 @@ export class GameComponent implements OnInit, AfterViewInit, OnDestroy {
       normalize: true
     });
 
-    this.voiceRecognitionService.wavesurfer.load(url);
+    this.playbackWavesurfer.load(url);
   }
 
   startRecording(): void {
-    this.voiceRecognitionService.startRecording();
+    this.voiceService.startRecording();
   }
 
   speakText(message: string): void {

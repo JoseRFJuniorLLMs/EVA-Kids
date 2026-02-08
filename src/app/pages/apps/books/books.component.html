@@ -1,0 +1,265 @@
+<div class="books-page" [class.dark-mode]="isDarkMode">
+  <!-- Tela de Loading -->
+  <div class="loading-screen" *ngIf="isLoading">
+    <div class="loading-content">
+      <div class="loading-emoji">📚</div>
+      <div class="loading-spinner">
+        <span class="spinner-dot"></span>
+        <span class="spinner-dot"></span>
+        <span class="spinner-dot"></span>
+      </div>
+      <p class="loading-text">{{ loadingMessage }}</p>
+    </div>
+  </div>
+
+  <!-- Conteudo Principal -->
+  <div class="main-content" *ngIf="!isLoading" @fadeIn>
+    <!-- Cabecalho -->
+    <header class="books-header">
+      <div class="header-left">
+        <button class="back-btn" *ngIf="activeTab !== 'library'" (click)="goBack()" matTooltip="Voltar">
+          <span>⬅️</span>
+        </button>
+        <span class="header-emoji">{{ activeTab === 'library' ? '📖' : activeTab === 'epub' ? '📕' : '📝' }}</span>
+        <h1 class="header-title">
+          {{ activeTab === 'library' ? 'Minha Biblioteca' :
+             currentEbook?.title || currentText?.title || 'Leitura' }}
+        </h1>
+      </div>
+
+      <!-- Controles de Acessibilidade -->
+      <div class="accessibility-controls">
+        <button
+          class="access-btn"
+          [class.active]="isDarkMode"
+          (click)="toggleDarkMode()"
+          matTooltip="Modo escuro">
+          <span>{{ isDarkMode ? '☀️' : '🌙' }}</span>
+        </button>
+
+        <button
+          class="access-btn"
+          [class.active]="isDyslexicMode"
+          (click)="toggleDyslexicMode()"
+          matTooltip="Modo disléxico">
+          <span>🔤</span>
+        </button>
+
+        <button
+          class="access-btn"
+          [class.active]="isBeeLineActive"
+          (click)="toggleBeeLineReader()"
+          matTooltip="BeeLine Reader"
+          *ngIf="activeTab === 'text'">
+          <span>🌈</span>
+        </button>
+
+        <div class="font-size-controls">
+          <button class="size-btn" (click)="decreaseTextSize()" matTooltip="Diminuir fonte">
+            <span>A-</span>
+          </button>
+          <span class="size-value">{{ textSize }}</span>
+          <button class="size-btn" (click)="increaseTextSize()" matTooltip="Aumentar fonte">
+            <span>A+</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Barra de Progresso -->
+    <div class="progress-bar-container" *ngIf="activeTab !== 'library'">
+      <div class="progress-info">
+        <span class="progress-emoji">📊</span>
+        <span class="progress-text">Progresso: {{ readingProgress }}%</span>
+      </div>
+      <mat-progress-bar
+        mode="determinate"
+        [value]="readingProgress"
+        color="accent">
+      </mat-progress-bar>
+    </div>
+
+    <!-- TAB: BIBLIOTECA -->
+    <div class="library-container" *ngIf="activeTab === 'library'" @fadeIn>
+      <!-- Secao de Ebooks -->
+      <section class="library-section">
+        <h2 class="section-title">
+          <span class="section-emoji">📕</span>
+          Livros Digitais (EPUB)
+        </h2>
+        <div class="books-grid">
+          <div
+            class="book-card"
+            *ngFor="let ebook of ebooks"
+            (click)="selectEbook(ebook)"
+            @slideIn>
+            <div class="book-cover">
+              <img [src]="ebook.cover" [alt]="ebook.title" *ngIf="ebook.cover">
+              <span class="no-cover" *ngIf="!ebook.cover">📘</span>
+            </div>
+            <div class="book-info">
+              <h3 class="book-title">{{ ebook.title }}</h3>
+              <p class="book-author">{{ ebook.author }}</p>
+              <span class="book-pages">📄 {{ ebook.pageCount }} páginas</span>
+            </div>
+          </div>
+
+          <div class="book-card empty" *ngIf="ebooks.length === 0">
+            <span class="empty-emoji">📚</span>
+            <p>Nenhum livro encontrado</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Secao de Textos -->
+      <section class="library-section">
+        <h2 class="section-title">
+          <span class="section-emoji">📝</span>
+          Textos para Praticar
+        </h2>
+        <div class="texts-grid">
+          <div
+            class="text-card"
+            *ngFor="let text of texts; let i = index"
+            (click)="selectText(text)"
+            @slideIn>
+            <div class="text-level" *ngIf="text.level">{{ text.level }}</div>
+            <p class="text-preview">{{ text.text | slice:0:80 }}...</p>
+            <div class="text-meta">
+              <span class="text-prime" *ngIf="text.prime">🔑 {{ text.prime }}</span>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- TAB: EPUB READER -->
+    <div class="epub-container" *ngIf="activeTab === 'epub'" @fadeIn>
+      <!-- Area de Renderizacao do EPUB -->
+      <div class="epub-reader" #epubContainer></div>
+
+      <!-- Controles de Navegacao -->
+      <div class="epub-controls">
+        <button
+          class="nav-btn prev"
+          (click)="prevPage()"
+          [disabled]="currentPage <= 1"
+          matTooltip="Página anterior">
+          <span>⬅️</span>
+        </button>
+
+        <div class="page-indicator">
+          <span class="page-emoji">📖</span>
+          <span class="page-text">{{ currentPage }} / {{ totalPages }}</span>
+        </div>
+
+        <button
+          class="nav-btn next"
+          (click)="nextPage()"
+          [disabled]="currentPage >= totalPages"
+          matTooltip="Próxima página">
+          <span>➡️</span>
+        </button>
+      </div>
+
+      <!-- Controles de Audio -->
+      <div class="audio-controls">
+        <button
+          class="audio-btn read"
+          (click)="readCurrentPage()"
+          [disabled]="isSpeaking"
+          matTooltip="Ler página">
+          <span class="btn-emoji">{{ isSpeaking ? '🔊' : '📢' }}</span>
+          <span class="btn-label">{{ isSpeaking ? 'Lendo...' : 'Ler' }}</span>
+        </button>
+
+        <button
+          class="audio-btn stop"
+          (click)="stopAudio()"
+          *ngIf="isSpeaking"
+          matTooltip="Parar">
+          <span class="btn-emoji">🛑</span>
+          <span class="btn-label">Parar</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- TAB: TEXT READER -->
+    <div class="text-reader-container" *ngIf="activeTab === 'text'" @fadeIn>
+      <!-- Area do Texto -->
+      <div
+        class="text-reader"
+        #textContainer
+        [class.dark-mode]="isDarkMode"
+        [class.dyslexic-mode]="isDyslexicMode">
+      </div>
+
+      <!-- Legendas -->
+      <div class="captions-container" *ngIf="showCaptions && currentCaption" @fadeIn>
+        <div class="caption-text" #captionContainer>
+          {{ currentCaption }}
+        </div>
+      </div>
+
+      <!-- Controles de Texto -->
+      <div class="text-controls">
+        <button
+          class="control-btn primary"
+          (click)="readNextSentence()"
+          [disabled]="isSpeaking"
+          matTooltip="Ler próxima frase">
+          <span class="btn-emoji">▶️</span>
+          <span class="btn-label">Ler</span>
+        </button>
+
+        <button
+          class="control-btn"
+          (click)="stopAudio()"
+          *ngIf="isSpeaking"
+          matTooltip="Parar leitura">
+          <span class="btn-emoji">⏸️</span>
+          <span class="btn-label">Pausar</span>
+        </button>
+
+        <button
+          class="control-btn"
+          [class.active]="showCaptions"
+          (click)="toggleCaptions()"
+          matTooltip="Mostrar legendas">
+          <span class="btn-emoji">💬</span>
+          <span class="btn-label">Legendas</span>
+        </button>
+
+        <button
+          class="control-btn mic"
+          [class.active]="isListening"
+          (click)="isListening ? stopListening() : startListening()"
+          matTooltip="{{ isListening ? 'Parar microfone' : 'Praticar pronúncia' }}">
+          <span class="btn-emoji">{{ isListening ? '🔴' : '🎤' }}</span>
+          <span class="btn-label">{{ isListening ? 'Gravando' : 'Praticar' }}</span>
+        </button>
+      </div>
+
+      <!-- Seletor de Fonte -->
+      <div class="font-selector">
+        <label class="font-label">🔤 Fonte:</label>
+        <select class="font-select" [value]="selectedFont" (change)="changeFont($any($event.target).value)">
+          <option *ngFor="let font of fonts" [value]="font">{{ font }}</option>
+        </select>
+      </div>
+
+      <!-- Info da Sentenca -->
+      <div class="sentence-info">
+        <span class="info-emoji">📍</span>
+        <span class="info-text">Frase {{ currentSentenceIndex + 1 }} de {{ sentences.length }}</span>
+      </div>
+    </div>
+
+    <!-- Indicador de Audio Global -->
+    <div class="speaking-indicator" *ngIf="isSpeaking" @fadeIn>
+      <span class="speaking-emoji">🔊</span>
+      <span class="speaking-text">Lendo...</span>
+      <button class="stop-btn" (click)="stopAudio()">🛑</button>
+    </div>
+  </div>
+</div>

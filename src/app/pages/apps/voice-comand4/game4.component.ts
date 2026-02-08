@@ -1,14 +1,17 @@
 import { Component, ElementRef, OnInit, ViewChild, NgZone, AfterViewInit, OnDestroy, Inject, ChangeDetectorRef, Renderer2 } from '@angular/core';
-import { Voice4RecognitionService } from './voice4-recognition.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatBadgeModule } from '@angular/material/badge';
+import { Subject } from 'rxjs';
+import { takeUntil, map } from 'rxjs/operators';
+import { Observable } from 'rxjs';
 import WaveSurfer from 'wavesurfer.js';
 import words from '../../../../assets/json/word.json';
 import { SoundService } from 'src/app/layouts/components/footer/sound.service';
+import { UnifiedVoiceService } from 'src/app/core/services/voice/unified-voice.service';
 import { VEX_THEMES } from '@vex/config/config.token';
 import { VexConfigService } from '@vex/config/vex-config.service';
 import {
@@ -17,12 +20,11 @@ import {
   VexConfigName,
   VexThemeProvider
 } from '@vex/config/vex-config.interface';
-import { Observable, Subscription, map } from 'rxjs';
 import { MatSlideToggleChange } from '@angular/material/slide-toggle';
 import screenfull from 'screenfull';
 import { MatChipsModule } from '@angular/material/chips';
 import { VexLayoutService } from '@vex/services/vex-layout.service';
-import { SatoshiService } from '../note/satoshi.service'; // Importing SatoshiService
+import { SatoshiService } from '../note/satoshi.service';
 
 @Component({
   selector: 'app-game4',
@@ -38,6 +40,9 @@ import { SatoshiService } from '../note/satoshi.service'; // Importing SatoshiSe
   ]
 })
 export class Game4Component implements OnInit, AfterViewInit, OnDestroy {
+  private destroy$ = new Subject<void>();
+  private playbackWavesurfer: WaveSurfer | null = null;
+
   @ViewChild('mic') micElement!: ElementRef<HTMLDivElement>;
   @ViewChild('waveformPlay') waveformPlay!: ElementRef;
 
@@ -45,10 +50,9 @@ export class Game4Component implements OnInit, AfterViewInit, OnDestroy {
   completeWord: string = '';
   message: string = '';
   commandCounter: number = 0;
-  private revealIndex: number = 2; 
+  private revealIndex: number = 2;
 
   private wordPairs: { fragment: string, completeWord: string }[] = [];
-  private satoshiSubscription: Subscription | null = null;
 
   configs: VexConfig[] = this.configService.configs;
   config$: Observable<VexConfig> = this.configService.config$;
@@ -64,12 +68,12 @@ export class Game4Component implements OnInit, AfterViewInit, OnDestroy {
     private readonly configService: VexConfigService,
     private layoutService: VexLayoutService,
     @Inject(VEX_THEMES) public readonly themes: VexThemeProvider[],
-    private voiceRecognitionService: Voice4RecognitionService,
+    private voiceService: UnifiedVoiceService,
     private soundService: SoundService,
     private zone: NgZone,
     private _snackBar: MatSnackBar,
     private changeDetectorRef: ChangeDetectorRef,
-    private satoshiService: SatoshiService // Injecting SatoshiService
+    private satoshiService: SatoshiService
   ) {
     this.loadWords();
   }
@@ -80,58 +84,64 @@ export class Game4Component implements OnInit, AfterViewInit, OnDestroy {
   ColorSchemeName = VexColorScheme;
   
   ngOnInit(): void {
+    this.voiceService.usePreset('game');
     this.changeBackgroundImage();
 
-    this.voiceRecognitionService.command$.subscribe(command => {
+    this.voiceService.command$.pipe(takeUntil(this.destroy$)).subscribe(command => {
       this.zone.run(() => this.checkAnswer(command));
     });
 
-    this.voiceRecognitionService.recordingEnded$.subscribe(url => {
+    this.voiceService.recordingEnded$.pipe(takeUntil(this.destroy$)).subscribe(url => {
       this.createWaveSurferPlay(url);
     });
 
-    this.updateSatoshiBalance(); // Update Satoshi balance on component init
+    this.updateSatoshiBalance();
   }
 
   ngAfterViewInit(): void {
     this.changeBackgroundImage();
 
-    this.voiceRecognitionService.setupWaveSurfer(this.micElement);
-  
+    this.voiceService.setupWaveSurfer(this.micElement);
+
     setTimeout(() => {
       this.layoutService.collapseSidenav();
-      this.changeDetectorRef.detectChanges(); // Forçar a detecção de mudanças
+      this.changeDetectorRef.detectChanges();
     });
-  
+
     this.startGame();
     this.startRecording();
     this.enableDarkMode();
-  
+
     const mockEvent = { checked: false } as MatSlideToggleChange;
     this.footerVisibleChange(mockEvent);
-    
+
     if (screenfull.isEnabled) {
       screenfull.request().catch(err => {
-        console.error('Screenfull request failed', err); // Adiciona um tratamento de erro
+        console.error('Screenfull request failed', err);
       });
     }
-  
+
     this.message = 'Listening...';
-    this.changeDetectorRef.detectChanges(); // Forçar a detecção de mudanças
+    this.changeDetectorRef.detectChanges();
   }
 
   ngOnDestroy(): void {
-    if (this.voiceRecognitionService.wavesurfer) {
-      this.voiceRecognitionService.wavesurfer.destroy();
+    this.destroy$.next();
+    this.destroy$.complete();
+
+    if (this.playbackWavesurfer) {
+      this.playbackWavesurfer.destroy();
     }
-    this.voiceRecognitionService.stopListening();
-    this.voiceRecognitionService.stopRecording();
+
+    this.voiceService.stopListening();
+    this.voiceService.stopRecording();
+
+    if (typeof speechSynthesis !== 'undefined') {
+      speechSynthesis.cancel();
+    }
+
     const mockEvent = { checked: true } as MatSlideToggleChange;
     this.footerVisibleChange(mockEvent);
-    this.soundService.playErro();
-    if (this.satoshiSubscription) {
-      this.satoshiSubscription.unsubscribe(); // Cancelar a assinatura ao destruir o componente
-    }
   }
 
   loadWords(): void {
@@ -156,13 +166,13 @@ export class Game4Component implements OnInit, AfterViewInit, OnDestroy {
   }
 
   startGame(): void {
-    this.voiceRecognitionService.startListening();
+    this.voiceService.startListening();
     this.message = 'Listening...';
-    this.changeDetectorRef.detectChanges(); 
+    this.changeDetectorRef.detectChanges();
   }
 
   stopGame(): void {
-    this.voiceRecognitionService.stopListening();
+    this.voiceService.stopListening();
     this.message = '';
   }
 
@@ -174,7 +184,7 @@ export class Game4Component implements OnInit, AfterViewInit, OnDestroy {
     if (answer.trim().toLowerCase() === this.completeWord.toLowerCase()) {
       this.message = 'Correct!';
       this.commandCounter++;
-      this.voiceRecognitionService.speak(this.completeWord);
+      this.voiceService.speak(this.completeWord);
       this.openSnackBar('Correct!', 'Close');
       this.selectRandomWord();  
       this.soundService.playDone();
@@ -201,7 +211,7 @@ export class Game4Component implements OnInit, AfterViewInit, OnDestroy {
   }
 
   startRecording(): void {
-    this.voiceRecognitionService.startRecording();
+    this.voiceService.startRecording();
   }
 
   createWaveSurferPlay(url: string): void {
@@ -209,7 +219,11 @@ export class Game4Component implements OnInit, AfterViewInit, OnDestroy {
       return;
     }
 
-    const wavesurferPlay = WaveSurfer.create({
+    if (this.playbackWavesurfer) {
+      this.playbackWavesurfer.destroy();
+    }
+
+    this.playbackWavesurfer = WaveSurfer.create({
       container: this.waveformPlay.nativeElement,
       waveColor: 'black',
       progressColor: 'gray',
@@ -220,7 +234,7 @@ export class Game4Component implements OnInit, AfterViewInit, OnDestroy {
       backend: 'WebAudio',
     });
 
-    wavesurferPlay.load(url);
+    this.playbackWavesurfer.load(url);
   }
 
   nextWord(): void {
@@ -265,7 +279,7 @@ export class Game4Component implements OnInit, AfterViewInit, OnDestroy {
   }
 
   updateSatoshiBalance() {
-    this.satoshiSubscription = this.satoshiService.getSatoshiBalance(this.studentId).subscribe(
+    this.satoshiService.getSatoshiBalance(this.studentId).pipe(takeUntil(this.destroy$)).subscribe(
       balance => {
         this.totalSatoshis = balance;
       },

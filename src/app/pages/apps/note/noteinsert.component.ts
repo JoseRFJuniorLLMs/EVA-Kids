@@ -130,6 +130,22 @@ export class NoteinsertComponent implements OnInit, AfterViewInit {
     this.newNote = this.createEmptyNote();
   }
 
+  /**
+   * Select a tag for the note (kid-friendly button selection)
+   */
+  selectTag(tag: string): void {
+    this.newNote.tags = tag;
+    this.soundService.playToc();
+  }
+
+  /**
+   * Select difficulty level (kid-friendly button selection)
+   */
+  selectLevel(level: string): void {
+    this.newNote.level = level;
+    this.soundService.playToc();
+  }
+
   convertToDate(dateString: string | undefined): Date | undefined {
     return dateString ? new Date(dateString) : undefined;
   }

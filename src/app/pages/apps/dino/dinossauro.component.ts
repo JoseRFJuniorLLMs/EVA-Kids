@@ -1,7 +1,9 @@
 import { Component, OnInit, HostListener, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 import { DinoService } from './dinoservice';
-import { Voice7RecognitionService } from './voice7-recognition.service'; // Importar o serviço
+import { UnifiedVoiceService } from 'src/app/core/services/voice/unified-voice.service';
 
 interface Word {
   value: string;
@@ -18,6 +20,7 @@ interface Word {
   imports: [CommonModule]
 })
 export class DinossauroComponent implements OnInit, OnDestroy {
+  private destroy$ = new Subject<void>();
   gameStarted = false;
   dinoHeight = 0;
   jumpHeight = 150;
@@ -39,11 +42,12 @@ export class DinossauroComponent implements OnInit, OnDestroy {
   showScore = false; // Variável para controlar a exibição do score temporário
   lastCapturedWord: string | null = null; // Armazenar a última palavra capturada
 
-  constructor(private dinoService: DinoService, private voiceService: Voice7RecognitionService) {} // Injete o serviço
+  constructor(private dinoService: DinoService, private voiceService: UnifiedVoiceService) {}
 
   ngOnInit(): void {
-    // Inscreva-se no comando de voz para pular
-    this.voiceService.command$.subscribe(command => {
+    this.voiceService.usePreset('game');
+
+    this.voiceService.command$.pipe(takeUntil(this.destroy$)).subscribe(command => {
       if (command === 'jump') {
         this.jump();
       }
@@ -157,7 +161,7 @@ export class DinossauroComponent implements OnInit, OnDestroy {
           this.coinSound.play();
         }
         
-        this.voiceService.speakSelectedText(word.value); // Falar a palavra capturada
+        this.voiceService.speak(word.value);
 
         // Mostrar o score temporariamente
         this.showScore = true;
@@ -223,10 +227,18 @@ export class DinossauroComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+
     if (this.gameLoop) {
       cancelAnimationFrame(this.gameLoop);
     }
-    this.voiceService.stopListening(); // Parar reconhecimento de voz quando o componente é destruído
+
+    this.voiceService.stopListening();
+
+    if (typeof speechSynthesis !== 'undefined') {
+      speechSynthesis.cancel();
+    }
   }
 
   getDinoStyle(): any {

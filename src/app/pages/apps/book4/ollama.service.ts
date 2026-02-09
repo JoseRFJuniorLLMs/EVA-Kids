@@ -22,13 +22,7 @@ export class OllamaService {
     this.http.post(this.apiUrl, payload, { observe: 'events', reportProgress: true, responseType: 'text' })
       .subscribe({
         next: (event: HttpEvent<any>) => {
-          if (event.type === HttpEventType.UploadProgress) {
-            // Upload progress
-            console.log('Upload progress:', event.loaded, '/', event.total);
-          } else if (event.type === HttpEventType.DownloadProgress) {
-            // Download progress
-            console.log('Download progress:', event.loaded, '/', event.total);
-          } else if (event.type === HttpEventType.Response) {
+          if (event.type === HttpEventType.Response) {
             // Full response
             const body = event.body as string;
             const lines = body.split('\n');

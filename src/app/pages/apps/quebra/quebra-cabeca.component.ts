@@ -3,9 +3,10 @@ import { CommonModule } from '@angular/common';
 import { DragDropModule, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
 import { Subject } from 'rxjs';
 import { UnifiedVoiceService } from 'src/app/core/services/voice/unified-voice.service';
-import { AngularFireDatabase } from '@angular/fire/compat/database';
+import { HttpClient } from '@angular/common/http';
 import { AuthService } from '../../pages/auth/login/auth.service';
 import { SoundService } from 'src/app/layouts/components/footer/sound.service';
+import { environment } from 'src/environments/environment';
 
 interface PuzzlePiece {
   position: string;
@@ -33,10 +34,12 @@ export class QuebraCabecaComponent implements OnInit, OnDestroy {
   gridSize = 4; // 4x4 grid
   completionCount = 0;
 
+  private apiUrl = `${environment.evaBack.apiUrl}/kids`;
+
   constructor(
     private voiceService: UnifiedVoiceService,
     private soundService: SoundService,
-    private db: AngularFireDatabase,
+    private http: HttpClient,
     private authService: AuthService
   ) {}
 
@@ -101,15 +104,11 @@ export class QuebraCabecaComponent implements OnInit, OnDestroy {
 
   async saveCompletionCount() {
     try {
-      const user = await this.authService.getCurrentUser();
-      if (user && user.uid) {
-        const userId = user.uid;
-        this.db.object(`users/${userId}/completionCount`).set(this.completionCount);
-      } else {
-        console.error('User not found or UID not available');
-      }
+      await this.http.put(`${this.apiUrl}/profile`, {
+        completion_count: this.completionCount
+      }).toPromise();
     } catch (error) {
-      console.error('Error getting user:', error);
+      console.error('Error saving completion count:', error);
     }
   }
   

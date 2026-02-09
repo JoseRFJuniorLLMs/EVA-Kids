@@ -54,7 +54,6 @@ export class GrammarAnalyzerComponent {
       const reader = new FileReader();
       reader.onload = (e: ProgressEvent<FileReader>) => {
         this.text = e.target?.result as string;
-        console.log('Text from file:', this.text);  // Adicionado para depuração
         this.isAnalyzed = false;
         this.analyzedText = [];
       };
@@ -66,17 +65,14 @@ export class GrammarAnalyzerComponent {
     if (!this.text) return;
     
     const doc = nlp(this.text);
-    console.log('NLP Document:', doc);  // Adicionado para depuração
 
     this.analyzedText = doc.terms().out('array').map((term: any) => {
       const word = term.text;
       const tags = term.tags as string[];
-      console.log('Tags for word:', word, tags);  // Adicionado para depuração
       const type = this.determineWordType(tags);
       return { word, type };
     });
 
-    console.log('Analyzed Text:', this.analyzedText);  // Adicionado para depuração
     this.isAnalyzed = true;
   }
 

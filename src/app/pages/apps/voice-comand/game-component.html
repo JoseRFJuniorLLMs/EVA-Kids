@@ -8,7 +8,7 @@
     <i class="fas fa-microphone" style="font-size: 35px;" matTooltip="AI"></i>
     <span class="material-symbols-outlined">graphic_eq</span>{{ speak }}
   </button>
-  Powell Janulus Sticky Game
+  {{ maskedMode ? 'Powell Janulus Hidden Game' : 'Powell Janulus Sticky Game' }}
   <mat-chip class="custom-badge">
     <i class="fa fa-btc" matTooltip="Satoshi" aria-hidden="true" style="font-size: 30px; color: rgb(248, 187, 2);">
     </i>
@@ -18,11 +18,8 @@
 
 <div *ngIf="message" class="error-message">{{ message }}</div>
 <div class="image-container">
-  <div>
-
-  </div>
-
-  <table>
+  <!-- Normal mode: 5 columns -->
+  <table *ngIf="!maskedMode">
     <thead>
       <tr>
         <th>Who</th>
@@ -48,4 +45,30 @@
     </tbody>
   </table>
 
+  <!-- Masked mode: 4 columns, "where" masked for non-active rows -->
+  <table *ngIf="maskedMode">
+    <thead>
+      <tr>
+        <th>Who</th>
+        <th>Why</th>
+        <th>Action</th>
+        <th matTooltip="Powell Janulus Hidden Game">Speak</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let combo of currentCombinations; let i = index" [ngClass]="{'active': i === currentPhraseIndex}">
+        <td>{{ combo.who }}</td>
+        <td>{{ combo.why }}</td>
+        <td>{{ combo.action }}</td>
+        <td>
+          <span *ngIf="i !== currentPhraseIndex">{{ combo.where[0] }}**{{ combo.where[combo.where.length - 1] }}</span>
+          <span *ngIf="i === currentPhraseIndex">{{ combo.where }}</span>
+          <button *ngIf="i === currentPhraseIndex" matTooltip="Powell Janulus Hidden Game"
+            (click)="speakText(combo.who + ' ' + combo.why + ' ' + combo.action + ' ' + combo.where)">
+            <i class="fas fa-microphone" style="font-size: 35px;" matTooltip="AI"></i>
+          </button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
 </div>

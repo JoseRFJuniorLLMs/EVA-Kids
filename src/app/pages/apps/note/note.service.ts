@@ -1,116 +1,95 @@
 import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
 import { MatSnackBar, MatSnackBarHorizontalPosition, MatSnackBarVerticalPosition } from '@angular/material/snack-bar';
-import { Firestore, collection, collectionData, doc, docData, addDoc, updateDoc, deleteDoc, query, where, Timestamp } from '@angular/fire/firestore';
 import { Observable, of } from 'rxjs';
+import { map, catchError } from 'rxjs/operators';
 import { NoteCollection } from './note-collection';
-import { AngularFireAuth } from '@angular/fire/compat/auth';
-import { switchMap } from 'rxjs/operators';
-import { SatoshiService } from './satoshi.service'; // Import SatoshiService
+import { environment } from 'src/environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class NoteService {
-
-  private noteCollectionRef = collection(this.firestore, 'NoteCollection');
+  private apiUrl = `${environment.evaBack.apiUrl}/kids`;
   noteCollection$!: Observable<NoteCollection[]>;
 
   durationInSeconds = 90;
   horizontalPosition: MatSnackBarHorizontalPosition = 'end';
   verticalPosition: MatSnackBarVerticalPosition = 'bottom';
 
-  private readonly SATOSHIS_PER_NOTE = 1; // Defina o valor de satoshis por nota aqui
+  private readonly SATOSHIS_PER_NOTE = 1;
 
   constructor(
-    private firestore: Firestore,
+    private http: HttpClient,
     private _snackBar: MatSnackBar,
-    private afAuth: AngularFireAuth,
-    private satoshiService: SatoshiService // Inject SatoshiService
   ) {
     this.noteCollection$ = this.getNotes();
   }
 
   getNotes(): Observable<NoteCollection[]> {
-    return this.afAuth.authState.pipe(
-      switchMap(user => {
-        if (user && user.uid) {
-          const userNotesQuery = query(this.noteCollectionRef, where('student._id', '==', user.uid));
-          return collectionData(userNotesQuery, { idField: '_id' }) as Observable<NoteCollection[]>;
-        } else {
-          return of<NoteCollection[]>([]);
-        }
-      })
+    return this.http.get<any[]>(`${this.apiUrl}/notes`).pipe(
+      map(notes => notes.map(n => this.mapToNote(n))),
+      catchError(() => of([]))
     );
   }
 
   getNoteById(id: string): Observable<NoteCollection> {
-    const noteDocRef = doc(this.firestore, `NoteCollection/${id}`);
-    return docData(noteDocRef, { idField: '_id' }) as Observable<NoteCollection>;
-  }
-
-  createNote(note: NoteCollection): Promise<void> {
-    return this.afAuth.authState.pipe(
-      switchMap(user => {
-        if (user && user.uid) {
-          note.student = { _id: user.uid }; // Associa a nota ao usuário autenticado
-          note.permanent = false; // Define o campo permanent como false
-          return addDoc(this.noteCollectionRef, { ...note }).then(async () => {
-            this.openSnackBar('Create Note OK !');
-            // Increment satoshi balance when a note is created
-            await this.satoshiService.incrementSatoshi(user.uid, this.SATOSHIS_PER_NOTE); // Use the constant here
-          });
-        } else {
-          return of(undefined);
-        }
-      })
-    ).toPromise();
-  }
-  
-  updateNote(id: string, note: Partial<NoteCollection>): Promise<void> {
-    return this.afAuth.authState.pipe(
-      switchMap(user => {
-        if (user && user.uid) {
-          const noteDocRef = doc(this.firestore, `NoteCollection/${id}`);
-          return updateDoc(noteDocRef, note).then(() => {
-            this.openSnackBar('Update Note OK !');
-          });
-        } else {
-          return of(undefined);
-        }
-      })
-    ).toPromise();
-  }
-
-  deleteNote(id: string): Promise<void> {
-    return this.afAuth.authState.pipe(
-      switchMap(user => {
-        if (user && user.uid) {
-          const noteDocRef = doc(this.firestore, `NoteCollection/${id}`);
-          return deleteDoc(noteDocRef).then(() => {
-            this.openSnackBar('Delete Note OK !');
-          });
-        } else {
-          return of(undefined);
-        }
-      })
-    ).toPromise();
-  }
-
-  private isTimestamp(value: any): value is Timestamp {
-    return (
-      value &&
-      typeof value.seconds === 'number' &&
-      typeof value.nanoseconds === 'number'
+    return this.http.get<any>(`${this.apiUrl}/notes/${id}`).pipe(
+      map(n => this.mapToNote(n))
     );
   }
 
+  async createNote(note: NoteCollection): Promise<void> {
+    try {
+      await this.http.post(`${this.apiUrl}/notes`, {
+        title: note.title,
+        description: note.description,
+        answer: note.answer,
+        tags: note.tags,
+        image: note.image,
+        permanent: note.permanent ?? false,
+        level: note.level,
+        last_revision_date: note.last_revision_date,
+        next_revision_date: note.next_revision_date,
+      }).toPromise();
+      this.openSnackBar('Create Note OK !');
+      // Satoshi increment is automatic on the backend
+    } catch (error) {
+      console.error('Error creating note:', error);
+    }
+  }
+
+  async updateNote(id: string, note: Partial<NoteCollection>): Promise<void> {
+    try {
+      await this.http.put(`${this.apiUrl}/notes/${id}`, {
+        title: note.title,
+        description: note.description,
+        answer: note.answer,
+        tags: note.tags,
+        image: note.image,
+        permanent: note.permanent,
+        level: note.level,
+        last_revision_date: note.last_revision_date,
+        next_revision_date: note.next_revision_date,
+      }).toPromise();
+      this.openSnackBar('Update Note OK !');
+    } catch (error) {
+      console.error('Error updating note:', error);
+    }
+  }
+
+  async deleteNote(id: string): Promise<void> {
+    try {
+      await this.http.delete(`${this.apiUrl}/notes/${id}`).toPromise();
+      this.openSnackBar('Delete Note OK !');
+    } catch (error) {
+      console.error('Error deleting note:', error);
+    }
+  }
+
   formatNoteDate(note: NoteCollection): NoteCollection {
-    if (note.created_at) {
-      if (this.isTimestamp(note.created_at)) {
-        note.created_at = new Date(note.created_at.seconds * 1000).toISOString();
-      } else if (typeof note.created_at === 'string') {
-        note.created_at = new Date(note.created_at).toISOString();
-      }
+    if (note.created_at && typeof note.created_at === 'string') {
+      note.created_at = new Date(note.created_at).toISOString();
     }
     return note;
   }
@@ -120,6 +99,22 @@ export class NoteService {
       duration: this.durationInSeconds * 1000,
       horizontalPosition: this.horizontalPosition,
       verticalPosition: this.verticalPosition
+    });
+  }
+
+  private mapToNote(data: any): NoteCollection {
+    return new NoteCollection({
+      _id: data.id?.toString(),
+      title: data.title,
+      description: data.description,
+      answer: data.answer,
+      tags: data.tags,
+      image: data.image,
+      permanent: data.permanent,
+      level: data.level,
+      last_revision_date: data.last_revision_date,
+      next_revision_date: data.next_revision_date,
+      created_at: data.created_at,
     });
   }
 }

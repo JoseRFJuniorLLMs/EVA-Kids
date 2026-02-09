@@ -1,11 +1,11 @@
 import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
 import words from '../../../../assets/json/word.json';
 import { NoteCollection } from '../note/note-collection';
 import { MatSnackBar, MatSnackBarHorizontalPosition, MatSnackBarVerticalPosition } from '@angular/material/snack-bar';
-import { Firestore, collection, collectionData, doc, docData, query, where } from '@angular/fire/firestore';
 import { Observable, of } from 'rxjs';
-import { AngularFireAuth } from '@angular/fire/compat/auth';
-import { switchMap } from 'rxjs/operators';
+import { map, catchError } from 'rxjs/operators';
+import { environment } from 'src/environments/environment';
 
 @Injectable({
   providedIn: 'root'
@@ -14,8 +14,8 @@ export class DataService {
 
   private primeToTarget: { [key: string]: string } = {};
   private colorMapping: { [key: string]: string } = {};
+  private apiUrl = `${environment.evaBack.apiUrl}/kids`;
 
-  private noteCollectionRef = collection(this.firestore, 'NoteCollection');
   noteCollection$!: Observable<NoteCollection[]>;
 
   durationInSeconds = 90;
@@ -23,36 +23,30 @@ export class DataService {
   verticalPosition: MatSnackBarVerticalPosition = 'bottom';
 
   constructor(
-    private firestore: Firestore,
+    private http: HttpClient,
     private _snackBar: MatSnackBar,
-    private afAuth: AngularFireAuth
   ) {
     this.loadPrimeToTargetMapping();
     this.noteCollection$ = this.getNotes();
   }
 
   getNotes(): Observable<NoteCollection[]> {
-    return this.afAuth.authState.pipe(
-      switchMap(user => {
-        if (user && user.uid) {
-          const userNotesQuery = query(this.noteCollectionRef, where('student._id', '==', user.uid));
-          return collectionData(userNotesQuery, { idField: '_id' }) as Observable<NoteCollection[]>;
-        } else {
-          return of<NoteCollection[]>([]);
-        }
-      })
+    return this.http.get<any[]>(`${this.apiUrl}/notes`).pipe(
+      map(notes => notes.map(n => this.mapToNote(n))),
+      catchError(() => of([]))
     );
   }
 
   getNoteById(id: string): Observable<NoteCollection> {
-    const noteDocRef = doc(this.firestore, `NoteCollection/${id}`);
-    return docData(noteDocRef, { idField: '_id' }) as Observable<NoteCollection>;
+    return this.http.get<any>(`${this.apiUrl}/notes/${id}`).pipe(
+      map(n => this.mapToNote(n))
+    );
   }
 
   private loadPrimeToTargetMapping() {
     words.forEach((wordObj: any) => {
-      const prime = wordObj['prime'].toLowerCase(); // Convertendo para minúsculas
-      const target = wordObj['target'].toLowerCase(); // Convertendo para minúsculas
+      const prime = wordObj['prime'].toLowerCase();
+      const target = wordObj['target'].toLowerCase();
       this.primeToTarget[prime] = target;
       const color = this.getRandomColor();
       this.colorMapping[prime] = color;
@@ -122,7 +116,7 @@ export class DataService {
           return {
             id: index + 1,
             shape: 'circularImage',
-            image: note?.image || 'https://priming-ai-7.web.app/assets/img/logo/priming.png', // Usa a imagem do note ou uma imagem padrão
+            image: note?.image || 'https://priming-ai-7.web.app/assets/img/logo/priming.png',
             label: sentence,
             color: { background: nodeColors.get(sentence) || 'lightgrey' }
           };
@@ -133,7 +127,7 @@ export class DataService {
   }
 
   tokenize(text: string): string[] {
-    return text.toLowerCase().split(/\W+/).filter(Boolean); // Convertendo para minúsculas
+    return text.toLowerCase().split(/\W+/).filter(Boolean);
   }
 
   getCommonWordsMap(nodes: any[]): Map<string, number[]> {
@@ -165,5 +159,20 @@ export class DataService {
       verticalPosition: this.verticalPosition
     });
   }
-}
 
+  private mapToNote(data: any): NoteCollection {
+    return new NoteCollection({
+      _id: data.id?.toString(),
+      title: data.title,
+      description: data.description,
+      answer: data.answer,
+      tags: data.tags,
+      image: data.image,
+      permanent: data.permanent,
+      level: data.level,
+      last_revision_date: data.last_revision_date,
+      next_revision_date: data.next_revision_date,
+      created_at: data.created_at,
+    });
+  }
+}

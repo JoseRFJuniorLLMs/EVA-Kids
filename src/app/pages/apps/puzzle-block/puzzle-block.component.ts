@@ -1,7 +1,6 @@
 import {
   Component,
   ElementRef,
-  Inject,
   Input,
   OnInit,
   ViewChild,
@@ -42,7 +41,6 @@ import { UnifiedAIService } from 'src/app/core/services/ai/unified-ai.service';
 //import * as WebSocket from 'websocket';
 import { CdkDrag, CdkDropList } from '@angular/cdk/drag-drop';
 import { Observable } from 'rxjs';
-import { Firestore, collection, collectionData } from '@angular/fire/firestore';
 import { ChatVideoComponent } from '../chat-video/chat-video.component';
 import { NoteComponent } from '../../apps/note/note.component';
 import { WordComponent } from '../word/word.component';
@@ -51,6 +49,7 @@ import { ShareBottomWimHofComponent } from '../../dashboards/components/share-bo
 import { ShareBottomGpt4Component } from '../../dashboards/components/share-bottom-gpt4/share-bottom-gpt4.component';
 import { ShareBottomZettelComponent } from '../../dashboards/components/share-bottom-zettel/share-bottom-zettel.component';
 import { SoundService } from 'src/app/layouts/components/footer/sound.service';
+import { StudentService } from '../student/student.service';
 const audioPath = '../../../../assets/audio/PRIMING.wav';
 
 interface StudentCollection {
@@ -148,17 +147,14 @@ export class PuzzleBlockComponent implements OnInit {
     private http: HttpClient,
     public dialog: MatDialog,
     private elementRef: ElementRef,
-    @Inject(Firestore) private firestore: Firestore,
     private cdRef: ChangeDetectorRef,
     private zone: NgZone,
     private _bottomSheet: MatBottomSheet,
     private soundService: SoundService,
-    private aiService: UnifiedAIService
+    private aiService: UnifiedAIService,
+    private studentService: StudentService
   ) {
-    const studentCollection = collection(this.firestore, 'StudentCollection');
-    this.studentCollection$ = collectionData(studentCollection) as Observable<
-      StudentCollection[]
-    >;
+    this.studentCollection$ = this.studentService.getStudents() as Observable<any[]>;
   }
 
   /* ==================ngOnInit==================== */
@@ -173,8 +169,7 @@ export class PuzzleBlockComponent implements OnInit {
       if (!this.recordPlugin) {
         console.error('RecordPlugin was NOT initialized correctly.');
       } else {
-        console.log('RecordPlugin is initialized and ready.');
-      }
+        }
     }, 1000);
   } //fim
 
@@ -294,9 +289,7 @@ export class PuzzleBlockComponent implements OnInit {
     recognition.lang = 'en-US'; // Idioma inglês (EUA)
     recognition.maxAlternatives = 3; // Máximo de 3 alternativas por reconhecimento
 
-    recognition.onstart = () => {
-      // console.log('Speech recognition started.');
-    };
+    recognition.onstart = () => {};
 
     recognition.onresult = (event: any) => {
       const lastResult = event.results[event.results.length - 1];
@@ -306,17 +299,12 @@ export class PuzzleBlockComponent implements OnInit {
       }
     };
 
-    recognition.onerror = (event: any) => {
-      // TODO : descomentar
-      //console.error('Speech recognition error:', event.error);
-    };
+    recognition.onerror = (event: any) => {};
 
     recognition.onend = () => {
-      //console.log('Speech recognition ended, restarting...');
       recognition.start();
     };
 
-    //console.log('Starting speech recognition...');
     recognition.start();
   }
 
@@ -324,36 +312,28 @@ export class PuzzleBlockComponent implements OnInit {
     this.zone.run(() => {
       switch (command) {
         case 'gpt':
-          console.log('expand gpt', command);
           this.isPanelExpanded = true;
           this.startRecording();
           break;
         case 'books':
-          console.log('books', command);
           this._bottomSheet.open(ShareBottomGpt4Component);
           break;
         case 'meditation':
-          console.log('meditation', command);
           this._bottomSheet.open(ShareBottomWimHofComponent);
           break;
         case 'notes':
-          console.log('notes', command);
           this._bottomSheet.open(ShareBottomZettelComponent);
           break;
         case 'call':
-          console.log('call', command);
           this._bottomSheet.open(ChatVideoComponent);
           break;
         case 'play music':
-          console.log('play music', command);
           this.soundService.playBiNeural();
           break;
         case 'stop music':
-          console.log('stop music', command);
           this.soundService.stopBiNeural();
           break;
         case 'hello':
-          console.log('hello', command);
           this.isPanelExpanded = true;
           this.startRecording();
           break;
@@ -364,34 +344,28 @@ export class PuzzleBlockComponent implements OnInit {
           this.isPanelExpanded = false;
           break;
         case 'start recording':
-          console.log('start recording', command);
           this.startRecording();
           break;
         case 'stop recording':
-          console.log('stop recording', command);
           this.stopRecording();
           break;
         case 'open dialog':
-          console.log('open dialog', command);
           //this.dialog.open(SomeDialogComponent);
           break;
         case 'close dialog':
-          console.log('close dialog', command);
           this.dialog.closeAll();
           break;
         case 'toggle button':
-          console.log('toggle button', command);
           this.someButtonAction();
           break;
         default:
-          console.log('Unknown command:', command);
+          break;
       }
     });
   }
 
   someButtonAction(): void {
     // Implement the action you want to trigger with the voice command
-    console.log('Button action triggered by voice command.');
   } //fim
 
   /* ==================Create Wave Surfer Play==================== */
@@ -431,19 +405,15 @@ export class PuzzleBlockComponent implements OnInit {
 
       // Add event listeners for playback events (optional)
       this.wavesurfer.on('ready', () => {
-        console.log('WaveSurfer playback ready!');
       });
 
       this.wavesurfer.on('play', () => {
-        console.log('Playback started!');
       });
 
       this.wavesurfer.on('pause', () => {
-        console.log('Playback paused.');
       });
 
       this.wavesurfer.on('finish', () => {
-        console.log('Playback finished.');
       });
     } else {
       console.error('Recorded URL not yet available');
@@ -570,8 +540,6 @@ export class PuzzleBlockComponent implements OnInit {
 
   /* ==================Transcribe Audio with Gemini==================== */
   transcribeAudio(audioPath: string) {
-    console.log('Caminho do arquivo de áudio:', audioPath);
-
     // For file-based transcription, we need to convert to blob first
     // If audioPath is a URL, fetch it first
     if (audioPath.startsWith('blob:') || audioPath.startsWith('data:')) {
@@ -583,16 +551,15 @@ export class PuzzleBlockComponent implements OnInit {
               this.transcribedText = response.text;
             },
             error: (error) => {
-              console.log('Error transcribing audio:', error);
+              console.error('Error transcribing audio:', error);
             }
           });
         })
         .catch(error => {
-          console.log('Error fetching audio:', error);
+          console.error('Error fetching audio:', error);
         });
     } else {
-      // For direct blob/file input
-      console.log('Audio transcription requires blob input');
+      // For direct blob/file input - audio transcription requires blob input
     }
   } //fim
 
@@ -603,7 +570,7 @@ export class PuzzleBlockComponent implements OnInit {
         this.transcribedText = response.text;
       },
       error: (error) => {
-        console.log('Error transcribing audio:', error);
+        console.error('Error transcribing audio:', error);
       }
     });
   } //fim

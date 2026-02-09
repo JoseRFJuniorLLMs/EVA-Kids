@@ -119,7 +119,7 @@ export class UnifiedVoiceService implements OnDestroy {
     if (presetConfig) {
       this.configure(presetConfig);
     } else {
-      console.warn(`Unknown preset: ${preset}`);
+      // Unknown preset - ignoring
     }
   }
 
@@ -164,7 +164,6 @@ export class UnifiedVoiceService implements OnDestroy {
 
     recognition.onstart = () => {
       this.zone.run(() => {
-        console.log('Speech recognition started.');
         this.isListeningInternal = true;
         this.stateSubject.next('listening');
       });
@@ -222,7 +221,7 @@ export class UnifiedVoiceService implements OnDestroy {
         this.recognition.start();
       } catch (e) {
         // May throw if already started
-        console.warn('Recognition may already be started:', e);
+        // Recognition may already be started
       }
     }
   }
@@ -249,7 +248,6 @@ export class UnifiedVoiceService implements OnDestroy {
    */
   setupWaveSurfer(container: ElementRef<HTMLDivElement>): void {
     if (!this.config.wavesurfer?.enabled) {
-      console.log('WaveSurfer is disabled in configuration');
       return;
     }
 
@@ -325,7 +323,7 @@ export class UnifiedVoiceService implements OnDestroy {
         this.handleError('RECORDING_START_ERROR', e);
       }
     } else {
-      console.warn('Recording is already in progress.');
+      // Recording is already in progress
     }
   }
 
@@ -341,7 +339,7 @@ export class UnifiedVoiceService implements OnDestroy {
         this.handleError('RECORDING_STOP_ERROR', e);
       }
     } else {
-      console.warn('No recording in progress to stop.');
+      // No recording in progress to stop
     }
   }
 
@@ -350,7 +348,7 @@ export class UnifiedVoiceService implements OnDestroy {
    */
   pauseRecording(): void {
     if (!this.recordPlugin || !this.isRecordingInternal) {
-      console.warn('No recording in progress to pause/resume.');
+      // No recording in progress to pause/resume
       return;
     }
 

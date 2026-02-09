@@ -181,11 +181,6 @@ export const appRoutes: VexRoutes = [
             }
           },
           {
-            path: 'book3',
-            redirectTo: 'books',
-            pathMatch: 'full'
-          },
-          {
             path: 'grammar-analyzer',
             loadComponent: () =>
               import('./pages/apps/book4/grammar-analyzer.component').then(
@@ -208,11 +203,12 @@ export const appRoutes: VexRoutes = [
           {
             path: 'voicegame3',
             loadComponent: () =>
-              import('./pages/apps/voice-comand3/game3.component').then(
-                (m) => m.Game3Component
+              import('./pages/apps/voice-comand/game.component').then(
+                (m) => m.GameComponent
               ),
             data: {
-              toolbarShadowEnabled: false
+              toolbarShadowEnabled: false,
+              maskedMode: true
             }
           },
           {
@@ -224,16 +220,6 @@ export const appRoutes: VexRoutes = [
             data: {
               toolbarShadowEnabled: false
             }
-          },
-          {
-            path: 'book',
-            redirectTo: 'books',
-            pathMatch: 'full'
-          },
-          {
-            path: 'book2',
-            redirectTo: 'books',
-            pathMatch: 'full'
           },
           {
             path: 'clase',

@@ -184,17 +184,14 @@ export class DialogIAComponent implements OnInit {
     // Configura eventos básicos.
     this.waveSurferPlayback.on('play', () => {
       this.isPlaying = true;
-      console.log('Playback started');
     });
 
     this.waveSurferPlayback.on('pause', () => {
       this.isPlaying = false;
-      console.log('Playback paused');
     });
 
     this.waveSurferPlayback.on('finish', () => {
       this.isPlaying = false;
-      console.log('Playback finished');
     });
   } //fim
 
@@ -422,16 +419,13 @@ export class DialogIAComponent implements OnInit {
 
   /* ==================Transcribe Audio==================== */
   transcribeAudio(audioBlob: Blob) {
-    console.log('Tamanho do Blob:', audioBlob.size);
-    console.log('Tipo do Blob:', audioBlob.type);
-
     // Use UnifiedAIService for transcription with Gemini
     this.aiService.transcribe({ audioBlob }).subscribe({
       next: (response) => {
         this.transcribedText = response.text;
       },
       error: (error) => {
-        console.log('Error transcribing audio:', error);
+        console.error('Error transcribing audio:', error);
       }
     });
   } //fim

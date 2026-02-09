@@ -1,7 +1,7 @@
 import { ApplicationConfig, importProvidersFrom } from '@angular/core';
 import { provideRouter, withInMemoryScrolling } from '@angular/router';
 import { provideAnimations } from '@angular/platform-browser/animations';
-import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { provideVex } from '@vex/vex.provider';
 import { provideIcons } from './core/icons/icons.provider';
 import { provideLuxon } from './core/luxon/luxon.provider';
@@ -9,26 +9,11 @@ import { provideNavigation } from './core/navigation/navigation.provider';
 import { provideQuillConfig } from 'ngx-quill';
 import { appRoutes } from './app.routes';
 import { vexConfigs } from '@vex/config/vex-configs';
-import { provideFirebaseApp, getApp, initializeApp } from '@angular/fire/app';
-import { getFirestore, provideFirestore } from '@angular/fire/firestore';
-import { provideAuth, getAuth } from '@angular/fire/auth';
-import { getStorage, provideStorage } from '@angular/fire/storage';
 import { BrowserModule } from '@angular/platform-browser';
 import { MatDialogModule } from '@angular/material/dialog';
 import { MatBottomSheetModule } from '@angular/material/bottom-sheet';
 import { MatNativeDateModule } from '@angular/material/core';
-import { AngularFireModule } from '@angular/fire/compat';
-import { AngularFireAuthModule } from '@angular/fire/compat/auth';
-
-const firebaseConfig = {
-  apiKey: "AIzaSyBotT5BDpUyOr33PLb3s9fcC6CBslp60Bc",
-  authDomain: "priming-ai-7.firebaseapp.com",
-  projectId: "priming-ai-7",
-  storageBucket: "priming-ai-7.appspot.com",
-  messagingSenderId: "391085826218",
-  appId: "1:391085826218:web:a774c5f446f84f6be5b0d3",
-  measurementId: "G-2LFVPEWERW"
-};
+import { authInterceptor } from './core/interceptors/auth.interceptor';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -37,12 +22,6 @@ export const appConfig: ApplicationConfig = {
       MatDialogModule,
       MatBottomSheetModule,
       MatNativeDateModule,
-      AngularFireModule.initializeApp(firebaseConfig),
-      AngularFireAuthModule,
-      provideFirebaseApp(() => initializeApp(firebaseConfig)),
-      provideFirestore(() => getFirestore()),
-      provideStorage(() => getStorage()),
-      provideAuth(() => getAuth())
     ),
     provideRouter(
       appRoutes,
@@ -52,7 +31,7 @@ export const appConfig: ApplicationConfig = {
       })
     ),
     provideAnimations(),
-    provideHttpClient(withInterceptorsFromDi()),
+    provideHttpClient(withInterceptors([authInterceptor])),
     provideVex({
       config: vexConfigs.poseidon,
       availableThemes: [

@@ -1,8 +1,9 @@
 /**
  * Voice Assistant Component - Componente Visual do Assistente de Voz
  *
- * Um botão flutuante e amigável que permite que crianças
+ * Um botao flutuante e amigavel que permite que criancas
  * interajam com o assistente EVA em qualquer tela do sistema.
+ * Conecta ao EVA-Mind via WebSocket para conversacao real.
  */
 
 import {
@@ -16,6 +17,7 @@ import {
   ChangeDetectorRef
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatIconModule } from '@angular/material/icon';
@@ -29,21 +31,22 @@ import {
 @Component({
   selector: 'app-voice-assistant',
   standalone: true,
-  imports: [CommonModule, MatButtonModule, MatTooltipModule, MatIconModule],
+  imports: [CommonModule, FormsModule, MatButtonModule, MatTooltipModule, MatIconModule],
   template: `
     <div class="voice-assistant-container" [class.expanded]="isExpanded" [class.minimized]="!isExpanded">
 
-      <!-- Botão Principal Flutuante -->
+      <!-- Botao Principal Flutuante -->
       <button
         class="assistant-fab"
         [class.listening]="state === 'listening'"
         [class.speaking]="state === 'speaking'"
         [class.thinking]="state === 'thinking'"
         [class.error]="state === 'error'"
+        [class.connecting]="state === 'connecting'"
         (click)="toggleExpanded()"
         [matTooltip]="status">
 
-        <!-- Círculos de Animação -->
+        <!-- Circulos de Animacao -->
         <div class="pulse-ring pulse-1" *ngIf="state === 'listening' || state === 'speaking'"></div>
         <div class="pulse-ring pulse-2" *ngIf="state === 'listening' || state === 'speaking'"></div>
         <div class="pulse-ring pulse-3" *ngIf="state === 'listening'"></div>
@@ -57,7 +60,7 @@ import {
       <!-- Painel Expandido -->
       <div class="assistant-panel" *ngIf="isExpanded">
 
-        <!-- Cabeçalho -->
+        <!-- Cabecalho -->
         <div class="panel-header">
           <span class="header-emoji">🦄</span>
           <span class="header-title">EVA</span>
@@ -65,11 +68,23 @@ import {
           <button class="close-btn" (click)="toggleExpanded()">✕</button>
         </div>
 
-        <!-- Visualização de Áudio -->
+        <!-- Visualizacao de Audio -->
         <div class="audio-visualizer">
           <canvas #visualizerCanvas></canvas>
           <div class="visualizer-overlay">
             <span class="state-emoji">{{ getStateEmoji() }}</span>
+          </div>
+        </div>
+
+        <!-- Transcricoes -->
+        <div class="transcript-area" *ngIf="userTranscript || aiResponse">
+          <div class="transcript-user" *ngIf="userTranscript">
+            <span class="transcript-label">Voce:</span>
+            <span class="transcript-text">{{ userTranscript }}</span>
+          </div>
+          <div class="transcript-ai" *ngIf="aiResponse">
+            <span class="transcript-label">EVA:</span>
+            <span class="transcript-text">{{ aiResponse }}</span>
           </div>
         </div>
 
@@ -78,23 +93,38 @@ import {
           <p class="status-text">{{ status }}</p>
         </div>
 
+        <!-- CPF Input (quando nao ha CPF configurado) -->
+        <div class="cpf-area" *ngIf="!hasCpf && state === 'idle'">
+          <label class="cpf-label">Digite o CPF para conectar:</label>
+          <div class="cpf-input-row">
+            <input
+              class="cpf-input"
+              type="text"
+              [(ngModel)]="cpfValue"
+              placeholder="00000000000"
+              maxlength="11"
+              (keyup.enter)="saveCpf()">
+            <button class="cpf-btn" (click)="saveCpf()" [disabled]="cpfValue.length !== 11">OK</button>
+          </div>
+        </div>
+
         <!-- Controles -->
         <div class="controls-area">
-          <!-- Botão Principal de Voz -->
+          <!-- Botao Principal de Voz -->
           <button
             class="voice-btn"
             [class.active]="state === 'listening'"
             (click)="toggleListening()"
-            [disabled]="state === 'speaking'">
+            [disabled]="state === 'speaking' || state === 'connecting' || (!hasCpf && state === 'idle')">
             <span class="btn-emoji">{{ state === 'listening' ? '🛑' : '🎤' }}</span>
-            <span class="btn-text">{{ state === 'listening' ? 'Parar' : 'Falar' }}</span>
+            <span class="btn-text">{{ getButtonText() }}</span>
           </button>
 
-          <!-- Botão Reset -->
+          <!-- Botao Reset -->
           <button
             class="reset-btn"
             (click)="resetSession()"
-            [disabled]="state === 'listening' || state === 'speaking'">
+            [disabled]="state === 'connecting'">
             <span class="btn-emoji">🔄</span>
           </button>
         </div>
@@ -119,7 +149,7 @@ import {
       font-family: 'Nunito', sans-serif;
     }
 
-    /* ============ BOTÃO FLUTUANTE ============ */
+    /* ============ BOTAO FLUTUANTE ============ */
 
     .assistant-fab {
       width: 70px;
@@ -157,6 +187,12 @@ import {
       box-shadow: 0 6px 25px rgba(255, 224, 102, 0.5);
     }
 
+    .assistant-fab.connecting {
+      background: linear-gradient(135deg, #FFE066, #FFA94D);
+      box-shadow: 0 6px 25px rgba(255, 224, 102, 0.5);
+      animation: connectPulse 1.5s ease infinite;
+    }
+
     .assistant-fab.error {
       background: linear-gradient(135deg, #FF6B6B, #FA5252);
       box-shadow: 0 6px 25px rgba(255, 107, 107, 0.5);
@@ -171,7 +207,7 @@ import {
       animation: bounce 0.5s ease infinite;
     }
 
-    /* Anéis de pulso */
+    /* Aneis de pulso */
     .pulse-ring {
       position: absolute;
       width: 100%;
@@ -211,6 +247,11 @@ import {
     @keyframes bounce {
       0%, 100% { transform: translateY(0); }
       50% { transform: translateY(-8px); }
+    }
+
+    @keyframes connectPulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.7; }
     }
 
     /* ============ PAINEL EXPANDIDO ============ */
@@ -313,6 +354,38 @@ import {
       filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
     }
 
+    /* Transcript Area */
+    .transcript-area {
+      padding: 10px 15px;
+      background: #f0f4ff;
+      border-bottom: 1px solid #e0e4ea;
+      max-height: 100px;
+      overflow-y: auto;
+    }
+
+    .transcript-user, .transcript-ai {
+      margin-bottom: 6px;
+      font-size: 0.85rem;
+      line-height: 1.3;
+    }
+
+    .transcript-user {
+      color: #495057;
+    }
+
+    .transcript-ai {
+      color: #7048e8;
+    }
+
+    .transcript-label {
+      font-weight: 700;
+      margin-right: 6px;
+    }
+
+    .transcript-text {
+      font-weight: 400;
+    }
+
     /* Status Area */
     .status-area {
       padding: 15px 20px;
@@ -326,6 +399,64 @@ import {
       font-weight: 600;
       color: #333;
       font-size: 0.95rem;
+    }
+
+    /* CPF Area */
+    .cpf-area {
+      padding: 12px 20px;
+      background: #fff3bf;
+      text-align: center;
+    }
+
+    .cpf-label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: #333;
+      margin-bottom: 8px;
+    }
+
+    .cpf-input-row {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+    }
+
+    .cpf-input {
+      width: 140px;
+      padding: 8px 12px;
+      border: 2px solid #ffd43b;
+      border-radius: 12px;
+      font-size: 1rem;
+      font-family: 'Nunito', sans-serif;
+      text-align: center;
+      letter-spacing: 1px;
+      outline: none;
+    }
+
+    .cpf-input:focus {
+      border-color: #DA77F2;
+    }
+
+    .cpf-btn {
+      padding: 8px 16px;
+      background: linear-gradient(135deg, #69DB7C, #51CF66);
+      border: none;
+      border-radius: 12px;
+      color: white;
+      font-weight: 700;
+      font-family: 'Fredoka One', cursive;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .cpf-btn:hover:not(:disabled) {
+      transform: scale(1.05);
+    }
+
+    .cpf-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
     }
 
     /* Controls */
@@ -435,22 +566,27 @@ export class VoiceAssistantComponent implements OnInit, OnDestroy, AfterViewInit
   @ViewChild('visualizerCanvas') canvasRef!: ElementRef<HTMLCanvasElement>;
 
   @Input() autoInit = false;
+  @Input() defaultCpf = '';
 
   state: AssistantState = 'idle';
-  status = 'Olá! Sou o EVA! 🦄';
+  status = 'Ola! Sou o EVA! 🦄';
   isExpanded = false;
+  hasCpf = false;
+  cpfValue = '';
+  userTranscript = '';
+  aiResponse = '';
 
   private subscriptions = new Subscription();
   private animationId: number | null = null;
   private inputLevel = 0;
   private outputLevel = 0;
 
-  // Dicas para crianças
+  // Dicas para criancas
   private tips = [
-    'Clique no microfone e diga "Olá EVA!"',
-    'Pergunte como falar uma palavra em inglês!',
-    'Peça para eu contar uma história!',
-    'Vamos praticar a pronúncia juntos!',
+    'Clique no microfone e diga "Ola EVA!"',
+    'Pergunte como falar uma palavra em ingles!',
+    'Peca para eu contar uma historia!',
+    'Vamos praticar a pronuncia juntos!',
     'Diga "EVA, me ajuda!" quando precisar!'
   ];
   private currentTipIndex = 0;
@@ -462,7 +598,13 @@ export class VoiceAssistantComponent implements OnInit, OnDestroy, AfterViewInit
   ) {}
 
   ngOnInit(): void {
-    // Subscrever ao estado
+    // Apply default CPF if provided
+    if (this.defaultCpf) {
+      this.cpfValue = this.defaultCpf;
+      this.saveCpf();
+    }
+
+    // Subscribe to state
     this.subscriptions.add(
       this.voiceAssistant.state$.subscribe(state => {
         this.state = state;
@@ -470,7 +612,7 @@ export class VoiceAssistantComponent implements OnInit, OnDestroy, AfterViewInit
       })
     );
 
-    // Subscrever ao status
+    // Subscribe to status
     this.subscriptions.add(
       this.voiceAssistant.status$.subscribe(status => {
         this.status = status;
@@ -478,7 +620,7 @@ export class VoiceAssistantComponent implements OnInit, OnDestroy, AfterViewInit
       })
     );
 
-    // Subscrever aos eventos de áudio
+    // Subscribe to audio events
     this.subscriptions.add(
       this.voiceAssistant.audioEvent$.subscribe(event => {
         if (event.type === 'input') {
@@ -489,13 +631,28 @@ export class VoiceAssistantComponent implements OnInit, OnDestroy, AfterViewInit
       })
     );
 
-    // Rotacionar dicas
+    // Subscribe to transcripts
+    this.subscriptions.add(
+      this.voiceAssistant.transcript$.subscribe(text => {
+        this.userTranscript = text;
+        this.cdRef.detectChanges();
+      })
+    );
+
+    this.subscriptions.add(
+      this.voiceAssistant.aiResponse$.subscribe(text => {
+        this.aiResponse = text;
+        this.cdRef.detectChanges();
+      })
+    );
+
+    // Rotate tips
     this.tipInterval = setInterval(() => {
       this.currentTipIndex = (this.currentTipIndex + 1) % this.tips.length;
       this.cdRef.detectChanges();
     }, 5000);
 
-    // Auto init se configurado
+    // Auto init if configured
     if (this.autoInit) {
       this.voiceAssistant.initSession();
     }
@@ -521,7 +678,6 @@ export class VoiceAssistantComponent implements OnInit, OnDestroy, AfterViewInit
     this.isExpanded = !this.isExpanded;
 
     if (this.isExpanded) {
-      // Iniciar visualização quando expandir
       setTimeout(() => this.startVisualization(), 100);
     }
   }
@@ -532,6 +688,15 @@ export class VoiceAssistantComponent implements OnInit, OnDestroy, AfterViewInit
 
   resetSession(): void {
     this.voiceAssistant.resetSession();
+    this.userTranscript = '';
+    this.aiResponse = '';
+  }
+
+  saveCpf(): void {
+    if (this.cpfValue.length === 11) {
+      this.hasCpf = true;
+      this.voiceAssistant.setCpf(this.cpfValue);
+    }
   }
 
   getStateEmoji(): string {
@@ -544,6 +709,14 @@ export class VoiceAssistantComponent implements OnInit, OnDestroy, AfterViewInit
       'connecting': '🔗'
     };
     return emojis[this.state];
+  }
+
+  getButtonText(): string {
+    switch (this.state) {
+      case 'listening': return 'Parar';
+      case 'connecting': return 'Conectando...';
+      default: return 'Falar';
+    }
   }
 
   getCurrentTip(): string {
@@ -563,15 +736,14 @@ export class VoiceAssistantComponent implements OnInit, OnDestroy, AfterViewInit
     const visualize = () => {
       this.animationId = requestAnimationFrame(visualize);
 
-      // Limpar canvas
+      // Clear canvas
       ctx.fillStyle = 'rgba(26, 26, 46, 0.1)';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      // Desenhar círculos concêntricos que reagem ao áudio
       const centerX = canvas.width / 2;
       const centerY = canvas.height / 2;
 
-      // Círculos de entrada (verde)
+      // Input circles (green)
       for (let i = 0; i < 3; i++) {
         const radius = 20 + (i * 15) + (this.inputLevel * 100);
         ctx.beginPath();
@@ -581,7 +753,7 @@ export class VoiceAssistantComponent implements OnInit, OnDestroy, AfterViewInit
         ctx.stroke();
       }
 
-      // Círculos de saída (azul)
+      // Output circles (blue)
       for (let i = 0; i < 3; i++) {
         const radius = 25 + (i * 12) + (this.outputLevel * 80);
         ctx.beginPath();
@@ -591,7 +763,7 @@ export class VoiceAssistantComponent implements OnInit, OnDestroy, AfterViewInit
         ctx.stroke();
       }
 
-      // Decair os níveis gradualmente
+      // Decay levels
       this.inputLevel *= 0.95;
       this.outputLevel *= 0.95;
     };

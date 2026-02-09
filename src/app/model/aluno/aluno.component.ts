@@ -76,30 +76,24 @@ export class AlunoComponent implements OnInit, OnDestroy {
     //   this.error = "ID do Aluno não fornecido.";
     // }
 
-    console.log('AlunoComponent inicializado.');
     // Chame aqui o método para carregar os dados iniciais
   }
 
   ngOnDestroy(): void {
     // Cancela todas as subscriptions para evitar memory leaks
     this.subscriptions.unsubscribe();
-    console.log('AlunoComponent destruído e subscriptions canceladas.');
   }
 
   // --- Métodos para Carregar Dados ---
 
   loadAlunoLogado(): void {
-    console.log('Tentando carregar dados do aluno logado...');
     this.isLoading = true;
     this.error = null;
     this.aluno$ = this.alunoService.getAlunoDataLogado().pipe(
       tap(data => {
         this.isLoading = false;
         if (!data) {
-          console.warn('Nenhum dado de aluno encontrado para o usuário logado.');
-          this.error = 'Aluno não encontrado.';
-        } else {
-           console.log('Dados do aluno logado carregados:', data);
+            this.error = 'Aluno não encontrado.';
         }
       }),
       catchError(err => {
@@ -116,17 +110,13 @@ export class AlunoComponent implements OnInit, OnDestroy {
         this.error = 'ID inválido para busca.';
         return;
      }
-     console.log(`Tentando carregar dados do aluno com ID: ${id}`);
      this.isLoading = true;
      this.error = null;
      this.aluno$ = this.alunoService.getAlunoById(id).pipe(
        tap(data => {
          this.isLoading = false;
          if (!data) {
-           console.warn(`Nenhum dado de aluno encontrado para o ID: ${id}`);
            this.error = 'Aluno não encontrado.';
-         } else {
-           console.log(`Dados do aluno ${id} carregados:`, data);
          }
        }),
        catchError(err => {
@@ -147,7 +137,6 @@ export class AlunoComponent implements OnInit, OnDestroy {
         this.showSnackbar('Erro: Aluno sem ID.');
         return;
      }
-     console.log('Abrindo diálogo de edição para:', aluno);
      // LÓGICA PARA ABRIR DIÁLOGO DE EDIÇÃO:
      // const dialogRef = this.dialog.open(EditAlunoDialogComponent, {
      //   width: '80vw', // Ou o tamanho desejado
@@ -166,7 +155,6 @@ export class AlunoComponent implements OnInit, OnDestroy {
 
   // Exemplo: Método para atualizar o aluno (chamado após fechar diálogo, por exemplo)
   updateAluno(id: string, data: Partial<Aluno>): void {
-     console.log(`Tentando atualizar aluno ${id}...`);
      this.isLoading = true; // Pode querer um loading específico para update
      // LÓGICA PARA CHAMAR O SERVIÇO DE UPDATE:
      // this.alunoService.updateAlunoData(id, data)
@@ -193,7 +181,6 @@ export class AlunoComponent implements OnInit, OnDestroy {
         this.showSnackbar('Erro: Aluno sem ID.');
         return;
      }
-     console.log('Abrindo diálogo de confirmação para deletar:', aluno);
      // LÓGICA PARA ABRIR DIÁLOGO DE CONFIRMAÇÃO:
      // const dialogRef = this.dialog.open(DeleteAlunoDialogComponent, {
      //   width: '350px',
@@ -212,7 +199,6 @@ export class AlunoComponent implements OnInit, OnDestroy {
 
   // Exemplo: Método para confirmar a deleção (chamado após fechar diálogo)
   confirmDelete(id: string): void {
-     console.log(`Tentando deletar aluno ${id}...`);
      this.isLoading = true; // Pode querer um loading específico para delete
      // LÓGICA PARA CHAMAR O SERVIÇO DE DELETE:
      // this.alunoService.deleteAlunoData(id)

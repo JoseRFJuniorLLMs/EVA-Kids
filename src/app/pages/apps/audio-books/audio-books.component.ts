@@ -25,7 +25,6 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 
 import ePub from 'epubjs';
 import WaveSurfer from 'wavesurfer.js';
-import gpt4 from '../../../../../gpt4.json';
 
 // Interface para descrever a estrutura da resposta da API
 interface ResponseData {

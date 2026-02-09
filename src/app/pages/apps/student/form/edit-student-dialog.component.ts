@@ -12,7 +12,6 @@ import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatCardModule } from '@angular/material/card';
 import { MatListModule } from '@angular/material/list';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
-import { Firestore } from '@angular/fire/firestore';
 import { Observable } from 'rxjs';
 import { MatButtonModule } from '@angular/material/button';
 

@@ -12,7 +12,6 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { CdkDrag } from '@angular/cdk/drag-drop';
 import { ChatVideoService } from './chat-video.service';
-import { Firestore } from '@angular/fire/firestore';
 import { OnlineUserDialogComponent } from './online-user-dialog.component';
 import { MatDialog, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { ChangeDetectorRef } from '@angular/core';
@@ -49,7 +48,6 @@ export class ChatVideoComponent implements OnInit, OnDestroy {
 
   constructor(
     public chatVideoService: ChatVideoService,
-    public firestore: Firestore,
     private dialog: MatDialog,
     private cdr: ChangeDetectorRef,
     private notificationService: NotificationService,
@@ -62,10 +60,11 @@ export class ChatVideoComponent implements OnInit, OnDestroy {
 
   async ngOnInit() {
     try {
-      const loggedUser = await this.authService.getCurrentUser();
+      const loggedUser = this.authService.getCurrentUser();
+      const uid = this.authService.getUID();
       if (loggedUser) {
         this.loggedUserName = loggedUser.email ?? 'Email';
-        this.loggedUserId = loggedUser.uid ?? 'ID não disponível';
+        this.loggedUserId = uid?.toString() ?? 'ID não disponível';
         this.chatVideoService.setCurrentUserId(this.loggedUserId);
       }
 
@@ -91,7 +90,6 @@ export class ChatVideoComponent implements OnInit, OnDestroy {
       const isOnline = await this.chatVideoService.checkUserOnlineStatus(
         this.targetUserId
       );
-      console.log(`User online status: ${isOnline}`);
       if (isOnline && !this.otherUserOnline) {
         this.openOnlineUserDialog();
       }
@@ -101,7 +99,6 @@ export class ChatVideoComponent implements OnInit, OnDestroy {
   }
 
   openOnlineUserDialog() {
-    console.log('Opening online user dialog');
     this.dialog.open(OnlineUserDialogComponent, {
       width: '250px'
     });

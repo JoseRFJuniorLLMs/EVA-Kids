@@ -30,21 +30,17 @@ export class AudioRecorderComponent implements OnInit {
       });
 
       this.wavesurfer.on('ready', () => {
-        console.log('WaveSurfer is ready.');
       });
 
       this.wavesurfer.on('record:start' as any, () => {
-        console.log('Recording started');
         this.isRecording = true;
       });
 
       this.wavesurfer.on('record:stop' as any, () => {
-        console.log('Recording stopped');
         this.isRecording = false;
       });
 
       this.wavesurfer.on('record:pause' as any, () => {
-        console.log('Recording paused');
       });
     }
 

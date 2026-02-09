@@ -10,25 +10,26 @@ export const environment = {
 
   // AI Configuration - GEMINI as default
   ai: {
-    provider: 'gemini' as const, // 'gemini' | 'browser'
+    provider: 'gemini' as const,
     gemini: {
-      apiKey: 'AIzaSyCw01_uZBPDHQYMYbA5UgmBDz2I8v_XLag', // Move to env variable in production
+      apiKey: 'AIzaSyCw01_uZBPDHQYMYbA5UgmBDz2I8v_XLag',
       models: {
         text: 'gemini-1.5-flash',
         vision: 'gemini-1.5-flash',
-        // For TTS/STT, Gemini uses different approach - we'll use browser APIs as fallback
       }
     }
   },
 
-  // Firebase Configuration
-  firebase: {
-    apiKey: 'AIzaSyBotT5BDpUyOr33PLb3s9fcC6CBslp60Bc',
-    authDomain: 'priming-ai-7.firebaseapp.com',
-    projectId: 'priming-ai-7',
-    storageBucket: 'priming-ai-7.appspot.com',
-    messagingSenderId: '12347834912',
-    appId: '1:12347834912:web:6bad4f89e9a78e1ab1238a'
+  // EVA-Back API (replaces Firebase)
+  evaBack: {
+    apiUrl: 'https://eva-ia.org:8000/api/v1',
+    wsSignaling: 'wss://eva-ia.org:8000/api/v1/kids/ws/signaling'
+  },
+
+  // EVA-Mind WebSocket
+  evaMind: {
+    wsUrl: 'wss://eva-ia.org:8090/ws/pcm',
+    sampleRate: 24000,
   },
 
   // API URLs

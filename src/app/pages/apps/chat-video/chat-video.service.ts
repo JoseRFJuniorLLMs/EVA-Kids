@@ -1,9 +1,9 @@
 import { Injectable, ElementRef } from '@angular/core';
-import { Firestore, collection, getDocs, setDoc, onSnapshot, doc, addDoc, writeBatch, DocumentSnapshot, getDoc, deleteDoc, updateDoc, runTransaction } from '@angular/fire/firestore';
+import { HttpClient } from '@angular/common/http';
 import { SoundService } from 'src/app/layouts/components/footer/sound.service';
 import { MatSnackBar, MatSnackBarHorizontalPosition, MatSnackBarVerticalPosition } from '@angular/material/snack-bar';
 import { NotificationService } from 'src/app/pages/apps/chat-video/notification.service';
-import { AuthService } from '../../pages/auth/login/auth.service';
+import { environment } from 'src/environments/environment';
 
 export enum CallState {
   IDLE,
@@ -18,10 +18,13 @@ export enum CallState {
 export class ChatVideoService {
 
   currentUserId: string = '';
+  private ws: WebSocket | null = null;
+  private apiUrl = `${environment.evaBack.apiUrl}/kids`;
+  private wsUrl = environment.evaBack.wsSignaling;
 
   setCurrentUserId(loggedUserId: string) {
     this.currentUserId = loggedUserId;
-    console.log('Current User ID set to:', this.currentUserId);
+    this.connectSignaling();
   }
 
   localStream!: MediaStream;
@@ -37,13 +40,10 @@ export class ChatVideoService {
 
   constructor(
     private _snackBar: MatSnackBar,
-    private firestore: Firestore,
     private soundService: SoundService,
-    private authService: AuthService,
+    private http: HttpClient,
     private notificationService: NotificationService
   ) {
-    console.log('ChatVideoService constructor - AuthService:', authService);
-    console.log('ChatVideoService constructor - Methods:', Object.getOwnPropertyNames(Object.getPrototypeOf(authService)));
   }
 
   openSnackBar(textDisplay: string) {
@@ -52,6 +52,99 @@ export class ChatVideoService {
       verticalPosition: this.verticalPosition,
       duration: this.durationInSeconds * 1000
     });
+  }
+
+  private connectSignaling() {
+    if (this.ws) {
+      this.ws.close();
+    }
+    if (!this.currentUserId) return;
+
+    this.ws = new WebSocket(`${this.wsUrl}/${this.currentUserId}`);
+
+    this.ws.onopen = () => {};
+
+    this.ws.onmessage = async (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        await this.handleSignalingMessage(data);
+      } catch (e) {
+        console.error('Error handling signaling message:', e);
+      }
+    };
+
+    this.ws.onclose = () => {
+      // Reconnect after 3 seconds
+      setTimeout(() => {
+        if (this.currentUserId) {
+          this.connectSignaling();
+        }
+      }, 3000);
+    };
+
+    this.ws.onerror = (error) => {
+      console.error('WebSocket error:', error);
+    };
+  }
+
+  private async handleSignalingMessage(data: any) {
+    switch (data.type) {
+      case 'offer':
+        if (this.pc) {
+          const offerDesc = new RTCSessionDescription(data.offer || data);
+          await this.pc.setRemoteDescription(offerDesc);
+          const answer = await this.pc.createAnswer();
+          await this.pc.setLocalDescription(answer);
+          this.sendSignaling({
+            type: 'answer',
+            answer: answer,
+            targetUserId: data.fromUserId
+          });
+        }
+        break;
+
+      case 'answer':
+        if (this.pc && !this.pc.currentRemoteDescription) {
+          const answerDesc = new RTCSessionDescription(data.answer || data);
+          await this.pc.setRemoteDescription(answerDesc);
+        }
+        break;
+
+      case 'ice-candidate':
+        if (this.pc && data.candidate) {
+          try {
+            await this.pc.addIceCandidate(new RTCIceCandidate(data.candidate));
+          } catch (e) {
+            console.error('Error adding ICE candidate:', e);
+          }
+        }
+        break;
+
+      case 'call-notification':
+        this.notificationService.handleIncomingCall(data);
+        break;
+
+      case 'call-response':
+        if (data.response === 'reject') {
+          this.openSnackBar('Call was rejected');
+          this.callState = CallState.ENDED;
+        }
+        break;
+
+      case 'online-status':
+        // Online users list available at data.users
+        break;
+
+      case 'error':
+        console.error('Signaling error:', data.message);
+        break;
+    }
+  }
+
+  private sendSignaling(data: any) {
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      this.ws.send(JSON.stringify(data));
+    }
   }
 
   async startLocalStream() {
@@ -68,7 +161,7 @@ export class ChatVideoService {
       console.error('Local stream not initialized');
       return;
     }
-  
+
     if (!this.pc) {
       this.pc = new RTCPeerConnection({
         iceServers: [
@@ -76,14 +169,12 @@ export class ChatVideoService {
           { urls: 'stun:stun2.l.google.com:19302' }
         ]
       });
-  
+
       this.localStream.getTracks().forEach((track) => {
         this.pc?.addTrack(track, this.localStream);
-        console.log('localStream.getTracks :', track);
       });
-  
+
       this.pc.ontrack = (event) => {
-        console.log('Track received:', event);
         if (event.streams && event.streams[0]) {
           this.remoteStream = event.streams[0];
         } else {
@@ -91,88 +182,63 @@ export class ChatVideoService {
           inboundStream.addTrack(event.track);
           this.remoteStream = inboundStream;
         }
-        remoteVideo.srcObject = this.remoteStream; // add remoto
-        console.log('Remote stream:', this.remoteStream);
+        remoteVideo.srcObject = this.remoteStream;
       };
-  
+
       this.pc.onicecandidate = (event) => {
-        if (event.candidate) {
-          console.log('ICE Candidate:', event.candidate);
-          const candidatesCollection = collection(this.firestore, `calls/${this.callDocId}/offerCandidates`);
-          addDoc(candidatesCollection, event.candidate.toJSON());
+        if (event.candidate && this.callDocId) {
+          this.sendSignaling({
+            type: 'ice-candidate',
+            candidate: event.candidate.toJSON(),
+            targetUserId: this.callDocId // target user
+          });
         }
       };
     }
   }
-  
+
   async startCall(
     webcamVideo: ElementRef<HTMLVideoElement>,
     remoteVideo: ElementRef<HTMLVideoElement>,
-    currentUserId: string, 
+    currentUserId: string,
     targetUserId?: string
   ) {
     try {
       await this.startLocalStream();
       this.soundService.playOn();
-      this.setupPeerConnection(remoteVideo.nativeElement);  
-  
+      this.setupPeerConnection(remoteVideo.nativeElement);
+
       webcamVideo.nativeElement.srcObject = this.localStream;
       remoteVideo.nativeElement.srcObject = this.remoteStream;
-  
-      const callsSnapshot = await getDocs(collection(this.firestore, 'calls'));
-      const existingCallDoc = callsSnapshot.docs[0];
-  
-      console.log('Current User ID:>>>>', currentUserId);
-  
+
       if (!currentUserId) {
-        console.error('No user is currently logged in or user ID is not available');
+        console.error('No user is currently logged in');
         return;
       }
-  
-      if (existingCallDoc) {
-        this.callDocId = existingCallDoc.id;
-        await this.answerCall(existingCallDoc);
-        console.log('answerCall:>>>>', targetUserId, currentUserId);
-      } else {
+
+      if (targetUserId) {
+        this.callDocId = targetUserId;
         await this.createOffer(currentUserId, targetUserId);
-        console.log('createOffer:>>>>', targetUserId, currentUserId);
-  
-        if (targetUserId) {
-          this.notificationService.sendCallNotification(targetUserId, this.callDocId, currentUserId);
-          console.log('sendCallNotification:>>>>', targetUserId, currentUserId);
-        }
+        // Send call notification via WebSocket
+        this.sendSignaling({
+          type: 'call-notification',
+          targetUserId: targetUserId,
+          callId: `${currentUserId}-${targetUserId}-${Date.now()}`
+        });
       }
-  
-      await this.updateCallState(currentUserId, CallState.CALLING);
-      await this.updateOnlineStatus(currentUserId, true);
+
+      this.callState = CallState.CALLING;
+      this.updateOnlineStatus(currentUserId, true);
     } catch (error) {
       console.error('Error during startCall:', error);
     }
   }
-  
+
   async finishCall() {
     try {
       this.soundService.playClose();
-      if (!this.callDocId) {
-        console.error('Invalid callDocId');
-        return;
-      }
-
-      await this.updateOnlineStatus(this.currentUserId, false);
-      await this.updateCallState(this.currentUserId, CallState.ENDED);
-
-      const callsSnapshot = await getDocs(collection(this.firestore, 'calls'));
-      const batch = writeBatch(this.firestore);
-
-      if (callsSnapshot.empty) {
-        console.log('No call documents found to delete.');
-      } else {
-        callsSnapshot.forEach((doc) => {
-          batch.delete(doc.ref);
-        });
-
-        await batch.commit();
-      }
+      this.updateOnlineStatus(this.currentUserId, false);
+      this.callState = CallState.ENDED;
 
       if (this.pc) {
         this.pc.close();
@@ -201,101 +267,35 @@ export class ChatVideoService {
         return;
       }
 
-      const callDoc = doc(collection(this.firestore, 'calls'));
-      this.callDocId = callDoc.id;
-
       const offerDescription = await this.pc.createOffer();
-      console.log('Offer created:', offerDescription);
       await this.pc.setLocalDescription(offerDescription);
 
-      const callData: any = {
-        offer: offerDescription,
-        userId
-      };
-
       if (targetUserId) {
-        callData.targetUserId = targetUserId;
-      }
-
-      await setDoc(callDoc, callData);
-
-      await this.saveWebRTCInfo(userId, {
-        iceServers: this.pc.getConfiguration().iceServers,
-        offerDescription: offerDescription
-      });
-
-      onSnapshot(callDoc, async (snapshot) => {
-        const data = snapshot.data();
-        if (this.pc && !this.pc.currentRemoteDescription && data && data['answer']) {
-          const answerDescription = new RTCSessionDescription(data['answer']);
-          console.log('Answer received:', answerDescription);
-          await this.pc.setRemoteDescription(answerDescription);
-        }
-      });
-
-      const answerCandidatesCollection = collection(this.firestore, `calls/${this.callDocId}/answerCandidates`);
-      onSnapshot(answerCandidatesCollection, (snapshot) => {
-        snapshot.docChanges().forEach((change) => {
-          if (change.type === 'added') {
-            const candidate = new RTCIceCandidate(change.doc.data());
-            console.log('Answer ICE Candidate:', candidate);
-            this.pc?.addIceCandidate(candidate);
-          }
+        this.sendSignaling({
+          type: 'offer',
+          offer: offerDescription,
+          targetUserId: targetUserId
         });
-      });
+      }
     } catch (error) {
       console.error('Error during createOffer:', error);
     }
   }
 
-  async saveWebRTCInfo(userId: string, info: any) {
+  async answerCall(callData: any) {
     try {
-      const userDoc = doc(this.firestore, `students/${userId}`);
-      await setDoc(userDoc, { webrtc: info }, { merge: true });
-    } catch (error) {
-      console.error('Error during saveWebRTCInfo:', error);
-    }
-  }
+      if (this.pc && callData.offer) {
+        const offerDescription = new RTCSessionDescription(callData.offer);
+        await this.pc.setRemoteDescription(offerDescription);
 
-  async answerCall(callDoc: DocumentSnapshot) {
-    try {
-      this.callDocId = callDoc.id;
-      const callData = callDoc.data();
+        const answerDescription = await this.pc.createAnswer();
+        await this.pc.setLocalDescription(answerDescription);
 
-      if (callData && callData['offer']) {
-        const offerDescription = new RTCSessionDescription(callData['offer']);
-        console.log('Offer received:', offerDescription);
-        if (this.pc) {
-          await this.pc.setRemoteDescription(offerDescription);
-
-          const answerDescription = await this.pc.createAnswer();
-          console.log('Answer created:', answerDescription);
-          await this.pc.setLocalDescription(answerDescription);
-
-          await setDoc(callDoc.ref, { answer: answerDescription });
-
-          const offerCandidatesCollection = collection(this.firestore, `calls/${this.callDocId}/offerCandidates`);
-          onSnapshot(offerCandidatesCollection, (snapshot) => {
-            snapshot.docChanges().forEach((change) => {
-              if (change.type === 'added') {
-                const candidate = new RTCIceCandidate(change.doc.data());
-                console.log('Offer ICE Candidate:', candidate);
-                this.pc?.addIceCandidate(candidate);
-              }
-            });
-          });
-
-          const answerCandidatesCollection = collection(this.firestore, `calls/${this.callDocId}/answerCandidates`);
-          onSnapshot(answerCandidatesCollection, (snapshot) => {
-            snapshot.docChanges().forEach((change) => {
-              if (change.type === 'added') {
-                const candidate = new RTCIceCandidate(change.doc.data());
-                console.log('Answer ICE Candidate:', candidate);
-                this.pc?.addIceCandidate(candidate);
-              }
-            });
-          });
-        }
+        this.sendSignaling({
+          type: 'answer',
+          answer: answerDescription,
+          targetUserId: callData.fromUserId
+        });
       }
     } catch (error) {
       console.error('Error during answerCall:', error);
@@ -313,22 +313,15 @@ export class ChatVideoService {
     if (this.remoteStream) {
       this.remoteStream.getTracks().forEach(track => track.stop());
     }
-    await this.deleteCallInfo();
-    this.updateCallState(this.currentUserId, CallState.IDLE);
+    this.callState = CallState.IDLE;
   }
 
-  async checkUserOnlineStatus(callDocId: string): Promise<boolean> {
+  async checkUserOnlineStatus(userId: string): Promise<boolean> {
     try {
       this.soundService.playOnline();
-      if (!callDocId) {
-        console.error('Invalid callDocId');
-        return false;
-      }
-      const userDoc = doc(this.firestore, `students/${callDocId}`);
-      const userSnapshot = await getDoc(userDoc);
-      const onlineStatus = userSnapshot.exists() && userSnapshot.data()?.['online'];
-      console.log(`Checked user online status for ${callDocId}: ${onlineStatus}`);
-      return onlineStatus;
+      const students = await this.http.get<any[]>(`${this.apiUrl}/students`).toPromise();
+      const student = students?.find(s => s.usuario_id?.toString() === userId || s.id?.toString() === userId);
+      return student?.online ?? false;
     } catch (error) {
       console.error('Error during checkUserOnlineStatus:', error);
       return false;
@@ -386,7 +379,7 @@ export class ChatVideoService {
   }
 
   openChat() {
-    console.log('Open chat function called');
+    // Chat opened
   }
 
   endCall() {
@@ -398,58 +391,29 @@ export class ChatVideoService {
     }
   }
 
-  async setupWebRTCForUser(userId: string) {
-    try {
-      const userDoc = doc(this.firestore, `students/${userId}`);
-      await setDoc(userDoc, { webrtc: { /* Add WebRTC configuration data here */ } }, { merge: true });
-    } catch (error) {
-      console.error('Error durante setupWebRTCForUser:', error);
-    }
+  setupWebRTCForUser(userId: string) {
+    this.setCurrentUserId(userId);
   }
 
   async tearDownWebRTCForUser(userId: string) {
-    try {
-      const userDoc = doc(this.firestore, `students/${userId}`);
-      await setDoc(userDoc, { webrtc: {} }, { merge: true });
-    } catch (error) {
-      console.error('Error durante tearDownWebRTCForUser:', error);
+    if (this.ws) {
+      this.ws.close();
+      this.ws = null;
     }
   }
 
   async deleteCallInfo() {
-    try {
-      if (!this.callDocId) {
-        console.error('Invalid callDocId');
-        return;
-      }
-
-      const callDoc = doc(this.firestore, `calls/${this.callDocId}`);
-      await deleteDoc(callDoc);
-    } catch (error) {
-      console.error('Error durante deleteCallInfo:', error);
-    }
+    // No-op: calls are in-memory on the WebSocket server
   }
 
   async updateOnlineStatus(userId: string, status: boolean) {
     try {
-      const userDoc = doc(this.firestore, `students/${userId}`);
-      await setDoc(userDoc, { online: status }, { merge: true });
+      const profile = await this.http.get<any>(`${this.apiUrl}/profile`).toPromise();
+      if (profile?.id) {
+        await this.http.put(`${this.apiUrl}/students/${profile.id}/online`, { online: status }).toPromise();
+      }
     } catch (error) {
       console.error('Error during updateOnlineStatus:', error);
     }
   }
-
-  private async updateCallState(userId: string, state: CallState) {
-    this.callState = state;
-    try {
-      const userDoc = doc(this.firestore, `students/${userId}`);
-      await updateDoc(userDoc, {
-        callState: state
-      });
-    } catch (error) {
-      console.error('Error updating call state:', error);
-    }
-  }
-
-
-}//fim
+}

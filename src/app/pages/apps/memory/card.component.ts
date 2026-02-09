@@ -46,17 +46,14 @@ export class CardComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.voiceService.usePreset('memory');
 
-    this.authService.getUID().then(uid => {
-      if (uid) {
-        this.studentId = uid;
-        this.newGame();
-        this.updateSatoshiBalance();
-      } else {
-        console.error('Não foi possível obter o ID do estudante.');
-      }
-    }).catch(error => {
-      console.error('Erro ao obter o ID do estudante:', error);
-    });
+    const uid = this.authService.getUID();
+    if (uid) {
+      this.studentId = uid.toString();
+      this.newGame();
+      this.updateSatoshiBalance();
+    } else {
+      console.error('Não foi possível obter o ID do estudante.');
+    }
   }
 
   ngOnDestroy(): void {

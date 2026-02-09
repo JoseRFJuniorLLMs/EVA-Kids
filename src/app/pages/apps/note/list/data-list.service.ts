@@ -1,188 +1,110 @@
 import { Injectable } from '@angular/core';
-import { Firestore, collection, collectionData, doc, docData, updateDoc, deleteDoc, query, where, getDocs, writeBatch } from '@angular/fire/firestore';
+import { HttpClient } from '@angular/common/http';
 import { Observable, of, BehaviorSubject } from 'rxjs';
+import { map, catchError } from 'rxjs/operators';
 import { NoteCollection } from '../../note/note-collection';
-import { format, subDays } from 'date-fns';
-import { AngularFireAuth } from '@angular/fire/compat/auth';
-import { switchMap } from 'rxjs/operators';
+import { environment } from 'src/environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class DataListService {
-
-  private noteCollectionRef = collection(this.firestore, 'NoteCollection');
+  private apiUrl = `${environment.evaBack.apiUrl}/kids`;
   private _totalNotesOfTheDay: BehaviorSubject<number> = new BehaviorSubject<number>(0);
 
   get totalNotesOfTheDay$(): Observable<number> {
     return this._totalNotesOfTheDay.asObservable();
   }
 
-  constructor(private firestore: Firestore, private afAuth: AngularFireAuth) {
-    // Atualiza a contagem de notas do dia e notas atrasadas quando o serviço é instanciado
+  constructor(private http: HttpClient) {
     this.updateOverdueNotes().then(() => this.updateTotalNotesOfTheDay());
   }
 
   getNotes(): Observable<NoteCollection[]> {
-    return this.afAuth.authState.pipe(
-      switchMap(user => {
-        if (user && user.uid) {
-          const userNotesQuery = query(
-            this.noteCollectionRef,
-            where('student._id', '==', user.uid),
-            where('permanent', '==', false)
-          );
-          return collectionData(userNotesQuery, { idField: '_id' }) as Observable<NoteCollection[]>;
-        } else {
-          return of<NoteCollection[]>([]);
-        }
-      })
+    return this.http.get<any[]>(`${this.apiUrl}/notes`, { params: { permanent: 'false' } }).pipe(
+      map(notes => notes.map(n => this.mapToNote(n))),
+      catchError(() => of([]))
     );
   }
 
   getNotesOfTheDay(): Observable<NoteCollection[]> {
-    const today = format(new Date(), 'yyyy-MM-dd');
-    return this.afAuth.authState.pipe(
-      switchMap(user => {
-        if (user && user.uid) {
-          const notesOfDayQuery = query(
-            this.noteCollectionRef,
-            where('next_revision_date', '==', today),
-            where('student._id', '==', user.uid),
-            where('permanent', '==', false)
-          );
-          return collectionData(notesOfDayQuery, { idField: '_id' }) as Observable<NoteCollection[]>;
-        } else {
-          return of<NoteCollection[]>([]);
-        }
-      })
+    return this.http.get<any[]>(`${this.apiUrl}/notes/today`).pipe(
+      map(notes => notes.map(n => this.mapToNote(n))),
+      catchError(() => of([]))
     );
   }
 
   getNoteById(id: string): Observable<NoteCollection> {
-    const noteDocRef = doc(this.firestore, `NoteCollection/${id}`);
-    return docData(noteDocRef, { idField: '_id' }) as Observable<NoteCollection>;
+    return this.http.get<any>(`${this.apiUrl}/notes/${id}`).pipe(
+      map(n => this.mapToNote(n))
+    );
   }
 
   updateNote(id: string, note: Partial<NoteCollection>): Promise<void> {
-    const noteDocRef = doc(this.firestore, `NoteCollection/${id}`);
-    return updateDoc(noteDocRef, note)
-      .then(() => {
-        console.log('Nota atualizada com sucesso!');
-        // Atualiza as contagens após a atualização da nota
-        this.updateTotalNotesOfTheDay();
-      })
-      .catch(error => {
-        console.error('Erro ao atualizar a nota:', error);
-      });
+    return this.http.put<any>(`${this.apiUrl}/notes/${id}`, {
+      title: note.title,
+      description: note.description,
+      answer: note.answer,
+      tags: note.tags,
+      image: note.image,
+      permanent: note.permanent,
+      level: note.level,
+      last_revision_date: note.last_revision_date,
+      next_revision_date: note.next_revision_date,
+    }).toPromise()
+      .then(() => { this.updateTotalNotesOfTheDay(); })
+      .catch(error => { console.error('Erro ao atualizar a nota:', error); });
   }
 
   deleteNote(id: string): Promise<void> {
-    const noteDocRef = doc(this.firestore, `NoteCollection/${id}`);
-    return deleteDoc(noteDocRef)
-      .then(() => {
-        console.log('Nota excluída com sucesso!');
-        // Atualiza as contagens após a exclusão da nota
-        this.updateTotalNotesOfTheDay();
-      })
-      .catch(error => {
-        console.error('Erro ao excluir a nota:', error);
-      });
+    return this.http.delete<any>(`${this.apiUrl}/notes/${id}`).toPromise()
+      .then(() => { this.updateTotalNotesOfTheDay(); })
+      .catch(error => { console.error('Erro ao excluir a nota:', error); });
   }
 
   getTotalNotesOfTheDay(): Observable<number> {
-    const today = format(new Date(), 'yyyy-MM-dd');
-    return this.afAuth.authState.pipe(
-      switchMap(user => {
-        if (user && user.uid) {
-          const notesOfDayQuery = query(
-            this.noteCollectionRef,
-            where('next_revision_date', '==', today),
-            where('student._id', '==', user.uid),
-            where('permanent', '==', false)
-          );
-          return getDocs(notesOfDayQuery).then(querySnapshot => {
-            return querySnapshot.size;
-          });
-        } else {
-          return of(0);
-        }
-      })
+    return this.http.get<any[]>(`${this.apiUrl}/notes/today`).pipe(
+      map(notes => notes.length),
+      catchError(() => of(0))
     );
   }
 
   updateTotalNotesOfTheDay(): void {
-    const today = format(new Date(), 'yyyy-MM-dd');
-    console.log('Atualizando total de notas do dia para:', today); // Log para verificar a execução
-    this.afAuth.authState.pipe(
-      switchMap(user => {
-        if (user && user.uid) {
-          const notesOfDayQuery = query(
-            this.noteCollectionRef,
-            where('next_revision_date', '==', today),
-            where('student._id', '==', user.uid),
-            where('permanent', '==', false)
-          );
-          return getDocs(notesOfDayQuery).then(querySnapshot => {
-            console.log('Notas do dia:', querySnapshot.size); // Log para verificar o resultado da consulta
-            this._totalNotesOfTheDay.next(querySnapshot.size);
-          });
-        } else {
-          this._totalNotesOfTheDay.next(0);
-          return Promise.resolve();
-        }
-      })
-    ).subscribe();
+    this.http.get<any[]>(`${this.apiUrl}/notes/today`).pipe(
+      catchError(() => of([]))
+    ).subscribe(notes => {
+      this._totalNotesOfTheDay.next(notes.length);
+    });
   }
 
   updateOverdueNotes(): Promise<void> {
-    const today = format(new Date(), 'yyyy-MM-dd');
-    //const fifteenDaysAgo = format(subDays(new Date(), 15), 'yyyy-MM-dd');
-    console.log('Atualizando notas atrasadas para a data de hoje:', today); // Log para verificar a execução
-    return this.afAuth.authState.pipe(
-      switchMap(async user => {
-        if (user && user.uid) {
-          const overdueNotesQuery = query(
-            this.noteCollectionRef,
-            where('next_revision_date', '<', today),
-            where('student._id', '==', user.uid),
-            where('permanent', '==', false)
-          );
-  
-          const querySnapshot = await getDocs(overdueNotesQuery);
-          const batch = writeBatch(this.firestore);
-  
-          querySnapshot.forEach(doc => {
-            batch.update(doc.ref, { next_revision_date: today });
-          });
-  
-          return batch.commit().then(() => {
-            console.log('Notas atrasadas atualizadas com sucesso!'); // Log para verificar sucesso
-          }).catch(error => {
-            console.error('Erro ao atualizar as notas atrasadas:', error);
-          });
-        } else {
-          return Promise.resolve();
-        }
-      })
-    ).toPromise();
+    return this.http.post<any>(`${this.apiUrl}/notes/update-overdue`, {}).toPromise()
+      .then(() => {})
+      .catch(error => {
+        console.error('Erro ao atualizar as notas atrasadas:', error);
+      });
   }
-  
-  // Novo método para buscar notas permanentes
+
   getPermanentNotes(): Observable<NoteCollection[]> {
-    return this.afAuth.authState.pipe(
-      switchMap(user => {
-        if (user && user.uid) {
-          const permanentNotesQuery = query(
-            this.noteCollectionRef,
-            where('student._id', '==', user.uid),
-            where('permanent', '==', true)
-          );
-          return collectionData(permanentNotesQuery, { idField: '_id' }) as Observable<NoteCollection[]>;
-        } else {
-          return of<NoteCollection[]>([]);
-        }
-      })
+    return this.http.get<any[]>(`${this.apiUrl}/notes`, { params: { permanent: 'true' } }).pipe(
+      map(notes => notes.map(n => this.mapToNote(n))),
+      catchError(() => of([]))
     );
+  }
+
+  private mapToNote(data: any): NoteCollection {
+    return new NoteCollection({
+      _id: data.id?.toString(),
+      title: data.title,
+      description: data.description,
+      answer: data.answer,
+      tags: data.tags,
+      image: data.image,
+      permanent: data.permanent,
+      level: data.level,
+      last_revision_date: data.last_revision_date,
+      next_revision_date: data.next_revision_date,
+      created_at: data.created_at,
+    });
   }
 }

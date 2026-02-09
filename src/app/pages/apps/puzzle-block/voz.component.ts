@@ -29,10 +29,8 @@ import { VexSecondaryToolbarComponent } from '@vex/components/vex-secondary-tool
 
 import WaveSurfer from 'wavesurfer.js';
 import RecordPlugin from 'wavesurfer.js/dist/plugins/record.js';
-import gpt4 from '../../../../../gpt4.json';
 
 import { CdkDrag, CdkDropList } from '@angular/cdk/drag-drop';
-import { Firestore } from '@angular/fire/firestore';
 import { ChatVideoComponent } from '../chat-video/chat-video.component';
 import { NoteComponent } from '../../apps/note/note.component';
 
@@ -88,8 +86,7 @@ export class VozComponent implements OnInit {
   isPanelExpanded: boolean = false;
 
   constructor(
-    public dialog: MatDialog,
-    @Inject(Firestore) private firestore: Firestore
+    public dialog: MatDialog
   ) {}
 
   /* ==================ngOnInit==================== */
@@ -152,16 +149,11 @@ export class VozComponent implements OnInit {
         });
 
       // Handle plugin-specific events
-      this.recordPlugin.on('record-start', () => {
-        //console.log('Recording started.');
-      });
+      this.recordPlugin.on('record-start', () => {});
 
-      this.recordPlugin.on('record-end', () => {
-        //console.log('Recording ended.');
-      });
+      this.recordPlugin.on('record-end', () => {});
 
       this.recordPlugin.on('record-progress', (progress) => {
-        console.log('Recording progress:', progress);
       });
 
       this.setupSpeechRecognition();
@@ -188,9 +180,7 @@ export class VozComponent implements OnInit {
     recognition.lang = 'en-US'; // Idioma inglês (EUA)
     recognition.maxAlternatives = 3; // Máximo de 3 alternativas por reconhecimento
 
-    recognition.onstart = () => {
-      //console.log('Speech recognition started.');
-    };
+    recognition.onstart = () => {};
 
     recognition.onresult = (event: any) => {
       const lastResult = event.results[event.results.length - 1];
@@ -202,17 +192,14 @@ export class VozComponent implements OnInit {
     recognition.onerror = (event: any) => {};
 
     recognition.onend = () => {
-      console.log('Speech recognition ended, restarting...');
       recognition.start();
     };
 
-    console.log('Starting speech recognition...');
     recognition.start();
   }
 
   someButtonAction(): void {
     // Implement the action you want to trigger with the voice command
-    console.log('Button action triggered by voice command.');
   } //fim
 
   /* ==================toggleRecording==================== */

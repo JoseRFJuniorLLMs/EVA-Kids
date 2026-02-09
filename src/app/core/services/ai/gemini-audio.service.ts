@@ -86,7 +86,6 @@ export class GeminiAudioService implements OnDestroy {
         this.ws = new WebSocket(wsUrl);
 
         this.ws.onopen = () => {
-          console.log('Gemini Live API conectada');
           this.isConnected = true;
           this._state.next('ready');
 
@@ -106,7 +105,6 @@ export class GeminiAudioService implements OnDestroy {
         };
 
         this.ws.onclose = () => {
-          console.log('WebSocket fechado');
           this.isConnected = false;
           this._state.next('idle');
         };

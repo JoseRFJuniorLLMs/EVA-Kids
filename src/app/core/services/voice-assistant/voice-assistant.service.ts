@@ -1,13 +1,14 @@
 /**
  * Voice Assistant Service - EVA (Educador Virtual Amigo)
  *
- * Usa browser SpeechSynthesis e SpeechRecognition como fallback
- * ate que @google/genai esteja disponivel.
+ * Delega para EVAMindWebSocketService para conexao real
+ * com o backend EVA-Mind via WebSocket PCM16.
  */
 
 import { Injectable, OnDestroy } from '@angular/core';
-import { BehaviorSubject, Subject } from 'rxjs';
-import { environment } from 'src/environments/environment';
+import { BehaviorSubject, Subject, Subscription } from 'rxjs';
+import { EVAMindWebSocketService } from '../eva-mind/eva-mind-websocket.service';
+import { EVAMindState } from '../eva-mind/eva-mind.models';
 
 // Estados do assistente
 export type AssistantState = 'idle' | 'listening' | 'thinking' | 'speaking' | 'error' | 'connecting';
@@ -24,6 +25,7 @@ export interface AssistantConfig {
   voiceName?: string;
   languageCode?: string;
   systemPrompt?: string;
+  cpf?: string;
 }
 
 @Injectable({
@@ -46,194 +48,133 @@ export class VoiceAssistantService implements OnDestroy {
   private _error = new BehaviorSubject<string | null>(null);
   error$ = this._error.asObservable();
 
-  // Transcricao
+  // Transcricao do usuario
   private _transcript = new BehaviorSubject<string>('');
   transcript$ = this._transcript.asObservable();
 
-  // Speech Recognition
-  private recognition: any = null;
-  private isRecording = false;
-  private isSessionActive = false;
+  // Resposta da IA
+  private _aiResponse = new BehaviorSubject<string>('');
+  aiResponse$ = this._aiResponse.asObservable();
 
-  // Voices disponiveis
-  private voices: SpeechSynthesisVoice[] = [];
+  private isActive = false;
+  private cpf = '';
+  private subscriptions = new Subscription();
 
-  // Configuracao padrao para criancas
-  private config: AssistantConfig = {
-    voiceName: 'Google Brasil',
-    languageCode: 'pt-BR',
-    systemPrompt: ''
-  };
-
-  constructor() {
-    this.loadVoices();
-    if (typeof speechSynthesis !== 'undefined') {
-      speechSynthesis.onvoiceschanged = () => this.loadVoices();
-    }
-    this.initSpeechRecognition();
+  constructor(private evaMind: EVAMindWebSocketService) {
+    this.setupSubscriptions();
   }
 
-  private loadVoices(): void {
-    if (typeof speechSynthesis !== 'undefined') {
-      this.voices = speechSynthesis.getVoices();
-    }
-  }
-
-  private getVoice(lang: string): SpeechSynthesisVoice | null {
-    const voice = this.voices.find(v =>
-      v.lang.startsWith(lang.substring(0, 2)) ||
-      v.lang === lang
+  private setupSubscriptions(): void {
+    // Map EVA-Mind states to assistant states
+    this.subscriptions.add(
+      this.evaMind.state$.subscribe((state: EVAMindState) => {
+        const mapped = this.mapState(state);
+        this._state.next(mapped);
+        this._status.next(this.getStatusMessage(mapped, state));
+      })
     );
-    return voice || this.voices[0] || null;
-  }
 
-  private initSpeechRecognition(): void {
-    if (typeof window === 'undefined') return;
+    this.subscriptions.add(
+      this.evaMind.transcript$.subscribe(text => {
+        if (text) this._transcript.next(text);
+      })
+    );
 
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (!SpeechRecognition) {
-      console.warn('SpeechRecognition not available');
-      return;
-    }
+    this.subscriptions.add(
+      this.evaMind.aiResponse$.subscribe(text => {
+        if (text) this._aiResponse.next(text);
+      })
+    );
 
-    this.recognition = new SpeechRecognition();
-    this.recognition.continuous = false;
-    this.recognition.interimResults = true;
-    this.recognition.lang = this.config.languageCode || 'pt-BR';
+    this.subscriptions.add(
+      this.evaMind.error$.subscribe(err => {
+        this._error.next(err);
+      })
+    );
 
-    this.recognition.onresult = (event: any) => {
-      let transcript = '';
-      for (let i = event.resultIndex; i < event.results.length; i++) {
-        transcript += event.results[i][0].transcript;
-      }
-      this._transcript.next(transcript);
-
-      if (event.results[event.resultIndex].isFinal) {
-        this.handleUserSpeech(transcript);
-      }
-    };
-
-    this.recognition.onend = () => {
-      this.isRecording = false;
-      if (this._state.value === 'listening') {
-        this._state.next('idle');
-        this._status.next('Clique no microfone para falar!');
-      }
-    };
-
-    this.recognition.onerror = (event: any) => {
-      console.error('Speech recognition error:', event.error);
-      this._error.next(event.error);
-      this._state.next('error');
-    };
-  }
-
-  private async handleUserSpeech(text: string): Promise<void> {
-    this._state.next('thinking');
-    this._status.next('Deixa eu pensar...');
-
-    // Resposta simples do EVA (pode ser expandido com IA real depois)
-    const response = this.generateSimpleResponse(text);
-
-    // Falar resposta
-    await this.speak(response);
-  }
-
-  private generateSimpleResponse(input: string): string {
-    const lowerInput = input.toLowerCase();
-
-    // Respostas basicas
-    if (lowerInput.includes('ola') || lowerInput.includes('oi')) {
-      return 'Ola amiguinho! Que bom falar com voce! Como posso te ajudar?';
-    }
-    if (lowerInput.includes('como vai') || lowerInput.includes('tudo bem')) {
-      return 'Estou otimo! Sempre pronto para te ajudar a aprender coisas novas!';
-    }
-    if (lowerInput.includes('obrigado') || lowerInput.includes('valeu')) {
-      return 'De nada! Estou sempre aqui para te ajudar!';
-    }
-    if (lowerInput.includes('tchau') || lowerInput.includes('adeus')) {
-      return 'Tchau amiguinho! Volte sempre para aprender mais!';
-    }
-
-    // Traducoes basicas
-    if (lowerInput.includes('como fala') && lowerInput.includes('ingles')) {
-      const wordMatch = lowerInput.match(/como fala (.+) em ingles/);
-      if (wordMatch) {
-        const word = wordMatch[1].trim();
-        const translations: { [key: string]: string } = {
-          'cachorro': 'DOG',
-          'gato': 'CAT',
-          'casa': 'HOUSE',
-          'escola': 'SCHOOL',
-          'livro': 'BOOK',
-          'agua': 'WATER',
-          'comida': 'FOOD',
-          'amigo': 'FRIEND',
-          'amor': 'LOVE',
-          'sol': 'SUN',
-          'lua': 'MOON',
-          'estrela': 'STAR',
-          'flor': 'FLOWER',
-          'arvore': 'TREE'
-        };
-        const translation = translations[word];
-        if (translation) {
-          return `${word} em ingles e ${translation}! Vamos falar juntos? ${translation}! Muito bem!`;
+    // Feed audio level into audioEvent$ for visualizer
+    this.subscriptions.add(
+      this.evaMind.audioLevel$.subscribe(level => {
+        if (level > 0) {
+          const data = new Float32Array(1);
+          data[0] = level;
+          this.audioEvent$.next({ type: 'input', data, averageLevel: level });
         }
-      }
-    }
+      })
+    );
+  }
 
-    // Resposta padrao
-    return 'Que legal! Continue praticando que voce vai aprender muito!';
+  private mapState(evaMindState: EVAMindState): AssistantState {
+    switch (evaMindState) {
+      case 'idle': return 'idle';
+      case 'connecting': return 'connecting';
+      case 'registered': return 'connecting';
+      case 'active': return 'listening';
+      case 'speaking': return 'speaking';
+      case 'error': return 'error';
+      default: return 'idle';
+    }
+  }
+
+  private getStatusMessage(state: AssistantState, evaMindState: EVAMindState): string {
+    switch (state) {
+      case 'idle': return 'Clique no microfone para falar!';
+      case 'connecting':
+        return evaMindState === 'registered' ? 'Conectado! Iniciando...' : 'Conectando ao EVA...';
+      case 'listening': return 'Estou te ouvindo... Pode falar!';
+      case 'speaking': return 'EVA esta falando...';
+      case 'error': return 'Ops! Algo deu errado...';
+      default: return 'Ola! Sou seu amigo EVA!';
+    }
+  }
+
+  /**
+   * Define o CPF para autenticacao
+   */
+  setCpf(cpf: string): void {
+    this.cpf = cpf;
   }
 
   /**
    * Inicializa a sessao
    */
   async initSession(): Promise<boolean> {
-    this.isSessionActive = true;
     this._state.next('idle');
     this._status.next('EVA esta pronto para te ajudar!');
     return true;
   }
 
   /**
-   * Inicia a escuta de audio
+   * Inicia a escuta de audio via EVA-Mind WebSocket
    */
   async startListening(): Promise<void> {
-    if (this.isRecording || !this.recognition) return;
+    if (this.isActive) return;
 
-    try {
-      this._state.next('listening');
-      this._status.next('Estou te ouvindo... Pode falar!');
-      this.isRecording = true;
-      this.recognition.start();
-    } catch (error) {
-      console.error('Erro ao iniciar gravacao:', error);
+    if (!this.cpf) {
+      this._error.next('CPF nao configurado');
       this._state.next('error');
-      this._status.next('Nao consegui acessar o microfone...');
-      this._error.next(`Erro de microfone: ${error}`);
+      this._status.next('Configure o CPF para continuar');
+      return;
     }
+
+    this.isActive = true;
+    await this.evaMind.connect(this.cpf);
   }
 
   /**
    * Para a escuta de audio
    */
   stopListening(): void {
-    if (!this.isRecording || !this.recognition) return;
-
-    this.isRecording = false;
-    this.recognition.stop();
-    this._state.next('idle');
-    this._status.next('Clique no microfone para falar!');
+    if (!this.isActive) return;
+    this.isActive = false;
+    this.evaMind.hangup();
   }
 
   /**
    * Toggle entre ouvir e parar
    */
   toggleListening(): void {
-    if (this.isRecording) {
+    if (this.isActive) {
       this.stopListening();
     } else {
       this.startListening();
@@ -245,77 +186,26 @@ export class VoiceAssistantService implements OnDestroy {
    */
   resetSession(): void {
     this.stopListening();
-    if (typeof speechSynthesis !== 'undefined') {
-      speechSynthesis.cancel();
-    }
     this._state.next('idle');
     this._status.next('EVA reiniciado! Pronto para te ajudar!');
     this._transcript.next('');
+    this._aiResponse.next('');
     this._error.next(null);
   }
 
   /**
-   * Envia mensagem de texto para o assistente
+   * Envia mensagem de texto (nao suportado via WebSocket PCM, mantido por compatibilidade)
    */
   async sendTextMessage(text: string): Promise<void> {
-    this._state.next('thinking');
-    this._status.next('Deixa eu pensar...');
     this._transcript.next(text);
-
-    const response = this.generateSimpleResponse(text);
-    await this.speak(response);
-  }
-
-  /**
-   * Fala texto usando browser SpeechSynthesis
-   */
-  async speak(text: string): Promise<void> {
-    if (!text.trim()) return;
-
-    return new Promise((resolve, reject) => {
-      if (typeof speechSynthesis === 'undefined') {
-        reject(new Error('SpeechSynthesis not available'));
-        return;
-      }
-
-      speechSynthesis.cancel();
-      this._state.next('speaking');
-      this._status.next('EVA esta falando...');
-
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = this.config.languageCode || 'pt-BR';
-      utterance.rate = 0.9;
-      utterance.pitch = 1.1;
-      utterance.volume = 1.0;
-
-      const voice = this.getVoice(utterance.lang);
-      if (voice) {
-        utterance.voice = voice;
-      }
-
-      utterance.onend = () => {
-        this._state.next('idle');
-        this._status.next('Sua vez de falar!');
-        resolve();
-      };
-
-      utterance.onerror = (event) => {
-        console.error('SpeechSynthesis error:', event);
-        this._state.next('error');
-        reject(event);
-      };
-
-      speechSynthesis.speak(utterance);
-    });
   }
 
   /**
    * Atualiza configuracao do assistente
    */
   updateConfig(config: Partial<AssistantConfig>): void {
-    this.config = { ...this.config, ...config };
-    if (this.recognition) {
-      this.recognition.lang = this.config.languageCode || 'pt-BR';
+    if (config.cpf) {
+      this.cpf = config.cpf;
     }
   }
 
@@ -328,8 +218,6 @@ export class VoiceAssistantService implements OnDestroy {
 
   ngOnDestroy(): void {
     this.stopListening();
-    if (typeof speechSynthesis !== 'undefined') {
-      speechSynthesis.cancel();
-    }
+    this.subscriptions.unsubscribe();
   }
 }

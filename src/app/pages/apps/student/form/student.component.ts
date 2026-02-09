@@ -1,4 +1,4 @@
-import { Component, OnInit, Inject } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MatTableModule } from '@angular/material/table';
@@ -11,7 +11,6 @@ import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatCardModule } from '@angular/material/card';
 import { MatListModule } from '@angular/material/list';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
-import { Firestore } from '@angular/fire/firestore';
 import { Observable } from 'rxjs';
 import { StudentService } from '../student.service';
 import { Student } from 'src/app/model/student/student';
@@ -49,7 +48,6 @@ export class StudentComponent implements OnInit {
 
   constructor(
     public dialog: MatDialog,
-    @Inject(Firestore) private firestore: Firestore,
     private studentService: StudentService,
     private authService: AuthService
   ) {}
@@ -61,7 +59,6 @@ export class StudentComponent implements OnInit {
 
   addStudent(student: Student) {
     this.studentService.addStudentData(student).then(() => {
-      console.log('Student added successfully');
     }).catch(error => {
       console.error('Error adding student:', error);
     });
@@ -69,11 +66,10 @@ export class StudentComponent implements OnInit {
 
   async updateStudent(student: Student) {
     try {
-      const uid = await this.authService.getUID();
+      const uid = this.authService.getUID();
       if (uid) {
-        student._id = uid;
+        student._id = uid.toString();
         await this.studentService.updateStudentData(student);
-        console.log('Student updated successfully');
       } else {
         console.error('Error: User is not logged in.');
       }
@@ -85,7 +81,6 @@ export class StudentComponent implements OnInit {
   deleteStudent(id: string) {
     if (id) {
       this.studentService.deleteStudentData(id).then(() => {
-        console.log('Student deleted successfully');
       }).catch(error => {
         console.error('Error deleting student:', error);
       });

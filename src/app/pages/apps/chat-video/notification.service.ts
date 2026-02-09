@@ -1,51 +1,49 @@
 import { Injectable, OnDestroy } from '@angular/core';
-import { AngularFirestore } from '@angular/fire/compat/firestore';
-import { AngularFireAuth } from '@angular/fire/compat/auth';
-import { Subscription } from 'rxjs';
 import { MatDialog } from '@angular/material/dialog';
 import { IncomingCallDialogComponent } from './incoming-call-dialog.component';
-import { ChatVideoService } from './chat-video.service';
+import { environment } from 'src/environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class NotificationService implements OnDestroy {
-  private subscriptions: Subscription[] = [];
+  private ws: WebSocket | null = null;
+  private wsUrl = environment.evaBack.wsSignaling;
+  private currentUserId: string = '';
 
   constructor(
-    private firestore: AngularFirestore,
-    private afAuth: AngularFireAuth,
     private dialog: MatDialog,
-    private chatVideoService: ChatVideoService
-  ) {
-    this.afAuth.authState.subscribe(user => {
-      if (user) {
-        this.listenForCallNotifications(user.uid);
-      }
-    });
+  ) {}
+
+  connect(userId: string) {
+    this.currentUserId = userId;
+    // The signaling WebSocket is managed by ChatVideoService.
+    // This service just handles incoming call UI.
+  }
+
+  disconnect() {
+    this.currentUserId = '';
   }
 
   listenForCallNotifications(userId: string) {
-    const userDoc = this.firestore.collection('students').doc(userId);
-    return userDoc.snapshotChanges().subscribe(snapshot => {
-      const data = snapshot.payload.data() as any;
-      if (data?.callNotification) {
-        this.openIncomingCallDialog(data.callNotification, userId);
-      }
-    });
+    this.currentUserId = userId;
   }
 
-  async sendCallNotification(targetUserId: string, callDocId: string, callerId: string) {
-    const targetUserDoc = this.firestore.collection('students').doc(targetUserId);
-    await targetUserDoc.update({
-      callNotification: {
-        from: callerId,
-        callDocId: callDocId
-      }
-    });
+  handleIncomingCall(data: any) {
+    if (data.fromUserId) {
+      this.openIncomingCallDialog({
+        from: data.fromUserId,
+        callId: data.callId || ''
+      });
+    }
   }
 
-  openIncomingCallDialog(callNotification: any, userId: string) {
+  sendCallNotification(targetUserId: string, callDocId: string, callerId: string) {
+    // Call notifications are sent via the signaling WebSocket in ChatVideoService
+    // This method is kept for API compatibility
+  }
+
+  openIncomingCallDialog(callNotification: any) {
     const dialogRef = this.dialog.open(IncomingCallDialogComponent, {
       height: '600px',
       width: '600px',
@@ -54,20 +52,14 @@ export class NotificationService implements OnDestroy {
 
     dialogRef.afterClosed().subscribe(result => {
       if (result === 'accept') {
-        this.chatVideoService.answerCall(callNotification.callDocId);
+        // Accept is handled by ChatVideoService via WebSocket
       } else if (result === 'reject') {
-        this.firestore.collection('calls').doc(callNotification.callDocId).update({
-          status: 'rejected'
-        });
+        // Rejection is handled via WebSocket signaling
       }
-      // Limpar a notificação de chamada
-      this.firestore.collection('students').doc(userId).update({
-        callNotification: null
-      });
     });
   }
 
   ngOnDestroy() {
-    this.subscriptions.forEach(sub => sub.unsubscribe());
+    this.disconnect();
   }
 }

@@ -1,45 +1,28 @@
 import { Injectable } from '@angular/core';
-import { AngularFirestore } from '@angular/fire/compat/firestore';
-import { AngularFireAuth } from '@angular/fire/compat/auth';
-import { Observable, from } from 'rxjs';
-import { map } from 'rxjs/operators';
-
-interface StudentData {
-  satoshiBalance?: number;
-}
+import { HttpClient } from '@angular/common/http';
+import { Observable, of } from 'rxjs';
+import { map, catchError } from 'rxjs/operators';
+import { environment } from 'src/environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class SatoshiService {
+  private apiUrl = `${environment.evaBack.apiUrl}/kids`;
 
-  constructor(
-    private firestore: AngularFirestore,
-    private afAuth: AngularFireAuth
-  ) {}
+  constructor(private http: HttpClient) {}
 
   getSatoshiBalance(studentId: string): Observable<number> {
-    return this.firestore.doc<StudentData>(`students/${studentId}`).valueChanges().pipe(
-      map(doc => doc?.satoshiBalance || 0)
+    return this.http.get<any>(`${this.apiUrl}/satoshi`).pipe(
+      map(res => res.satoshi_balance || 0),
+      catchError(() => of(0))
     );
   }
 
   incrementSatoshi(studentId: string, amount: number): Observable<number> {
-    const docRef = this.firestore.doc<StudentData>(`students/${studentId}`);
-    
-    return from(this.firestore.firestore.runTransaction(async transaction => {
-      const studentDoc = await transaction.get(docRef.ref);
-      let newBalance: number;
-      if (studentDoc.exists) {
-        const data = studentDoc.data() as StudentData;
-        const currentBalance = data?.satoshiBalance || 0;
-        newBalance = currentBalance + amount;
-        transaction.update(docRef.ref, { satoshiBalance: newBalance }); // Atualiza apenas o campo satoshiBalance
-      } else {
-        newBalance = amount;
-        transaction.set(docRef.ref, { satoshiBalance: newBalance });
-      }
-      return newBalance;
-    }));
+    return this.http.post<any>(`${this.apiUrl}/satoshi/increment`, { amount }).pipe(
+      map(res => res.satoshi_balance || 0),
+      catchError(() => of(0))
+    );
   }
-}//fim
+}

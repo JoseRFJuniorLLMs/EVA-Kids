@@ -55,7 +55,6 @@ export class FlashcardComponent implements AfterViewInit, OnDestroy {
     private dataService: DataListService,
     private voiceService: UnifiedVoiceService
   ) {
-    console.log('FlashcardComponent initialized');
     this.loadNotesOfTheDay();
     this.loadVoices();
   }
@@ -68,7 +67,6 @@ export class FlashcardComponent implements AfterViewInit, OnDestroy {
     this.dataService.getNotesOfTheDay().subscribe({
       next: (notes: NoteCollection[]) => {
         this.notesOfTheDay = notes.map(note => new NoteCollection(note));
-        console.log('Notes of the day loaded:', this.notesOfTheDay);
         if (this.notesOfTheDay.length > 0) {
           this.currentNoteIndex = 0;
         } else {
@@ -101,7 +99,6 @@ export class FlashcardComponent implements AfterViewInit, OnDestroy {
 
   ngAfterViewInit(): void {
     if (this.voiceService) {
-      console.log('Setting up WaveSurfer');
       this.voiceService.setupWaveSurfer(this.waveformElement);
     } else {
       console.error('voiceService is not initialized');
@@ -116,13 +113,9 @@ export class FlashcardComponent implements AfterViewInit, OnDestroy {
 
   toggleTranslation(): void {
     this.showTranslation = !this.showTranslation;
-    console.log('Translation toggled:', this.showTranslation);
-    
+
     if (this.currentNote && this.currentNote.description) {
-      console.log('Attempting to speak and visualize:', this.currentNote.description);
       this.voiceService.speakAndVisualize(this.currentNote.description, this.waveformElement, this.selectedVoice);
-    } else {
-      console.log('Not speaking. currentNote:', this.currentNote);
     }
   }
 
@@ -131,8 +124,6 @@ export class FlashcardComponent implements AfterViewInit, OnDestroy {
     this.currentNoteIndex++;
     if (this.currentNoteIndex >= this.notesOfTheDay.length) {
       this.reviewCompleted = true;
-    } else {
-      console.log('Next note index:', this.currentNoteIndex);
     }
   }
 
@@ -144,7 +135,6 @@ export class FlashcardComponent implements AfterViewInit, OnDestroy {
   }
 
   answer(response: 'fail' | 'hard' | 'good' | 'easy'): void {
-    console.log('Answer given:', response);
     this.updateNoteReviewDate(response);
     this.showNextNote();
   }
@@ -154,7 +144,6 @@ export class FlashcardComponent implements AfterViewInit, OnDestroy {
     const today = new Date();
 
     note.last_revision_date = format(today, 'yyyy-MM-dd');
-    console.log('Note before calculateNextReview:', note);
 
     if (typeof note.calculateNextReview === 'function') {
       note.calculateNextReview(response);
@@ -166,7 +155,6 @@ export class FlashcardComponent implements AfterViewInit, OnDestroy {
       last_revision_date: note.last_revision_date,
       next_revision_date: note.next_revision_date
     }).then(() => {
-      console.log('Note updated:', note);
     }).catch(error => {
       console.error('Error updating note:', error);
     });

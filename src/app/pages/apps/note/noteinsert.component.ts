@@ -1,6 +1,5 @@
-import { Component, Inject, OnInit, AfterViewInit, ViewChild, ElementRef } from '@angular/core';
+import { Component, OnInit, AfterViewInit, ViewChild, ElementRef } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
-import { Firestore } from '@angular/fire/firestore';
 import { NoteService } from './note.service';
 import { NoteCollection } from './note-collection';
 import { Observable } from 'rxjs';
@@ -12,11 +11,11 @@ import { MatInputModule } from '@angular/material/input';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { FormsModule } from '@angular/forms';
 import { CdkDragDrop, moveItemInArray, DragDropModule } from '@angular/cdk/drag-drop';
-import { v4 as uuidv4 } from 'uuid';
+const uuidv4 = () => crypto.randomUUID();
 import { RouterModule } from '@angular/router';
 import { SoundService } from 'src/app/layouts/components/footer/sound.service';
 import { MatSelectModule } from '@angular/material/select';
-import { AngularFireAuth } from '@angular/fire/compat/auth';
+import { AuthService } from '../../pages/auth/login/auth.service';
 
 @Component({
   selector: 'noteinsert',
@@ -48,10 +47,9 @@ export class NoteinsertComponent implements OnInit, AfterViewInit {
 
   constructor(
     public dialog: MatDialog,
-    @Inject(Firestore) private firestore: Firestore,
     private noteService: NoteService,
     private soundService: SoundService,
-    private afAuth: AngularFireAuth
+    private authService: AuthService
   ) {}
 
   ngOnInit(): void {}
@@ -99,24 +97,23 @@ export class NoteinsertComponent implements OnInit, AfterViewInit {
       return;
     }
   
-    const user = await this.afAuth.currentUser;
-    if (!user) {
+    const uid = this.authService.getUID();
+    if (!uid) {
       console.error('User not authenticated');
       return;
     }
-  
+
     this.newNote._id = uuidv4();
     this.newNote.created_at = new Date().toISOString();
-  
+
     const noteToSave: Partial<NoteCollection> = {
       ...this.newNote,
-      student: { _id: user.uid }
+      student: { _id: uid.toString() }
     };
   
     this.noteService
       .createNote(noteToSave as NoteCollection)
       .then(() => {
-        console.log('Note created successfully');
         this.resetForm();
         window.close(); // Fechar a página após a criação da nota
       })

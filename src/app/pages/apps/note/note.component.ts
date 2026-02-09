@@ -1,6 +1,5 @@
-import { Component, Inject, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
-import { Firestore } from '@angular/fire/firestore';
 import { NoteService } from './note.service';
 import { NoteCollection } from './note-collection';
 import { Observable, Subject, Subscription } from 'rxjs';
@@ -42,7 +41,6 @@ export class NoteComponent implements OnInit, OnDestroy {
 
   constructor(
     public dialog: MatDialog,
-    @Inject(Firestore) private firestore: Firestore,
     private noteService: NoteService,
     private voiceService: UnifiedVoiceService
   ) {}
@@ -58,7 +56,6 @@ export class NoteComponent implements OnInit, OnDestroy {
   loadNotes(): void {
     this.notes$ = this.noteService.noteCollection$;
     this.notes$.pipe(takeUntil(this.destroy$)).subscribe(notes => {
-      console.log('Loaded notes:', notes);
     });
   }
 
@@ -75,7 +72,6 @@ export class NoteComponent implements OnInit, OnDestroy {
     this.noteService
       .createNote(newNote)
       .then(() => {
-        console.log('Note created successfully');
         this.loadNotes();
       })
       .catch((error) => {
@@ -87,7 +83,6 @@ export class NoteComponent implements OnInit, OnDestroy {
     this.noteService
       .updateNote(id, noteData)
       .then(() => {
-        console.log('Note updated successfully');
         this.loadNotes();
       })
       .catch((error) => {
@@ -99,7 +94,6 @@ export class NoteComponent implements OnInit, OnDestroy {
     this.noteService
       .deleteNote(id)
       .then(() => {
-        console.log('Note deleted successfully');
         this.loadNotes();
       })
       .catch((error) => {
@@ -112,7 +106,6 @@ export class NoteComponent implements OnInit, OnDestroy {
     this.noteService
       .updateNote(note._id, updatedNote)
       .then(() => {
-        console.log('Note updated successfully');
         this.loadNotes();
       })
       .catch((error) => {
@@ -125,7 +118,6 @@ export class NoteComponent implements OnInit, OnDestroy {
   }
 
   drop(event: CdkDragDrop<NoteCollection[]>): void {
-    console.log('Drop event:', event);
     this.notes$.pipe(takeUntil(this.destroy$)).subscribe(notes => {
       const prevIndex = notes.findIndex((d) => d === event.item.data);
       moveItemInArray(notes, prevIndex, event.currentIndex);
@@ -140,7 +132,6 @@ export class NoteComponent implements OnInit, OnDestroy {
       Permanent: ${note.permanent ? 'Yes' : 'No'},
       Created at: ${this.convertToDate(note.created_at)?.toLocaleDateString() ?? 'Unknown'}
     `;
-    console.log('Speaking note:', text);
     this.voiceService.speak(text);
   }
 

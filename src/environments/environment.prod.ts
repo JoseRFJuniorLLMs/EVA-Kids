@@ -9,7 +9,7 @@ export const environment = {
   ai: {
     provider: 'gemini' as const,
     gemini: {
-      apiKey: '', // Load from environment variable: process.env.GEMINI_API_KEY
+      apiKey: '',
       models: {
         text: 'gemini-1.5-flash',
         vision: 'gemini-1.5-flash',
@@ -17,14 +17,16 @@ export const environment = {
     }
   },
 
-  // Firebase Configuration
-  firebase: {
-    apiKey: '', // Load from environment variable
-    authDomain: 'priming-ai-7.firebaseapp.com',
-    projectId: 'priming-ai-7',
-    storageBucket: 'priming-ai-7.appspot.com',
-    messagingSenderId: '',
-    appId: ''
+  // EVA-Back API (replaces Firebase)
+  evaBack: {
+    apiUrl: 'https://eva-ia.org:8000/api/v1',
+    wsSignaling: 'wss://eva-ia.org:8000/api/v1/kids/ws/signaling'
+  },
+
+  // EVA-Mind WebSocket
+  evaMind: {
+    wsUrl: 'wss://eva-ia.org:8090/ws/pcm',
+    sampleRate: 24000,
   },
 
   // API URLs

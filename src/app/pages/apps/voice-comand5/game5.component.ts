@@ -1,7 +1,6 @@
-import { Component, ElementRef, Inject, Input, OnInit, ViewChild, NgZone, ChangeDetectorRef, AfterViewInit, OnDestroy, CUSTOM_ELEMENTS_SCHEMA, Renderer2 } from '@angular/core';
+import { Component, ElementRef, OnInit, ViewChild, AfterViewInit, CUSTOM_ELEMENTS_SCHEMA, Renderer2, Inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Observable, Subject } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
+import { Observable } from 'rxjs';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatBadgeModule } from '@angular/material/badge';
@@ -16,14 +15,10 @@ import { MatSliderModule } from '@angular/material/slider';
 import { FormsModule } from '@angular/forms';
 import { fadeInUp400ms } from '@vex/animations/fade-in-up.animation';
 import { stagger40ms } from '@vex/animations/stagger.animation';
-import WaveSurfer from 'wavesurfer.js';
-import screenfull from 'screenfull';
-
-import { SoundService } from 'src/app/layouts/components/footer/sound.service';
-import { UnifiedVoiceService } from 'src/app/core/services/voice/unified-voice.service';
 import { vocabulary } from './vocabulary';
 import { VEX_THEMES } from '@vex/config/config.token';
-import { SatoshiService } from '../note/satoshi.service';
+import { BaseVoiceGame } from '../voice-game/base-voice-game';
+import { VoiceGameConfig } from '../voice-game/voice-game.models';
 
 @Component({
   selector: 'app-game5',
@@ -33,7 +28,7 @@ import { SatoshiService } from '../note/satoshi.service';
   standalone: true,
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   imports: [
-    CommonModule, 
+    CommonModule,
     MatExpansionModule,
     MatTooltipModule,
     MatBadgeModule,
@@ -48,23 +43,23 @@ import { SatoshiService } from '../note/satoshi.service';
     FormsModule
   ]
 })
-export class Game5Component implements OnInit, AfterViewInit, OnDestroy {
-  private destroy$ = new Subject<void>();
-
-  @ViewChild('mic') micElement!: ElementRef<HTMLDivElement>;
+export class Game5Component extends BaseVoiceGame implements OnInit, AfterViewInit {
   @ViewChild('tableContainer') tableContainer!: ElementRef<HTMLDivElement>;
 
   student$!: Observable<any[]>;
 
+  protected override get gameConfig(): VoiceGameConfig {
+    return { ...super.gameConfig, enablePlayback: false };
+  }
+
   constructor(
     @Inject(VEX_THEMES) public readonly themes: any[],
-    public voiceService: UnifiedVoiceService,
-    public soundService: SoundService,
-    private renderer: Renderer2,
-    private satoshiService: SatoshiService
-  ) {}
+    private renderer: Renderer2
+  ) {
+    super();
+  }
 
-  vocabulary = this.shuffleArray(vocabulary); // Embaralhar o vocabulário ao inicializar
+  vocabulary = this.shuffleArray(vocabulary);
   currentIndex = 0;
   phases = ['english', 'pronunciation', 'translation', 'association'];
   currentPhase = this.phases[0];
@@ -74,59 +69,40 @@ export class Game5Component implements OnInit, AfterViewInit, OnDestroy {
   correctEnglish: boolean[] = [];
   correctPronunciation: boolean[] = [];
 
-  private studentId = 'student-id'; 
-  totalSatoshis = 0; // Adicionar o total de Satoshis
-  showSatoshiAlert = false;
+  override ngOnInit(): void {
+    super.ngOnInit();
+  }
 
-  ngOnInit(): void {
-    this.voiceService.usePreset('game');
+  ngAfterViewInit(): void {
+    this.voiceService.setupWaveSurfer(this.micElement);
+    this.addClickEventToCells();
+  }
+
+  protected override onGameInit(): void {
     this.correctEnglish = new Array(this.vocabulary.length).fill(false);
     this.correctPronunciation = new Array(this.vocabulary.length).fill(false);
-    this.voiceService.startListening();
-
-    this.voiceService.command$.pipe(takeUntil(this.destroy$)).subscribe((transcript: string) => {
-      const currentWord = this.vocabulary[this.currentIndex].english;
-      if (transcript.trim().toLowerCase() === currentWord.toLowerCase() && !this.correctEnglish[this.currentIndex]) {
-        this.correctEnglish[this.currentIndex] = true;
-        this.soundService.playDone();
-        this.markRowAsCorrect(this.currentIndex);
-        this.score++;
-        this.incrementSatoshi();
-        this.next();
-      } else {
-        this.soundService.playErro();
-        this.markError(this.currentIndex);
-        this.score--;
-        this.next();
-      }
-    });
 
     if (this.currentPhase === 'english') {
       const currentWord = this.vocabulary[this.currentIndex].english;
       this.voiceService.speak(currentWord);
     }
-
-    this.updateSatoshiBalance();
   }
 
-  updateSatoshiBalance() {
-    this.satoshiService.getSatoshiBalance(this.studentId).pipe(takeUntil(this.destroy$)).subscribe(
-      balance => {
-        this.totalSatoshis = balance;
-      },
-      error => console.error('Error fetching satoshi balance:', error)
-    );
-  }
-
-  private incrementSatoshi() {
-    this.satoshiService.incrementSatoshi(this.studentId, 1).subscribe(
-      newBalance => {
-        this.totalSatoshis = newBalance;
-        this.showSatoshiAlert = true;
-        setTimeout(() => this.showSatoshiAlert = false, 2000);
-      },
-      error => console.error('Erro ao incrementar saldo de satoshi:', error)
-    );
+  protected handleVoiceCommand(command: string): void {
+    const currentWord = this.vocabulary[this.currentIndex].english;
+    if (command.trim().toLowerCase() === currentWord.toLowerCase() && !this.correctEnglish[this.currentIndex]) {
+      this.correctEnglish[this.currentIndex] = true;
+      this.playSuccessSound();
+      this.markRowAsCorrect(this.currentIndex);
+      this.score++;
+      this.incrementSatoshi();
+      this.next();
+    } else {
+      this.playErrorSound();
+      this.markError(this.currentIndex);
+      this.score--;
+      this.next();
+    }
   }
 
   shuffleArray(array: any[]): any[] {
@@ -141,9 +117,9 @@ export class Game5Component implements OnInit, AfterViewInit, OnDestroy {
     if (this.currentIndex < this.vocabulary.length - 1) {
       this.currentIndex++;
     } else {
-      this.currentIndex = 0; // Reinicia do começo se desejado
+      this.currentIndex = 0;
     }
-    this.currentPhase = this.phases[0]; // Reinicia a fase
+    this.currentPhase = this.phases[0];
     const currentWord = this.vocabulary[this.currentIndex].english;
     this.voiceService.speak(currentWord);
     this.scrollToCurrentElement();
@@ -151,7 +127,7 @@ export class Game5Component implements OnInit, AfterViewInit, OnDestroy {
 
   scrollToCurrentElement(): void {
     setTimeout(() => {
-      const currentElement = document.querySelector(`tr:nth-child(${this.currentIndex + 2})`); // +2 to account for the header row
+      const currentElement = document.querySelector(`tr:nth-child(${this.currentIndex + 2})`);
       if (currentElement) {
         currentElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }
@@ -183,17 +159,12 @@ export class Game5Component implements OnInit, AfterViewInit, OnDestroy {
     this.voiceService.setVoice(selectedVoiceName);
   }
 
-  ngAfterViewInit(): void {
-    this.voiceService.setupWaveSurfer(this.micElement);
-    this.addClickEventToCells();
-  }
-
   addClickEventToCells(): void {
     const cells = document.querySelectorAll('td');
     cells.forEach(cell => {
       this.renderer.listen(cell, 'click', () => {
         this.score--;
-        this.soundService.playErro();
+        this.playErrorSound();
         this.markError(this.currentIndex);
         this.next();
       });
@@ -202,24 +173,12 @@ export class Game5Component implements OnInit, AfterViewInit, OnDestroy {
   }
 
   markRowAsCorrect(index: number): void {
-    const row = document.querySelector(`tr:nth-child(${index + 2})`); // +2 to account for the header row
+    const row = document.querySelector(`tr:nth-child(${index + 2})`);
     if (row) {
       row.classList.add('correct');
       const heartIcon = document.createElement('i');
       heartIcon.className = 'fa-solid fa-heart';
       row.appendChild(heartIcon);
-    }
-  }
-
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
-
-    this.voiceService.stopListening();
-    this.voiceService.stopRecording();
-
-    if (typeof speechSynthesis !== 'undefined') {
-      speechSynthesis.cancel();
     }
   }
 }

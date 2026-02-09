@@ -141,14 +141,24 @@ export class GraphComponent implements OnInit, AfterViewInit, OnDestroy {
 
       // Obter frases e nos
       const loadedNodes = await this.dataService.getSentences().toPromise();
-      if (loadedNodes) {
+      if (loadedNodes && loadedNodes.length > 0) {
         this.processNodes(loadedNodes);
+      } else {
+        // Sem dados - mostrar grafo vazio
+        this.isLoading = false;
+        this.loadingMessage = '';
+        return;
       }
 
       this.loadingMessage = 'Conectando as palavras...';
 
       // Processar similaridades e criar rede
-      await this.processSentences();
+      try {
+        await this.processSentences();
+      } catch (nlpError) {
+        console.warn('NLP processing failed, showing graph without similarity edges:', nlpError);
+      }
+
       this.createNetwork();
 
       // Calcular estatisticas
@@ -164,6 +174,7 @@ export class GraphComponent implements OnInit, AfterViewInit, OnDestroy {
     } catch (error) {
       console.error('Erro ao carregar grafo:', error);
       this.loadingMessage = 'Ops! Algo deu errado...';
+      this.isLoading = false;
     }
   }
 

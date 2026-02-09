@@ -1,19 +1,11 @@
 
 import { Injectable } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import {
   HttpClient,
-  HttpClientModule,
   HttpHeaders
 } from '@angular/common/http';
-import { MatSnackBar, MatSnackBarHorizontalPosition, MatSnackBarVerticalPosition } from '@angular/material/snack-bar';
-import { Firestore, collection, collectionData, doc, docData, addDoc, updateDoc, deleteDoc, query, where, Timestamp } from '@angular/fire/firestore';
-import { Observable, of } from 'rxjs';
-import { NoteCollection } from './note-collection';
-import { AngularFireAuth } from '@angular/fire/compat/auth';
-import { switchMap } from 'rxjs/operators';
-import { SatoshiService } from './satoshi.service'; 
-import gpt4 from '../../../../../gpt4.json';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { environment } from 'src/environments/environment';
 
 
 @Injectable({
@@ -26,7 +18,6 @@ export class NoteImgService {
     generatedImageUrl: string = '';
 
     constructor(
-        private firestore: Firestore,
         private _snackBar: MatSnackBar,
         private http: HttpClient,
       ) {
@@ -34,7 +25,7 @@ export class NoteImgService {
 
 /* ==================Generate Image From OpenAI==================== */
 generateImageFromOpenAI(selectedText: string) {
-    const openAIKey = gpt4.apiKey;
+    const openAIKey = environment.ai?.gemini?.apiKey || '';
     const headers = new HttpHeaders({
       Authorization: `Bearer ${openAIKey}`,
       'Content-Type': 'application/json'

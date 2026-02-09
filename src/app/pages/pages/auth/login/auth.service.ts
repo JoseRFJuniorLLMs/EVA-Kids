@@ -1,15 +1,32 @@
 import { Injectable } from '@angular/core';
-import { AngularFireAuth } from '@angular/fire/compat/auth';
-import { AngularFirestore } from '@angular/fire/compat/firestore';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Router } from '@angular/router';
-import { BehaviorSubject, Observable } from 'rxjs';
+import { BehaviorSubject, Observable, of } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { Student } from 'src/app/model/student/student';
 import { ChatVideoService } from 'src/app/pages/apps/chat-video/chat-video.service';
 import { StudentService } from 'src/app/pages/apps/student/student.service';
 import { NotificationService } from 'src/app/pages/apps/chat-video/notification.service';
-import firebase from 'firebase/compat/app';
 import { DataListService } from 'src/app/pages/apps/note/list/data-list.service';
+import { environment } from 'src/environments/environment';
+
+interface LoginResponse {
+  access_token: string;
+  token_type: string;
+  user?: {
+    id: number;
+    email: string;
+    role: string;
+    active: boolean;
+  };
+}
+
+interface JwtPayload {
+  sub: string;
+  role: string;
+  user_id: number;
+  exp: number;
+}
 
 @Injectable({
   providedIn: 'root'
@@ -17,40 +34,55 @@ import { DataListService } from 'src/app/pages/apps/note/list/data-list.service'
 export class AuthService {
   private loginErrorSubject = new BehaviorSubject<string | null>(null);
   loginError$ = this.loginErrorSubject.asObservable();
-  
+
   private userNameSubject = new BehaviorSubject<string | null>(null);
   userName$ = this.userNameSubject.asObservable();
 
+  private authenticatedSubject = new BehaviorSubject<boolean>(this.hasValidToken());
+
+  private cachedUser: any = null;
+  private apiUrl = environment.evaBack.apiUrl;
+
   constructor(
-    private afAuth: AngularFireAuth,
-    private firestore: AngularFirestore,
+    private http: HttpClient,
     private router: Router,
     private chatVideoService: ChatVideoService,
     private studentService: StudentService,
     private notificationService: NotificationService,
-    private dataListService: DataListService 
-  ) {}
+    private dataListService: DataListService
+  ) {
+    // Restore username from cached user on startup
+    if (this.hasValidToken()) {
+      this.getCurrentUserFromApi().subscribe();
+    }
+  }
 
   async register(email: string, password: string, studentData: Omit<Student, '_id' | 'email'>) {
     try {
-      console.log('Registering user with email:', email);
-      const userCredential = await this.afAuth.createUserWithEmailAndPassword(email, password);
-      const user = userCredential.user;
-      if (!user || !user.uid || !user.email) {
-        throw new Error('User or user email not found.');
+      const res = await this.http.post<LoginResponse>(`${this.apiUrl}/auth/register`, {
+        name: studentData.name || '',
+        email,
+        senha_hash: password,
+        role: 'cuidador'
+      }).toPromise();
+
+      if (res && res.access_token) {
+        localStorage.setItem('eva_jwt_token', res.access_token);
+        this.authenticatedSubject.next(true);
+
+        // Create student profile in kids system
+        await this.http.post(`${this.apiUrl}/kids/students`, {
+          name: studentData.name,
+          city: studentData.city,
+          country: studentData.country,
+          gender: studentData.gender,
+          phone: studentData.phone,
+          image_url: studentData.image_url,
+          spoken_language: studentData.spoken_language,
+        }).toPromise();
+
+        this.router.navigate(['/dashboards/analytics']);
       }
-
-      const student: Student = {
-        _id: user.uid,
-        email: user.email,
-        ...studentData,
-        online: true
-      };
-
-      console.log('Adding student data to Firestore:', student);
-      await this.studentService.addStudentData(student);
-      console.log('Student data added successfully');
-      this.router.navigate(['/dashboards/analytics']);
     } catch (error) {
       console.error('Error during registration:', error);
       this.loginErrorSubject.next('Registration failed. Please try again.');
@@ -59,62 +91,81 @@ export class AuthService {
 
   async login(email: string, password: string) {
     try {
-      console.log('Logging in user with email:', email);
-      const userCredential = await this.afAuth.signInWithEmailAndPassword(email, password);
-      const user = userCredential.user;
-      if (user && user.uid) {
-        const userDoc = this.firestore.collection('students').doc(user.uid);
-        const userDocSnapshot = await userDoc.get().toPromise();
-        const currentTimestamp = new Date().toISOString();
-        
-        if (userDocSnapshot && userDocSnapshot.exists) {
-          await userDoc.update({ 
-            online: true,
-            lastLogin: currentTimestamp,
-            loginHistory: firebase.firestore.FieldValue.arrayUnion(currentTimestamp)
-          });
-          const userData = userDocSnapshot.data() as Student;
-          this.userNameSubject.next(userData.name ?? null);
-        } else {
-          await userDoc.set({ 
-            online: true, 
-            lastLogin: currentTimestamp,
-            loginHistory: [currentTimestamp]
-          }, { merge: true });
+      // EVA-back uses OAuth2PasswordRequestForm (application/x-www-form-urlencoded)
+      const body = new HttpParams()
+        .set('username', email)
+        .set('password', password);
+
+      const res = await this.http.post<LoginResponse>(`${this.apiUrl}/auth/login`, body.toString(), {
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+      }).toPromise();
+
+      if (res && res.access_token) {
+        localStorage.setItem('eva_jwt_token', res.access_token);
+        if (res.user) {
+          localStorage.setItem('eva_user', JSON.stringify(res.user));
         }
-  
-        this.notificationService.listenForCallNotifications(user.uid);
-  
-        // Initialize WebRTC for the user, set up the connection and create an offer
-        await this.chatVideoService.startLocalStream();
-        await this.chatVideoService.setupWebRTCForUser(user.uid);
-        await this.chatVideoService.createOffer(user.uid);
-  
-        // Atualiza as notas atrasadas após o login
-        setTimeout(() => {
-          this.dataListService.updateOverdueNotes()
-            .then(() => console.log('Notas atrasadas atualizadas com sucesso após o login.'))
-            .catch(error => console.error('Erro ao atualizar as notas atrasadas após o login:', error));
-        }, 0);
+        this.authenticatedSubject.next(true);
+
+        const userId = this.getUID();
+
+        // Update login timestamp on student profile
+        if (userId) {
+          try {
+            const profile = await this.http.get<any>(`${this.apiUrl}/kids/profile`).toPromise();
+            if (profile) {
+              this.userNameSubject.next(profile.name ?? null);
+              // Update online status
+              if (profile.id) {
+                this.http.put(`${this.apiUrl}/kids/students/${profile.id}/online`, { online: true }).subscribe();
+              }
+            }
+          } catch {
+            // Profile may not exist yet - that's ok
+          }
+
+          this.notificationService.connect(userId.toString());
+
+          // Initialize WebRTC
+          await this.chatVideoService.startLocalStream();
+          this.chatVideoService.setCurrentUserId(userId.toString());
+
+          // Update overdue notes
+          setTimeout(() => {
+            this.dataListService.updateOverdueNotes()
+              .catch(error => console.error('Erro ao atualizar as notas atrasadas após o login:', error));
+          }, 0);
+        }
+
+        this.loginErrorSubject.next(null);
+        this.router.navigate(['/dashboards/analytics']);
       }
-      this.loginErrorSubject.next(null);
-      this.router.navigate(['/dashboards/analytics']);
     } catch (error) {
       console.error('Error during login:', error);
       this.loginErrorSubject.next('Incorrect email or password.');
     }
   }
-  
+
   async logout() {
     try {
-      const user = await this.afAuth.currentUser;
-      if (user && user.uid) {
-        await this.firestore.collection('students').doc(user.uid).update({ online: false });
-        await this.chatVideoService.tearDownWebRTCForUser(user.uid);
-        await this.chatVideoService.deleteCallInfo();
+      const userId = this.getUID();
+      if (userId) {
+        // Set offline
+        try {
+          const profile = await this.http.get<any>(`${this.apiUrl}/kids/profile`).toPromise();
+          if (profile?.id) {
+            await this.http.put(`${this.apiUrl}/kids/students/${profile.id}/online`, { online: false }).toPromise();
+          }
+        } catch {}
+        this.chatVideoService.endCall();
+        this.notificationService.disconnect();
       }
-      console.log('Logging out user');
-      await this.afAuth.signOut();
+
+      localStorage.removeItem('eva_jwt_token');
+      localStorage.removeItem('eva_user');
+      this.authenticatedSubject.next(false);
+      this.cachedUser = null;
+      this.userNameSubject.next(null);
       this.router.navigate(['/login']);
     } catch (error) {
       console.error('Error during logout:', error);
@@ -122,17 +173,60 @@ export class AuthService {
   }
 
   isAuthenticated(): Observable<boolean> {
-    return this.afAuth.authState.pipe(map(user => !!user));
+    return this.authenticatedSubject.asObservable();
   }
 
-  async getCurrentUser(): Promise<firebase.User | null> {
-    return this.afAuth.currentUser;
-  }
-  
-  async getUID(): Promise<string | null> {
-    const user = await this.afAuth.currentUser;
-    return user ? user.uid : null;
+  getUID(): number | null {
+    const token = localStorage.getItem('eva_jwt_token');
+    if (!token) return null;
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1])) as JwtPayload;
+      return payload.user_id;
+    } catch {
+      return null;
+    }
   }
 
+  getEmail(): string | null {
+    const token = localStorage.getItem('eva_jwt_token');
+    if (!token) return null;
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1])) as JwtPayload;
+      return payload.sub;
+    } catch {
+      return null;
+    }
+  }
 
-}//fim
+  getCurrentUser(): any {
+    if (this.cachedUser) return this.cachedUser;
+    const stored = localStorage.getItem('eva_user');
+    if (stored) {
+      this.cachedUser = JSON.parse(stored);
+      return this.cachedUser;
+    }
+    return null;
+  }
+
+  getCurrentUserFromApi(): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/auth/me`).pipe(
+      map(user => {
+        this.cachedUser = user;
+        localStorage.setItem('eva_user', JSON.stringify(user));
+        this.userNameSubject.next(user.nome ?? null);
+        return user;
+      })
+    );
+  }
+
+  private hasValidToken(): boolean {
+    const token = localStorage.getItem('eva_jwt_token');
+    if (!token) return false;
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1])) as JwtPayload;
+      return payload.exp * 1000 > Date.now();
+    } catch {
+      return false;
+    }
+  }
+}

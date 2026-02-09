@@ -1,8 +1,7 @@
-import { Component, ElementRef, Inject, Input, OnInit, ViewChild, NgZone, ChangeDetectorRef, AfterViewInit, OnDestroy, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
+import { Component, ElementRef, Input, OnInit, ViewChild, AfterViewInit, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Observable, Subject, Subscription } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
-import { Firestore, collection, collectionData } from '@angular/fire/firestore';
+import { Observable } from 'rxjs';
+import { ActivatedRoute } from '@angular/router';
 import { MatDialog } from '@angular/material/dialog';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { MatTooltipModule } from '@angular/material/tooltip';
@@ -16,15 +15,13 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatSliderModule } from '@angular/material/slider';
 import { FormsModule } from '@angular/forms';
-import { SoundService } from 'src/app/layouts/components/footer/sound.service';
 import { fadeInUp400ms } from '@vex/animations/fade-in-up.animation';
 import { stagger40ms } from '@vex/animations/stagger.animation';
-import { UnifiedVoiceService } from 'src/app/core/services/voice/unified-voice.service';
 import WaveSurfer from 'wavesurfer.js';
-import screenfull from 'screenfull';
+import { StudentService } from '../student/student.service';
 import { FlashcardComponent } from '../note/list/flashcard.component';
-import { SatoshiService } from '../note/satoshi.service'; // Verifique o caminho correto
 import { NoteCollection } from '../note/note-collection';
+import { BaseVoiceGame } from '../voice-game/base-voice-game';
 
 @Component({
   selector: 'game-component',
@@ -34,7 +31,7 @@ import { NoteCollection } from '../note/note-collection';
   standalone: true,
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   imports: [
-    CommonModule, 
+    CommonModule,
     MatExpansionModule,
     MatTooltipModule,
     MatBadgeModule,
@@ -50,24 +47,15 @@ import { NoteCollection } from '../note/note-collection';
     FlashcardComponent
   ]
 })
-export class GameComponent implements OnInit, AfterViewInit, OnDestroy {
-  // Cleanup subject for memory leak prevention
-  private destroy$ = new Subject<void>();
-
+export class GameComponent extends BaseVoiceGame implements OnInit, AfterViewInit {
   student$!: Observable<any[]>;
-  private satoshiSubscription: Subscription | null = null;
 
-  @ViewChild('mic') micElement!: ElementRef<HTMLDivElement>;
-  @ViewChild('micSelect') micSelectElement!: ElementRef<HTMLSelectElement>;
-  @ViewChild('waveformPlay') waveformPlay!: ElementRef;
-
+  @ViewChild('waveformPlay') override waveformPlay!: ElementRef;
   @Input() recordedUrl: string | undefined;
 
+  maskedMode = false;
   isPanelExpanded: boolean = true;
-  recognition: any;
-  message: string = '';
   speak: string = '';
-  commandCounter: number = 0;
   currentPhraseIndex: number = 0;
 
   combinations: Set<string> = new Set();
@@ -76,8 +64,6 @@ export class GameComponent implements OnInit, AfterViewInit, OnDestroy {
   pageSize: number = 9;
 
   legendas: string[] = [];
-  collapsed: any;
-  layoutService: any;
 
   whos = ['i', 'you', 'we', 'they', 'he', 'she', 'it', 'people', 'someone', 'everyone'];
   whys = ['can', 'want', 'like', 'need', 'loves', 'hates', 'prefers', 'enjoy', 'has to', 'should'];
@@ -90,85 +76,81 @@ export class GameComponent implements OnInit, AfterViewInit, OnDestroy {
   private flashcardDialogRef: any;
   filteredNotes$!: Observable<NoteCollection[]>;
 
-  private studentId = 'student-id';
-  totalSatoshis = 0;
-  showSatoshiAlert = false;
-
-  // Local WaveSurfer for playback
-  private playbackWavesurfer: WaveSurfer | null = null;
-
   constructor(
-    private cdr: ChangeDetectorRef,
     public dialog: MatDialog,
     private elementRef: ElementRef,
-    @Inject(Firestore) private firestore: Firestore,
-    private zone: NgZone,
-    private soundService: SoundService,
-    private voiceService: UnifiedVoiceService,
-    @Inject(SatoshiService) private satoshiService: SatoshiService
+    private route: ActivatedRoute,
+    private studentService: StudentService
   ) {
-    const student = collection(this.firestore, 'StudentCollection'); // Verifique o nome correto da coleção
-    this.student$ = collectionData(student) as Observable<any[]>;
-
+    super();
+    this.student$ = this.studentService.getStudents();
+    this.maskedMode = this.route.snapshot.data['maskedMode'] === true;
     this.totalCombinations = this.whos.length * this.whys.length * this.actions.length * this.wheres.length;
     this.generateCombinations();
     this.updateCurrentCombinations();
   }
 
-  ngOnInit(): void {
-    if (screenfull.isEnabled) {
-      screenfull.request();
-    }
-
-    // Configure voice service for game mode
-    this.voiceService.usePreset('game');
-
-    this.voiceService.command$.pipe(takeUntil(this.destroy$)).subscribe(command => {
-      this.zone.run(() => this.executeVoiceCommand(command));
-    });
-
-    this.voiceService.recordingEnded$.pipe(takeUntil(this.destroy$)).subscribe(url => {
-      this.recordedUrl = url;
-      this.createWaveSurferPlay(url);
-    });
-
-    this.startVoiceRecognition();
-    this.updateSatoshiBalance();
+  override ngOnInit(): void {
+    super.ngOnInit();
   }
 
   ngAfterViewInit(): void {
-    this.voiceService.setupWaveSurfer(this.micElement);
-    this.startRecording();
+    this.setupWaveSurferAndStart();
   }
 
-  ngOnDestroy(): void {
-    // Complete destroy$ to unsubscribe all subscriptions
-    this.destroy$.next();
-    this.destroy$.complete();
+  protected override onGameInit(): void {
+    this.voiceService.recordingEnded$.pipe().subscribe(url => {
+      this.recordedUrl = url;
+    });
+  }
 
-    // Clean up local playback WaveSurfer
+  protected handleVoiceCommand(command: string): void {
+    const cleanedCommand = this.cleanCommand(command);
+    const parsedCommand = this.parseCommand(cleanedCommand);
+
+    if (parsedCommand) {
+      const commandKey = `${parsedCommand.who} ${parsedCommand.why} ${parsedCommand.action} ${parsedCommand.where}`;
+      if (!this.combinations.has(commandKey)) {
+        this.combinations.add(commandKey);
+        this.commandCounter++;
+        this.cdr.detectChanges();
+        if (this.commandCounter === this.pageSize) {
+          this.nextPage();
+        }
+      }
+
+      if (this.currentPhraseIndex < this.currentCombinations.length - 1) {
+        this.currentPhraseIndex++;
+      } else {
+        this.nextPage();
+      }
+
+      this.speak = `${parsedCommand.who} ${parsedCommand.why} ${parsedCommand.action} ${parsedCommand.where}`;
+      this.playSuccessSound();
+      this.incrementSatoshi();
+    } else {
+      this.message = `${cleanedCommand}`;
+      this.playErrorSound();
+      this.speakText(`${cleanedCommand}`);
+    }
+  }
+
+  override createWaveSurferPlay(url: string): void {
     if (this.playbackWavesurfer) {
       this.playbackWavesurfer.destroy();
     }
 
-    // Stop voice services
-    this.voiceService.stopListening();
-    this.voiceService.stopRecording();
+    this.playbackWavesurfer = WaveSurfer.create({
+      container: this.waveformPlay.nativeElement,
+      waveColor: '#6c63ff',
+      progressColor: '#FE7F9C',
+      barWidth: 4,
+      cursorWidth: 1,
+      height: 100,
+      normalize: true
+    });
 
-    // Cancel any browser speech synthesis
-    if (typeof speechSynthesis !== 'undefined') {
-      speechSynthesis.cancel();
-    }
-  }
-
-  updateSatoshiBalance() {
-    this.satoshiService.getSatoshiBalance(this.studentId).pipe(takeUntil(this.destroy$)).subscribe(
-      (balance: number) => {
-        this.totalSatoshis = balance;
-        this.cdr.detectChanges();
-      },
-      (error: any) => console.error('Error fetching satoshi balance:', error)
-    );
+    this.playbackWavesurfer.load(url);
   }
 
   generateCombinations(): void {
@@ -192,51 +174,12 @@ export class GameComponent implements OnInit, AfterViewInit, OnDestroy {
   nextPage(): void {
     this.currentPage++;
     this.updateCurrentCombinations();
-    this.currentPhraseIndex = 0; 
+    this.currentPhraseIndex = 0;
   }
 
   updateHint(event: any): void {
     this.commandCounter = event.value;
     this.cdr.detectChanges();
-  }
-
-  startVoiceRecognition(): void {
-    this.voiceService.startListening();
-  }
-
-  cleanCommand(command: string): string {
-    return command.trim().toLowerCase().replace(/\s+/g, ' ');
-  }
-
-  executeVoiceCommand(command: string): void {
-    const cleanedCommand = this.cleanCommand(command);
-    const parsedCommand = this.parseCommand(cleanedCommand);
-  
-    if (parsedCommand) {
-      const commandKey = `${parsedCommand.who} ${parsedCommand.why} ${parsedCommand.action} ${parsedCommand.where}`;
-      if (!this.combinations.has(commandKey)) {
-        this.combinations.add(commandKey);
-        this.commandCounter++;
-        this.cdr.detectChanges();
-        if (this.commandCounter === this.pageSize) {
-          this.nextPage();
-        }
-      }
-  
-      if (this.currentPhraseIndex < this.currentCombinations.length - 1) {
-        this.currentPhraseIndex++;
-      } else {
-        this.nextPage();
-      }
-      
-      this.speak = `${parsedCommand.who} ${parsedCommand.why} ${parsedCommand.action} ${parsedCommand.where}`;
-      this.soundService.playDone();
-      this.incrementSatoshi(); 
-    } else {
-      this.message = `${cleanedCommand}`;
-      this.soundService.playErro();
-      this.speakText(`${cleanedCommand}`);
-    }
   }
 
   parseCommand(command: string): { who: string, why: string, action: string, where: string } | null {
@@ -255,48 +198,7 @@ export class GameComponent implements OnInit, AfterViewInit, OnDestroy {
     return null;
   }
 
-  incrementSatoshi(): void {
-    this.satoshiService.incrementSatoshi(this.studentId, 1).pipe(takeUntil(this.destroy$)).subscribe(
-      () => {
-        this.totalSatoshis++;
-        this.showSatoshiAlert = true;
-
-        this.cdr.detectChanges();
-        setTimeout(() => {
-          this.showSatoshiAlert = false;
-          this.cdr.detectChanges();
-        }, 3000);
-      },
-      (error: any) => console.error('Error incrementing satoshi:', error)
-    );
-  }
-
-  createWaveSurferPlay(url: string): void {
-    // Destroy existing playback wavesurfer
-    if (this.playbackWavesurfer) {
-      this.playbackWavesurfer.destroy();
-    }
-
-    // Create local wavesurfer for playback
-    this.playbackWavesurfer = WaveSurfer.create({
-      container: this.waveformPlay.nativeElement,
-      waveColor: '#6c63ff',
-      progressColor: '#FE7F9C',
-      barWidth: 4,
-      cursorWidth: 1,
-      height: 100,
-      normalize: true
-    });
-
-    this.playbackWavesurfer.load(url);
-  }
-
-  startRecording(): void {
-    this.voiceService.startRecording();
-  }
-
-  speakText(message: string): void {
-    const speech = new SpeechSynthesisUtterance(message);
-    window.speechSynthesis.speak(speech);
+  playBiNeural(): void {
+    this.soundService.playBiNeural();
   }
 }

@@ -2,8 +2,8 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Observable, throwError, Subject, BehaviorSubject } from 'rxjs';
 import { MatSnackBar, MatSnackBarHorizontalPosition, MatSnackBarVerticalPosition } from '@angular/material/snack-bar';
-import { Firestore, doc, docData, setDoc, getDoc, collection, collectionData } from '@angular/fire/firestore';
-import { map } from 'rxjs/operators';
+import { map, catchError } from 'rxjs/operators';
+import { environment } from 'src/environments/environment';
 
 interface Ebook {
   title: string;
@@ -33,6 +33,7 @@ export class PdfService {
   public ebooks$ = this.ebooksSubject.asObservable();
 
   private pdfDoc: any = null;
+  private apiUrl = `${environment.evaBack.apiUrl}/kids`;
 
   durationInSeconds = 10;
   horizontalPosition: MatSnackBarHorizontalPosition = 'end';
@@ -41,7 +42,6 @@ export class PdfService {
   constructor(
     private http: HttpClient,
     private _snackBar: MatSnackBar,
-    private firestore: Firestore
   ) {
     this.loadEbooks();
     this.initializeVoices();
@@ -49,51 +49,46 @@ export class PdfService {
       this.voices.find((voice) => voice.name === 'Google US English') || null;
   }
 
-  // Método para salvar a página atual no Firebase
   async saveCurrentPage(ebookId: string): Promise<void> {
-    const userId = 'defaultUser'; // ID do usuário fixo
-    const userDocRef = doc(this.firestore, `userProgress/${userId}`);
-    const userDocSnap = await getDoc(userDocRef);
-
-    if (userDocSnap.exists()) {
-      await setDoc(userDocRef, { [ebookId]: this.currentPage }, { merge: true });
-    } else {
-      await setDoc(userDocRef, { [ebookId]: this.currentPage });
+    try {
+      await this.http.put(`${this.apiUrl}/progress/${ebookId}`, {
+        current_page: this.currentPage,
+        completed: false
+      }).toPromise();
+    } catch (error) {
+      console.error('Error saving page:', error);
     }
   }
 
-  // Método para recuperar a página salva do Firebase
   getCurrentPage(ebookId: string): Observable<number> {
-    const userId = 'defaultUser'; // ID do usuário fixo
-    const userDocRef = doc(this.firestore, `userProgress/${userId}`);
-    return docData(userDocRef).pipe(
-      map((data: any) => data ? data[ebookId] || 1 : 1)
+    return this.http.get<any>(`${this.apiUrl}/progress/${ebookId}`).pipe(
+      map(data => data?.current_page || 1),
+      catchError(() => {
+        return new Observable<number>(obs => { obs.next(1); obs.complete(); });
+      })
     );
   }
 
-  // Método para salvar o estado de conclusão no Firebase
   async markAsCompleted(ebookId: string, completed: boolean): Promise<void> {
-    const userId = 'defaultUser'; // ID do usuário fixo
-    const userDocRef = doc(this.firestore, `userProgress/${userId}`);
-    const userDocSnap = await getDoc(userDocRef);
-
-    if (userDocSnap.exists()) {
-      await setDoc(userDocRef, { [`${ebookId}_completed`]: completed }, { merge: true });
-    } else {
-      await setDoc(userDocRef, { [`${ebookId}_completed`]: completed });
+    try {
+      await this.http.put(`${this.apiUrl}/progress/${ebookId}`, {
+        current_page: this.currentPage,
+        completed
+      }).toPromise();
+    } catch (error) {
+      console.error('Error marking as completed:', error);
     }
   }
 
-  // Método para verificar o estado de conclusão no Firebase
   getCompletionStatus(ebookId: string): Observable<boolean> {
-    const userId = 'defaultUser'; // ID do usuário fixo
-    const userDocRef = doc(this.firestore, `userProgress/${userId}`);
-    return docData(userDocRef).pipe(
-      map((data: any) => data ? data[`${ebookId}_completed`] || false : false)
+    return this.http.get<any>(`${this.apiUrl}/progress/${ebookId}`).pipe(
+      map(data => data?.completed || false),
+      catchError(() => {
+        return new Observable<boolean>(obs => { obs.next(false); obs.complete(); });
+      })
     );
   }
 
-  // Método para carregar eBooks do JSON local
   async loadEbooks(): Promise<void> {
     this.http.get<Ebook[]>('../../../../assets/pdf/clasepdf.json').subscribe(
       (data) => {
@@ -108,7 +103,6 @@ export class PdfService {
     );
   }
 
-  // Método para retornar os eBooks como observable
   getEbooks(): Observable<Ebook[]> {
     return this.ebooks$;
   }
@@ -141,7 +135,6 @@ export class PdfService {
   }
 
   async renderPage(pageNumber: number, container: HTMLElement): Promise<void> {
-    // Esta função pode ser ajustada ou removida dependendo do uso com ngx-extended-pdf-viewer
   }
 
   loadBookFromArrayBuffer(arrayBuffer: ArrayBuffer, containerId: string): void {
@@ -150,7 +143,6 @@ export class PdfService {
   }
 
   async updateCurrentPage(containerId: string): Promise<void> {
-    console.log('Updating current page...');
     const container = document.getElementById(containerId);
     if (this.pdfDoc && container) {
       await this.renderPage(this.currentPage, container);
@@ -162,23 +154,19 @@ export class PdfService {
   }
 
   async processCurrentPageAudio(): Promise<void> {
-    console.log('Processing current page audio...');
     this.currentPageTextArray = this.splitIntoSentences(this.currentPageText);
     this.currentSentenceIndex = 0;
     if (this.audioMode && this.readingInProgress) {
       this.openSnackBar('Processing current page audio.');
-      console.log('Audio mode is active and reading is in progress.');
     }
   }
 
   splitIntoSentences(text: string): string[] {
-    console.log('Splitting text into sentences...');
     return text.match(/[^\.!\?]+[\.!\?]+/g) || [];
   }
 
   startReadingMode(): void {
     this.openSnackBar('Start Reading Mode');
-    console.log('Starting reading mode...');
     this.audioMode = false;
     this.readingInProgress = false;
     speechSynthesis.cancel();
@@ -186,7 +174,6 @@ export class PdfService {
 
   startAudioMode(): void {
     this.openSnackBar('Start Audio Mode');
-    console.log('Starting audio mode...');
     this.audioMode = true;
     this.readingInProgress = true;
     this.processCurrentPageAudio();
@@ -194,14 +181,12 @@ export class PdfService {
 
   pauseReading(): void {
     this.openSnackBar('Pause Reading');
-    console.log('Pausing reading...');
     speechSynthesis.pause();
     this.readingInProgress = false;
   }
 
   resumeReading(): void {
     this.openSnackBar('Resume Reading');
-    console.log('Resuming reading...');
     speechSynthesis.resume();
     this.readingInProgress = true;
     if (this.currentSentenceIndex !== null) {
@@ -211,21 +196,19 @@ export class PdfService {
 
   nextPage(containerId: string, ebookId: string): void {
     this.openSnackBar('Next Page');
-    console.log('Going to next page...');
     if (this.currentPage < this.totalPages) {
       this.currentPage++;
       this.updateCurrentPage(containerId);
-      this.saveCurrentPage(ebookId); // Salva a página atual
+      this.saveCurrentPage(ebookId);
     }
   }
 
   prevPage(containerId: string, ebookId: string): void {
     this.openSnackBar('Previous Page');
-    console.log('Going to previous page...');
     if (this.currentPage > 1) {
       this.currentPage--;
       this.updateCurrentPage(containerId);
-      this.saveCurrentPage(ebookId); // Salva a página atual
+      this.saveCurrentPage(ebookId);
     }
   }
 
@@ -240,7 +223,6 @@ export class PdfService {
     if (this.audioMode) {
       await this.processCurrentPageAudio();
     }
-    console.log('Selected voice:', voice.name);
   }
 
   initializeVoices(): Promise<void> {

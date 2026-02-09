@@ -1,16 +1,15 @@
-import firebase from 'firebase/compat/app'; // Importe o namespace do Firebase
 
 // (Opcional) Interface auxiliar para clareza nas referências de responsáveis
 interface ResponsavelRef {
-  pessoaRef: firebase.firestore.DocumentReference; // Ref para /pessoas/{cdpesResponsavel}
-  tipoRelacaoRef: firebase.firestore.DocumentReference; // Ref para /tiposRelacao/{cdtip}
+  pessoaRef: string | null; // ID referência para /pessoas/{cdpesResponsavel}
+  tipoRelacaoRef: string | null; // ID referência para /tiposRelacao/{cdtip}
   responsavel: boolean;
   autorizadoBuscar: boolean;
   obs: string | null;
 }
 
 export interface Aluno {
-  _id?: string; // ID do documento Firestore (opcional, pode ser o UID do Auth)
+  _id?: string; // ID do documento (opcional)
   cdpes: number; // PK original do SQL
 
   // --- Dados Pessoais ---
@@ -19,23 +18,23 @@ export interface Aluno {
   nomeSocial?: string | null;
   apelido?: string | null;
   fantasia?: string | null; // Adicionado
-  dtnasc: firebase.firestore.Timestamp | null;
-  dtobito?: firebase.firestore.Timestamp | null;
+  dtnasc: Date | string | null;
+  dtobito?: Date | string | null;
   sexo?: 'M' | 'F' | null; // Ou string, se houver outros valores
-  estadoCivilRef?: firebase.firestore.DocumentReference | null; // Ref para /estadosCivis/{cdestciv}
-  racaCorRef?: firebase.firestore.DocumentReference | null; // Ref para /racas/{cdrac}
+  estadoCivilRef?: string | null; // ID referência para /estadosCivis/{cdestciv}
+  racaCorRef?: string | null; // ID referência para /racas/{cdrac}
   tipoSanguineo?: string | null;
   nacionalidade?: {
-    paisOrigemRef: firebase.firestore.DocumentReference | null; // Ref para /paises/{cdpaiorig}
+    paisOrigemRef: string | null; // ID referência para /paises/{cdpaiorig}
     anoChegada?: number | null;
     naturalizado?: boolean;
   } | null;
   naturalidade?: {
-    cidadeRef: firebase.firestore.DocumentReference | null; // Ref para /cidades/{cdcidnat}
+    cidadeRef: string | null; // ID referência para /cidades/{cdcidnat}
   } | null;
   fotoUrl?: string | null; // Mapeado de cdane ou campo específico
-  dtcad: firebase.firestore.Timestamp; // Data de cadastro original
-  ultimaAtualizacao?: firebase.firestore.Timestamp; // Gerenciado pela aplicação
+  dtcad: Date | string; // Data de cadastro original
+  ultimaAtualizacao?: Date | string; // Gerenciado pela aplicação
   ativo?: boolean; // Gerenciado pela aplicação ou derivado
   observacoesGerais?: string | null; // de public.pessoa.obs
 
@@ -45,8 +44,8 @@ export interface Aluno {
     numero: string | null;
     complemento?: string | null;
     orgaoEmissor?: string | null;
-    ufRef?: firebase.firestore.DocumentReference | null; // Ref para /ufs/{dcrguf}
-    dataEmissao?: firebase.firestore.Timestamp | null;
+    ufRef?: string | null; // ID referência para /ufs/{dcrguf}
+    dataEmissao?: Date | string | null;
   } | null;
   certidao?: {
     tipo?: 'N' | 'C' | string | null; // Nascimento, Casamento, etc.
@@ -54,16 +53,16 @@ export interface Aluno {
     numeroAntigo?: string | null; // Se aplicável
     livro?: string | null;
     folha?: string | null;
-    dataEmissao?: firebase.firestore.Timestamp | null;
-    cartorioCidadeRef?: firebase.firestore.DocumentReference | null; // Ref para /cidades/{cidcartorio}
-    cartorioUfRef?: firebase.firestore.DocumentReference | null; // Ref para /ufs/{dcccartoriouf}
+    dataEmissao?: Date | string | null;
+    cartorioCidadeRef?: string | null; // ID referência para /cidades/{cidcartorio}
+    cartorioUfRef?: string | null; // ID referência para /ufs/{dcccartoriouf}
   } | null;
   tituloEleitor?: {
     numero: string | null;
     zona?: string | null;
     secao?: string | null;
-    cidadeRef?: firebase.firestore.DocumentReference | null; // Ref para /cidades/{dctcidtitulo}
-    ufRef?: firebase.firestore.DocumentReference | null; // Ref para /ufs/{dctuftitulo}
+    cidadeRef?: string | null; // ID referência para /cidades/{dctcidtitulo}
+    ufRef?: string | null; // ID referência para /ufs/{dctuftitulo}
   } | null;
   outrosDocumentos?: {
     carteiraProfissional?: { // Mapeando dccartprof e dccpserie
@@ -94,7 +93,7 @@ export interface Aluno {
     complemento?: string | null;
     referencia?: string | null;
     cep: string | null;
-    bairroRef: firebase.firestore.DocumentReference | null; // Ref para /bairros/{cdbai}
+    bairroRef: string | null; // ID referência para /bairros/{cdbai}
     latitude?: number | null; // Adicionado
     longitude?: number | null; // Adicionado
     latLongManual?: boolean; // Adicionado
@@ -116,16 +115,16 @@ export interface Aluno {
 
   // --- Saúde ---
   pcd?: boolean; // Derivado?
-  necessidadesEspeciaisRefs?: Array<firebase.firestore.DocumentReference> | null; // Ref para /patologias/{cdpat}
-  alergiasRefs?: Array<firebase.firestore.DocumentReference> | null; // Ref para /itens/{cdite}
+  necessidadesEspeciaisRefs?: Array<string> | null; // IDs referência para /patologias/{cdpat}
+  alergiasRefs?: Array<string> | null; // IDs referência para /itens/{cdite}
   usaMedicacaoContinua?: boolean | null; // Baseado em medespecial?
   medicacaoDescricao?: string | null; // Baseado em medespecial?
   gestante?: boolean;
-  dataProvavelParto?: firebase.firestore.Timestamp | null;
-  imcHistoricoRefs?: Array<firebase.firestore.DocumentReference> | null; // Ref para coleção /imcs/{id_imc}
+  dataProvavelParto?: Date | string | null;
+  imcHistoricoRefs?: Array<string> | null; // IDs referência para coleção /imcs/{id_imc}
 
   // --- Informações Escolares (Aluno) ---
-  matriculaAtualRef?: firebase.firestore.DocumentReference | null; // Ref para /matriculas/{id_matricula_ativa}
+  matriculaAtualRef?: string | null; // ID referência para /matriculas/{id_matricula_ativa}
   bolsaFamilia?: boolean; // de alubolsa
   pim?: boolean; // de alupim
   transporteNecessario?: boolean; // Derivado?

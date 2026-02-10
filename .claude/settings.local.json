@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx ng build:*)",
+      "Read(//tmp/claude/d--dev-priming-front-end-v6/tasks/**)",
+      "Bash(npx tsc:*)",
+      "Bash(powershell:*)",
+      "Bash(npm install:*)",
+      "Bash(ng build:*)",
+      "Bash(echo:*)"
+    ]
+  }
+}

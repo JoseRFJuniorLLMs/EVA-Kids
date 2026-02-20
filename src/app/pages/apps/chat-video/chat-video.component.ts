@@ -18,6 +18,7 @@ import { ChangeDetectorRef } from '@angular/core';
 import screenfull from 'screenfull';
 import { NotificationService } from './notification.service';
 import { AuthService } from '../../pages/auth/login/auth.service';
+import { VexLayoutService } from '@vex/services/vex-layout.service';
 
 @Component({
   selector: 'chat-video',
@@ -39,8 +40,7 @@ export class ChatVideoComponent implements OnInit, OnDestroy {
   inCall: boolean = false;
   otherUserOnline: boolean = false;
   checkUserOnlineInterval: any;
-  collapsed: any;
-  layoutService: any;
+  collapsed = false;
   targetUserId: string;
   loggedUserName: string = '';
   loggedUserId: string = '';
@@ -52,6 +52,7 @@ export class ChatVideoComponent implements OnInit, OnDestroy {
     private cdr: ChangeDetectorRef,
     private notificationService: NotificationService,
     private authService: AuthService,
+    private layoutService: VexLayoutService,
     @Inject(MAT_DIALOG_DATA) public data: { targetUserId: string, targetUserName: string }
   ) {
     this.targetUserId = data.targetUserId;

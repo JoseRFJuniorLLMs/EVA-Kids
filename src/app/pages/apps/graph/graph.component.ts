@@ -4,7 +4,8 @@
  * Mostra as palavras que a crianca conhece e as palavras priming
  * que se relacionam, ajudando no aprendizado de forma visual e divertida.
  *
- * Usa Gemini Native Audio para pronunciar as palavras.
+ * Usa Browser TTS para pronunciar as palavras.
+ * TensorFlow USE para similaridade semantica entre frases.
  */
 
 import { Component, OnInit, ElementRef, ViewChild, AfterViewInit, ChangeDetectorRef, OnDestroy } from '@angular/core';
@@ -90,10 +91,12 @@ export class GraphComponent implements OnInit, AfterViewInit, OnDestroy {
 
   // Dados do grafo
   sentences: string[] = [];
+  private nodeIds: number[] = []; // IDs reais dos nodes para mapear indices -> IDs
   nodes: DataSet<WordNode> = new DataSet<WordNode>();
   edges: DataSet<Edge> = new DataSet<Edge>();
   primeToTarget: { [key: string]: string } = {};
   colorMapping: { [key: string]: string } = {};
+  similarityThreshold = 0.5;
 
   // Estatisticas
   totalWords = 0;
@@ -271,23 +274,31 @@ export class GraphComponent implements OnInit, AfterViewInit, OnDestroy {
     });
 
     this.nodes = new DataSet<WordNode>(processedNodes);
+    this.nodeIds = processedNodes.map(node => node.id);
     this.sentences = processedNodes.map(node => node.label);
     this.totalWords = processedNodes.length;
   }
 
   /**
-   * Processa similaridades entre palavras
+   * Processa similaridades entre palavras usando TensorFlow USE.
+   * Cria edges baseadas em:
+   *   1) Relacoes prime-target (word.json)
+   *   2) Similaridade semantica acima do threshold
    */
   async processSentences() {
-    const similarities = await this.nlpService.calculateSimilarities(this.sentences);
-    const similarityThreshold = 0.5;
+    const similarities = await this.nlpService.calculateSimilarities(
+      this.sentences, this.similarityThreshold
+    );
 
     for (let i = 0; i < this.sentences.length; i++) {
       for (let j = i + 1; j < this.sentences.length; j++) {
+        // Pular se fora do range da matriz (batch truncado)
+        if (i >= similarities.length || j >= similarities[i].length) continue;
+
         const primeTargetRelation = this.checkPrimeTargetRelation(this.sentences[i], this.sentences[j]);
         const semanticSimilarity = similarities[i][j];
 
-        if (primeTargetRelation || semanticSimilarity > similarityThreshold) {
+        if (primeTargetRelation || semanticSimilarity > this.similarityThreshold) {
           let color = KIDS_COLORS.blue;
           let width = 2;
 
@@ -298,9 +309,10 @@ export class GraphComponent implements OnInit, AfterViewInit, OnDestroy {
             width = Math.max(1, semanticSimilarity * 4);
           }
 
+          // Usar IDs reais dos nodes, nao indices
           this.edges.add({
-            from: i + 1,
-            to: j + 1,
+            from: this.nodeIds[i],
+            to: this.nodeIds[j],
             arrows: {
               to: {
                 enabled: true,

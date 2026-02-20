@@ -1,36 +1,35 @@
 /**
  * Environment configuration - Production
- * API keys should be loaded from environment variables or secure vault
+ * All AI calls routed through EVA backend - no API keys in frontend
  */
 export const environment = {
   production: true,
 
-  // AI Configuration - GEMINI as default
+  // EVA - Main AI Backend (Go)
+  eva: {
+    baseUrl: 'https://eva-ia.org:8091',
+    wsUrl: 'wss://eva-ia.org:8091/ws/browser',
+    chatUrl: 'https://eva-ia.org:8091/api/chat',
+    sampleRate: 24000,
+  },
+
+  // AI Configuration - routed through EVA
   ai: {
-    provider: 'gemini' as const,
-    gemini: {
-      apiKey: '',
-      models: {
-        text: 'gemini-1.5-flash',
-        vision: 'gemini-1.5-flash',
-      }
+    provider: 'eva' as const,
+    models: {
+      text: 'gemini-2.5-flash',
+      vision: 'gemini-2.5-flash',
     }
   },
 
-  // EVA-Back API (replaces Firebase)
+  // EVA-Back API (data services: students, notes, auth)
   evaBack: {
     apiUrl: 'https://eva-ia.org:8000/api/v1',
     wsSignaling: 'wss://eva-ia.org:8000/api/v1/kids/ws/signaling'
   },
 
-  // EVA-Mind WebSocket
-  evaMind: {
-    wsUrl: 'wss://eva-ia.org:8090/ws/pcm',
-    sampleRate: 24000,
-  },
-
-  // Ollama (local AI for grammar analysis)
+  // Ollama (disabled in production)
   ollama: {
-    apiUrl: 'http://localhost:11434/api/generate'
+    apiUrl: ''
   }
 };

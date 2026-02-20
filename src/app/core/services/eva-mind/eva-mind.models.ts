@@ -10,9 +10,14 @@ export interface EVAMindMessage {
   type: string;
   cpf?: string;
   session_id?: string;
+  text?: string;
+  data?: string;
   payload?: any;
   error?: string;
   success?: boolean;
+  tool?: string;
+  status?: string;
+  tool_data?: any;
   serverContent?: {
     inputAudioTranscription?: { text: string };
     audioTranscription?: { text: string };

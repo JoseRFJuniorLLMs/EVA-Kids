@@ -9,28 +9,20 @@ export class NoteImgService {
   imagePrompt = '';
   generatedImageUrl = '';
 
-  private apiKey: string;
-  private baseUrl = 'https://generativelanguage.googleapis.com/v1beta';
+  private chatUrl: string;
 
   constructor(private http: HttpClient) {
-    this.apiKey = (environment as any).geminiApiKey ||
-      environment.ai?.gemini?.apiKey || '';
+    this.chatUrl = environment.eva?.chatUrl || 'https://eva-ia.org:8091/api/chat';
   }
 
   generateImage(selectedText: string): void {
-    if (!this.apiKey) return;
+    if (!selectedText) return;
 
-    const url = `${this.baseUrl}/models/gemini-1.5-flash:generateContent?key=${this.apiKey}`;
-
-    this.http.post<any>(url, {
-      contents: [{
-        parts: [{
-          text: `Create a simple, child-friendly description of an image for: "${selectedText}". Respond with only a URL-safe description.`
-        }]
-      }]
+    this.http.post<any>(this.chatUrl, {
+      message: `Create a simple, child-friendly description of an image for: "${selectedText}". Respond with only a URL-safe description.`
     }).subscribe({
       next: (response) => {
-        const text = response?.candidates?.[0]?.content?.parts?.[0]?.text;
+        const text = response?.response || response?.text || '';
         if (text) {
           this.generatedImageUrl = `https://via.placeholder.com/256?text=${encodeURIComponent(selectedText.slice(0, 20))}`;
         }

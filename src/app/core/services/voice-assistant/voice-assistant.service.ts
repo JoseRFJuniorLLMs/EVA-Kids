@@ -2,7 +2,7 @@
  * Voice Assistant Service - EVA (Educador Virtual Amigo)
  *
  * Delega para EVAMindWebSocketService para conexao real
- * com o backend EVA-Mind via WebSocket PCM16.
+ * com o backend EVA via WebSocket /ws/browser.
  */
 
 import { Injectable, OnDestroy } from '@angular/core';
@@ -194,10 +194,11 @@ export class VoiceAssistantService implements OnDestroy {
   }
 
   /**
-   * Envia mensagem de texto (nao suportado via WebSocket PCM, mantido por compatibilidade)
+   * Envia mensagem de texto via EVA WebSocket
    */
   async sendTextMessage(text: string): Promise<void> {
     this._transcript.next(text);
+    this.evaMind.sendText(text);
   }
 
   /**

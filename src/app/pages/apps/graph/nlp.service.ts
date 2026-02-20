@@ -2,12 +2,16 @@ import { Injectable } from '@angular/core';
 import { DataService } from './data.service';
 import * as tf from '@tensorflow/tfjs';
 import * as use from '@tensorflow-models/universal-sentence-encoder';
+import type { UniversalSentenceEncoder } from '@tensorflow-models/universal-sentence-encoder';
+
+const MAX_BATCH_SIZE = 100;
+const DEFAULT_SIMILARITY_THRESHOLD = 0.5;
 
 @Injectable({
   providedIn: 'root'
 })
 export class NlpService {
-  private model: any = null;
+  private model: UniversalSentenceEncoder | null = null;
   private modelLoading: Promise<void> | null = null;
 
   constructor(private dataService: DataService) {
@@ -16,7 +20,6 @@ export class NlpService {
 
   async loadModel(): Promise<void> {
     try {
-      // Tentar WebGL primeiro, fallback para CPU
       try {
         await tf.setBackend('webgl');
       } catch {
@@ -24,7 +27,7 @@ export class NlpService {
       }
       await tf.ready();
       this.model = await use.load();
-    } catch (error) {
+    } catch {
       this.model = null;
     }
   }
@@ -40,7 +43,7 @@ export class NlpService {
   async getEmbeddings(sentences: string[]): Promise<tf.Tensor2D | null> {
     const ready = await this.ensureModel();
     if (!ready || sentences.length === 0) return null;
-    return this.model.embed(sentences) as Promise<tf.Tensor2D>;
+    return this.model!.embed(sentences) as Promise<tf.Tensor2D>;
   }
 
   cosineSimilarity(vecA: tf.Tensor1D, vecB: tf.Tensor1D): number {
@@ -54,14 +57,22 @@ export class NlpService {
     });
   }
 
-  async calculateSimilarities(sentences: string[]): Promise<number[][]> {
+  /**
+   * Calcula similaridades entre frases com limite de batch.
+   * Para datasets grandes (>MAX_BATCH_SIZE), processa apenas os primeiros N.
+   */
+  async calculateSimilarities(sentences: string[], threshold = DEFAULT_SIMILARITY_THRESHOLD): Promise<number[][]> {
     if (sentences.length === 0) return [];
 
-    const embeddings = await this.getEmbeddings(sentences);
+    // Limitar tamanho do batch para evitar O(n^2) explosivo
+    const batch = sentences.length > MAX_BATCH_SIZE
+      ? sentences.slice(0, MAX_BATCH_SIZE)
+      : sentences;
 
-    // Fallback: se o modelo não carregou, retorna matriz zerada
+    const embeddings = await this.getEmbeddings(batch);
+
     if (!embeddings) {
-      return this.fallbackSimilarities(sentences);
+      return this.fallbackSimilarities(batch);
     }
 
     try {
@@ -74,10 +85,8 @@ export class NlpService {
           if (i === j) {
             row.push(1.0);
           } else if (j < i) {
-            // Já calculado - usar simetria
             row.push(similarities[j][i]);
           } else {
-            // Usar tf.tidy para auto-dispose dos tensors intermediários
             const similarity = tf.tidy(() => {
               const vecA = embeddings.slice([i, 0], [1, -1]).reshape([-1]) as tf.Tensor1D;
               const vecB = embeddings.slice([j, 0], [1, -1]).reshape([-1]) as tf.Tensor1D;
@@ -89,16 +98,19 @@ export class NlpService {
         similarities.push(row);
       }
 
+      // Preencher linhas extras com zeros se truncado
+      for (let i = batch.length; i < sentences.length; i++) {
+        similarities.push(new Array(sentences.length).fill(0));
+      }
+
       return similarities;
     } finally {
-      // Sempre dispose do tensor de embeddings
       embeddings.dispose();
     }
   }
 
   /**
-   * Fallback: calcula similaridade baseada em palavras comuns
-   * quando o TensorFlow não está disponível
+   * Fallback: similaridade Jaccard por palavras comuns
    */
   private fallbackSimilarities(sentences: string[]): number[][] {
     const tokenized = sentences.map(s =>
@@ -114,7 +126,6 @@ export class NlpService {
         } else if (j < i) {
           row.push(similarities[j][i]);
         } else {
-          // Jaccard similarity
           const intersection = new Set([...tokenized[i]].filter(x => tokenized[j].has(x)));
           const union = new Set([...tokenized[i], ...tokenized[j]]);
           row.push(union.size > 0 ? intersection.size / union.size : 0);

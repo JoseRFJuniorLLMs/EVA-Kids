@@ -44,11 +44,12 @@ export class DataService {
   }
 
   private loadPrimeToTargetMapping() {
-    words.forEach((wordObj: any) => {
+    words.forEach((wordObj: any, index: number) => {
       const prime = wordObj['prime'].toLowerCase();
       const target = wordObj['target'].toLowerCase();
       this.primeToTarget[prime] = target;
-      const color = this.getRandomColor();
+      // Cor deterministica baseada no indice (reproduzivel entre sessoes)
+      const color = this.deterministicColor(index);
       this.colorMapping[prime] = color;
       this.colorMapping[target] = color;
     });
@@ -62,13 +63,15 @@ export class DataService {
     return this.colorMapping;
   }
 
-  private getRandomColor() {
-    const letters = '0123456789ABCDEF';
-    let color = '#';
-    for (let i = 0; i < 6; i++) {
-      color += letters[Math.floor(Math.random() * 16)];
-    }
-    return color;
+  /**
+   * Gera cor deterministica baseada no indice usando golden angle.
+   * Produz cores bem distribuidas e reproduziveis.
+   */
+  private deterministicColor(index: number): string {
+    const hue = (index * 137.508) % 360; // Golden angle
+    const saturation = 65 + (index % 3) * 10; // 65-85%
+    const lightness = 55 + (index % 2) * 10; // 55-65%
+    return `hsl(${Math.round(hue)}, ${saturation}%, ${lightness}%)`;
   }
 
   getSentences(): Observable<any[]> {

@@ -2,7 +2,6 @@ import { Injectable, NgZone } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable, Subject, BehaviorSubject, from, of, throwError } from 'rxjs';
 import { map, catchError, switchMap, tap } from 'rxjs/operators';
-import { GoogleGenerativeAI, GenerativeModel, GenerateContentResult } from '@google/generative-ai';
 import nlp from 'compromise';
 
 import { environment } from '../../../../environments/environment';
@@ -30,25 +29,22 @@ import {
 } from '../../models/ai.models';
 
 /**
- * UnifiedAIService - Single AI service for all Priming application needs
+ * UnifiedAIService - Servico unificado de IA para EVA-Kids
  *
- * Replaces:
- * - OpenAI GPT-4 (text generation)
- * - OpenAI TTS (text-to-speech) -> Uses browser SpeechSynthesis
- * - OpenAI Whisper (speech-to-text) -> Uses browser SpeechRecognition
- * - OpenAI DALL-E (image generation) -> Uses Gemini Vision
- * - Ollama (local LLM) -> Uses Gemini
+ * Roteia chamadas de texto pelo EVA backend (/api/chat).
+ * Nenhuma API key no frontend - EVA gerencia Gemini server-side.
  *
- * Primary AI: Google Gemini
- * Fallbacks: Browser APIs for TTS/STT
+ * - Text generation: EVA /api/chat
+ * - TTS: Browser SpeechSynthesis
+ * - STT: Browser SpeechRecognition
+ * - Grammar: Compromise.js (local, sem API)
  */
 @Injectable({
   providedIn: 'root'
 })
 export class UnifiedAIService {
-  // Gemini client
-  private genAI: GoogleGenerativeAI;
-  private model: GenerativeModel;
+  // EVA chat endpoint
+  private chatUrl: string;
 
   // State management
   private stateSubject = new BehaviorSubject<AIServiceState>('idle');
@@ -71,32 +67,26 @@ export class UnifiedAIService {
     private http: HttpClient,
     private zone: NgZone
   ) {
-    // Initialize Gemini
-    this.genAI = new GoogleGenerativeAI(environment.ai.gemini.apiKey);
-    this.model = this.genAI.getGenerativeModel({
-      model: environment.ai.gemini.models.text
-    });
+    this.chatUrl = environment.eva?.chatUrl || 'https://eva-ia.org:8091/api/chat';
 
     // Initialize browser TTS
     this.speechSynthesis = window.speechSynthesis;
     this.loadVoices();
   }
 
-  // ==================== TEXT GENERATION (Gemini) ====================
+  // ==================== TEXT GENERATION (via EVA) ====================
 
   /**
-   * Generate text using Gemini
-   * Replaces: OpenAI GPT-4, Ollama
+   * Generate text using EVA backend
    */
   generateText(request: TextGenerationRequest): Observable<string> {
     this.stateSubject.next('loading');
 
     const prompt = this.buildPrompt(request);
 
-    return from(this.model.generateContent(prompt)).pipe(
-      map((result: GenerateContentResult) => {
-        const response = result.response;
-        const text = response.text();
+    return this.http.post<any>(this.chatUrl, { message: prompt }).pipe(
+      map((result: any) => {
+        const text = result?.response || result?.text || result?.message || '';
         this.stateSubject.next('idle');
         return text;
       }),
@@ -111,51 +101,26 @@ export class UnifiedAIService {
    * Generate text with streaming response
    */
   generateTextStream(request: TextGenerationRequest): Observable<string> {
+    // EVA /api/chat returns a single response, simulate stream
     this.stateSubject.next('streaming');
 
-    const prompt = this.buildPrompt(request);
-
-    return new Observable(observer => {
-      (async () => {
-        try {
-          const result = await this.model.generateContentStream(prompt);
-          let fullText = '';
-
-          for await (const chunk of result.stream) {
-            const chunkText = chunk.text();
-            fullText += chunkText;
-            this.zone.run(() => {
-              this.streamingText.next(chunkText);
-              observer.next(fullText);
-            });
-          }
-
-          this.stateSubject.next('idle');
-          observer.complete();
-        } catch (error) {
-          this.handleError('STREAM_GENERATION_FAILED', error);
-          observer.error(error);
-        }
-      })();
-    });
+    return this.generateText(request).pipe(
+      tap(text => {
+        this.streamingText.next(text);
+        this.stateSubject.next('idle');
+      })
+    );
   }
 
   /**
    * Chat completion with message history
    */
   chat(request: ChatRequest): Observable<string> {
-    const messages = request.messages.map(m => ({
-      role: m.role === 'assistant' ? 'model' : m.role,
-      parts: [{ text: m.content }]
-    }));
-
-    // Get the last user message as the prompt
     const lastUserMessage = request.messages.filter(m => m.role === 'user').pop();
     if (!lastUserMessage) {
       return throwError(() => new Error('No user message found'));
     }
 
-    // Build context from previous messages
     const context = request.messages
       .slice(0, -1)
       .map(m => `${m.role}: ${m.content}`)
@@ -172,7 +137,6 @@ export class UnifiedAIService {
 
   /**
    * Speak text using browser SpeechSynthesis
-   * Replaces: OpenAI TTS
    */
   speak(request: TTSRequest): Promise<void> {
     return new Promise((resolve, reject) => {
@@ -181,18 +145,15 @@ export class UnifiedAIService {
         return;
       }
 
-      // Cancel any ongoing speech
       this.speechSynthesis.cancel();
 
       const utterance = new SpeechSynthesisUtterance(request.text);
 
-      // Apply options
       const options = request.options || {};
       utterance.lang = options.language || 'en-GB';
       utterance.rate = options.speed || 1.0;
       utterance.pitch = options.pitch || 1.0;
 
-      // Select voice
       if (options.voice && options.voice !== 'default') {
         const voice = this.voices.find(v =>
           v.name.toLowerCase().includes(options.voice!.toLowerCase())
@@ -250,19 +211,11 @@ export class UnifiedAIService {
 
   /**
    * Generate audio blob from text
-   * Returns a blob that can be played with WaveSurfer
    */
   generateAudioBlob(text: string, options?: TTSOptions): Observable<Blob> {
-    // Browser SpeechSynthesis doesn't support direct blob generation
-    // We'll use a MediaRecorder workaround or return empty for now
-    // For full blob support, consider using a cloud TTS service
-
     return new Observable(observer => {
-      // For now, we'll speak the text and return a placeholder
-      // In production, use Google Cloud TTS or similar
       this.speak({ text, options })
         .then(() => {
-          // Return empty blob as placeholder
           observer.next(new Blob([], { type: 'audio/wav' }));
           observer.complete();
         })
@@ -270,37 +223,22 @@ export class UnifiedAIService {
     });
   }
 
-  /**
-   * Stop current speech
-   */
   stopSpeaking(): void {
     this.speechSynthesis?.cancel();
   }
 
-  /**
-   * Pause current speech
-   */
   pauseSpeaking(): void {
     this.speechSynthesis?.pause();
   }
 
-  /**
-   * Resume paused speech
-   */
   resumeSpeaking(): void {
     this.speechSynthesis?.resume();
   }
 
-  /**
-   * Get available voices
-   */
   getVoices(): SpeechSynthesisVoice[] {
     return this.voices;
   }
 
-  /**
-   * Set preferred voice by name
-   */
   setVoice(voiceName: string): void {
     this.selectedVoice = this.voices.find(v =>
       v.name.toLowerCase().includes(voiceName.toLowerCase())
@@ -310,91 +248,63 @@ export class UnifiedAIService {
   // ==================== SPEECH-TO-TEXT (Browser API) ====================
 
   /**
-   * Transcribe audio using browser SpeechRecognition
-   * Replaces: OpenAI Whisper
-   * Note: For file-based transcription, use Gemini multimodal
+   * Transcribe audio using EVA backend
    */
   transcribe(request: STTRequest): Observable<STTResponse> {
-    // For blob transcription, we need to use Gemini's multimodal capabilities
-    // Browser SpeechRecognition only works with live microphone input
-
-    return this.transcribeWithGemini(request.audioBlob, request.options?.language);
-  }
-
-  /**
-   * Transcribe audio file using Gemini multimodal
-   */
-  private transcribeWithGemini(audioBlob: Blob, language?: string): Observable<STTResponse> {
     return new Observable(observer => {
       const reader = new FileReader();
-      reader.onload = async () => {
-        try {
-          const base64Audio = (reader.result as string).split(',')[1];
+      reader.onload = () => {
+        const base64Audio = (reader.result as string).split(',')[1];
 
-          const prompt = language
-            ? `Transcribe this audio in ${language}. Return only the transcribed text.`
-            : 'Transcribe this audio. Return only the transcribed text.';
-
-          const result = await this.model.generateContent([
-            prompt,
-            {
-              inlineData: {
-                mimeType: audioBlob.type || 'audio/webm',
-                data: base64Audio
-              }
-            }
-          ]);
-
-          const text = result.response.text();
-          observer.next({ text, confidence: 0.9 });
-          observer.complete();
-        } catch (error) {
-          this.handleError('TRANSCRIPTION_FAILED', error);
-          observer.error(error);
-        }
+        this.http.post<any>(this.chatUrl, {
+          message: request.options?.language
+            ? `Transcribe this audio in ${request.options.language}. Return only the transcribed text.`
+            : 'Transcribe this audio. Return only the transcribed text.',
+          audio: base64Audio,
+          audio_type: request.audioBlob.type || 'audio/webm'
+        }).subscribe({
+          next: (result) => {
+            const text = result?.response || result?.text || '';
+            observer.next({ text, confidence: 0.9 });
+            observer.complete();
+          },
+          error: (error) => {
+            this.handleError('TRANSCRIPTION_FAILED', error);
+            observer.error(error);
+          }
+        });
       };
       reader.onerror = (error) => observer.error(error);
-      reader.readAsDataURL(audioBlob);
+      reader.readAsDataURL(request.audioBlob);
     });
   }
 
-  // ==================== IMAGE GENERATION (Gemini) ====================
+  // ==================== IMAGE GENERATION ====================
 
-  /**
-   * Generate image description/prompt enhancement using Gemini
-   * Note: Gemini doesn't generate images directly, but can enhance prompts
-   * For actual image generation, consider using Imagen API
-   */
   generateImage(request: ImageGenerationRequest): Observable<ImageGenerationResponse> {
-    // Gemini can enhance the prompt for better image generation
     const enhancePrompt = `
       Enhance this image prompt for a children's educational application.
-      Make it more descriptive and suitable for children with disabilities.
+      Make it more descriptive and suitable for children.
       Original prompt: "${request.prompt}"
       Return only the enhanced prompt, nothing else.
     `;
 
     return this.generateText({ prompt: enhancePrompt }).pipe(
       map(enhancedPrompt => ({
-        url: '', // Would need actual image generation service
+        url: '',
         revisedPrompt: enhancedPrompt
       }))
     );
   }
 
-  // ==================== GRAMMAR ANALYSIS (Compromise + Gemini) ====================
+  // ==================== GRAMMAR ANALYSIS (Compromise + EVA) ====================
 
-  /**
-   * Analyze grammar using Compromise.js library
-   * Replaces: Ollama grammar analysis
-   */
   analyzeGrammar(text: string): Observable<GrammarAnalysisResponse> {
     return of(text).pipe(
       map(inputText => {
         const doc = nlp(inputText);
         const words: GrammarWord[] = [];
 
-        // Extract parts of speech
         doc.terms().forEach((term: any) => {
           const word = term.text();
           let type: PartOfSpeech = 'Unknown';
@@ -408,17 +318,10 @@ export class UnifiedAIService {
           else if (term.has('#Conjunction')) type = 'Conjunction';
           else if (term.has('#Determiner')) type = 'Determiner';
 
-          words.push({
-            word,
-            type,
-            color: GRAMMAR_COLORS[type]
-          });
+          words.push({ word, type, color: GRAMMAR_COLORS[type] });
         });
 
-        // Extract sentences
         const sentences = doc.sentences().out('array') as string[];
-
-        // Calculate summary
         const summary = {
           nouns: words.filter(w => w.type === 'Noun').length,
           verbs: words.filter(w => w.type === 'Verb').length,
@@ -432,9 +335,6 @@ export class UnifiedAIService {
     );
   }
 
-  /**
-   * Get AI-powered grammar explanation
-   */
   explainGrammar(text: string, word: string): Observable<string> {
     const prompt = `
       Explain the grammar of the word "${word}" in this sentence: "${text}"
@@ -450,10 +350,6 @@ export class UnifiedAIService {
 
   // ==================== EDUCATIONAL CONTENT ====================
 
-  /**
-   * Generate educational content for children
-   * Replaces: GPT-4 educational prompts
-   */
   generateEducationalContent(request: EducationalContentRequest): Observable<EducationalContentResponse> {
     let prompt = '';
 
@@ -463,14 +359,12 @@ export class UnifiedAIService {
                   Make them fun and memorable using memory palace techniques.
                   Format: One phrase per line.`;
         break;
-
       case 'text':
         prompt = `Write a short, imaginative story for children about "${request.topic}".
                   Use memory palace techniques to make it memorable.
                   Include the word "${request.targetWord}" if provided.
                   Keep it under 100 words and make it fun and educational.`;
         break;
-
       case 'word':
         prompt = `For the word "${request.targetWord || request.topic}", provide:
                   1. Simple definition suitable for children
@@ -478,7 +372,6 @@ export class UnifiedAIService {
                   3. A fun fact or memory trick
                   Keep each part brief.`;
         break;
-
       case 'story':
         prompt = `Create an engaging, educational story for children about "${request.topic}".
                   Use vivid imagery and memory palace techniques.
@@ -501,30 +394,23 @@ export class UnifiedAIService {
 
   private buildPrompt(request: TextGenerationRequest): string {
     let prompt = request.prompt;
-
     if (request.options?.systemPrompt) {
       prompt = `${request.options.systemPrompt}\n\n${prompt}`;
     }
-
     return prompt;
   }
 
   private loadVoices(): void {
     const loadVoicesInternal = () => {
       this.voices = this.speechSynthesis.getVoices();
-
-      // Select a default English female voice for children
       this.selectedVoice = this.voices.find(v =>
         v.lang.startsWith('en') && /female|woman|girl/i.test(v.name)
       ) || this.voices.find(v => v.lang.startsWith('en')) || null;
     };
 
-    // Voices may be loaded asynchronously
     if (this.speechSynthesis.onvoiceschanged !== undefined) {
       this.speechSynthesis.onvoiceschanged = loadVoicesInternal;
     }
-
-    // Also try loading immediately
     setTimeout(loadVoicesInternal, 100);
   }
 
@@ -534,19 +420,13 @@ export class UnifiedAIService {
     this.errorSubject.next({ code, message, details: error });
   }
 
-  /**
-   * Check if Gemini API is available
-   */
   isAvailable(): Observable<boolean> {
-    return this.generateText({ prompt: 'test' }).pipe(
+    return this.http.get<any>(`${environment.eva?.baseUrl || 'https://eva-ia.org:8091'}/api/health`).pipe(
       map(() => true),
       catchError(() => of(false))
     );
   }
 
-  /**
-   * Get current service state
-   */
   getState(): AIServiceState {
     return this.stateSubject.value;
   }

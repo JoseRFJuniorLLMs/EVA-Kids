@@ -51,7 +51,6 @@ export class RegisterComponent {
         await this.authService.register(email, password, studentData);
         this.snackbar.open('Registration successful!', 'Close', { duration: 3000 });
       } catch (error) {
-        console.error('Registration error:', error);
         this.snackbar.open('Registration failed. Please try again.', 'Close', { duration: 5000 });
       }
     } else {

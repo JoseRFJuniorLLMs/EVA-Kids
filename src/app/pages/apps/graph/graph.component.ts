@@ -24,7 +24,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatCardModule } from '@angular/material/card';
 import { GeminiAudioService } from 'src/app/core/services/ai/gemini-audio.service';
-import { Subscription } from 'rxjs';
+import { Subscription, firstValueFrom } from 'rxjs';
 import { animate, style, transition, trigger } from '@angular/animations';
 
 // Paleta de cores kids
@@ -140,7 +140,7 @@ export class GraphComponent implements OnInit, AfterViewInit, OnDestroy {
       this.loadingMessage = 'Buscando suas palavras...';
 
       // Obter frases e nos
-      const loadedNodes = await this.dataService.getSentences().toPromise();
+      const loadedNodes = await firstValueFrom(this.dataService.getSentences());
       if (loadedNodes && loadedNodes.length > 0) {
         this.processNodes(loadedNodes);
       } else {
@@ -156,7 +156,6 @@ export class GraphComponent implements OnInit, AfterViewInit, OnDestroy {
       try {
         await this.processSentences();
       } catch (nlpError) {
-        console.warn('NLP processing failed, showing graph without similarity edges:', nlpError);
       }
 
       this.createNetwork();
@@ -172,7 +171,6 @@ export class GraphComponent implements OnInit, AfterViewInit, OnDestroy {
       }, 1000);
 
     } catch (error) {
-      console.error('Erro ao carregar grafo:', error);
       this.loadingMessage = 'Ops! Algo deu errado...';
       this.isLoading = false;
     }
@@ -238,7 +236,7 @@ export class GraphComponent implements OnInit, AfterViewInit, OnDestroy {
       return {
         id: node.id || index + 1,
         label: node.label,
-        isKnown: node.isKnown ?? Math.random() > 0.3, // Simular se conhece
+        isKnown: node.isKnown ?? true, // Default to known - backend should provide real data
         isPrime,
         category: node.tag || 'geral',
         color: {
@@ -498,17 +496,8 @@ export class GraphComponent implements OnInit, AfterViewInit, OnDestroy {
     this.currentWord = word;
 
     try {
-      // Prompt para pronunciar em ingles
-      const prompt = `You are a friendly pronunciation tutor for children. Say the word "${word}" clearly and slowly in English. After a brief pause, say "Em portugues:" and then say the Portuguese translation if it's an English word, or just repeat the word if it's already in Portuguese. Be encouraging!`;
-
-      if (!this.geminiAudio['isSessionActive']) {
-        await this.geminiAudio.connect(prompt);
-      }
-
       await this.geminiAudio.speak(`Say the word: "${word}"`);
-
     } catch (error) {
-      console.error('Erro ao falar palavra:', error);
       // Fallback para browser TTS
       this.fallbackSpeak(word);
     }
@@ -546,7 +535,8 @@ export class GraphComponent implements OnInit, AfterViewInit, OnDestroy {
       data: {
         node: nodeData,
         primeToTarget: this.primeToTarget,
-        speakWord: (word: string) => this.speakWord(word)
+        speakWord: (word: string) => this.speakWord(word),
+        audioState$: this.geminiAudio.state$
       },
       panelClass: 'kids-dialog-container',
       width: '400px'

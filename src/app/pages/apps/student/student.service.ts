@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, of, BehaviorSubject } from 'rxjs';
+import { Observable, of, BehaviorSubject, firstValueFrom } from 'rxjs';
 import { map, catchError, tap } from 'rxjs/operators';
 import { Student } from 'src/app/model/student/student';
 import { environment } from 'src/environments/environment';
@@ -30,7 +30,7 @@ export class StudentService {
   }
 
   addStudentData(student: Student): Promise<void> {
-    return this.http.post<any>(`${this.apiUrl}/students`, {
+    return firstValueFrom(this.http.post<any>(`${this.apiUrl}/students`, {
       name: student.name,
       city: student.city,
       country: student.country,
@@ -38,11 +38,11 @@ export class StudentService {
       phone: student.phone,
       image_url: student.image_url,
       spoken_language: student.spoken_language,
-    }).toPromise().then(() => {});
+    })).then(() => {});
   }
 
   updateStudentData(student: Student): Promise<void> {
-    return this.http.put<any>(`${this.apiUrl}/profile`, {
+    return firstValueFrom(this.http.put<any>(`${this.apiUrl}/profile`, {
       name: student.name,
       city: student.city,
       country: student.country,
@@ -51,7 +51,7 @@ export class StudentService {
       image_url: student.image_url,
       spoken_language: student.spoken_language,
       status: student.status,
-    }).toPromise().then(() => {});
+    })).then(() => {});
   }
 
   deleteStudentData(id: string): Promise<void> {

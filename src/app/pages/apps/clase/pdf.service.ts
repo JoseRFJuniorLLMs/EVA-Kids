@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { Observable, throwError, Subject, BehaviorSubject } from 'rxjs';
+import { Observable, throwError, Subject, BehaviorSubject, firstValueFrom } from 'rxjs';
 import { MatSnackBar, MatSnackBarHorizontalPosition, MatSnackBarVerticalPosition } from '@angular/material/snack-bar';
 import { map, catchError } from 'rxjs/operators';
 import { environment } from 'src/environments/environment';
@@ -51,12 +51,11 @@ export class PdfService {
 
   async saveCurrentPage(ebookId: string): Promise<void> {
     try {
-      await this.http.put(`${this.apiUrl}/progress/${ebookId}`, {
+      await firstValueFrom(this.http.put(`${this.apiUrl}/progress/${ebookId}`, {
         current_page: this.currentPage,
         completed: false
-      }).toPromise();
+      }));
     } catch (error) {
-      console.error('Error saving page:', error);
     }
   }
 
@@ -71,12 +70,11 @@ export class PdfService {
 
   async markAsCompleted(ebookId: string, completed: boolean): Promise<void> {
     try {
-      await this.http.put(`${this.apiUrl}/progress/${ebookId}`, {
+      await firstValueFrom(this.http.put(`${this.apiUrl}/progress/${ebookId}`, {
         current_page: this.currentPage,
         completed
-      }).toPromise();
+      }));
     } catch (error) {
-      console.error('Error marking as completed:', error);
     }
   }
 
@@ -108,7 +106,6 @@ export class PdfService {
   }
 
   private handleError(error: any): Observable<never> {
-    console.error('An error occurred:', error.message);
     return throwError('Something bad happened; please try again later.');
   }
 
@@ -130,7 +127,6 @@ export class PdfService {
     try {
       await this.initializeViewer(filePath, containerId);
     } catch (error) {
-      console.error('Error loading or rendering book: ', error);
     }
   }
 

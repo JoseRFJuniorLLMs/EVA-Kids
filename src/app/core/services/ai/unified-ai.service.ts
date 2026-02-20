@@ -532,7 +532,6 @@ export class UnifiedAIService {
     const message = error instanceof Error ? error.message : 'Unknown error';
     this.stateSubject.next('error');
     this.errorSubject.next({ code, message, details: error });
-    console.error(`[UnifiedAIService] ${code}:`, error);
   }
 
   /**

@@ -9,6 +9,6 @@ export class DashboardAnalyticsService {
   /* ==================ALARME==================== */
   playSound(soundUrl: string) {
     const audio = new Audio(soundUrl);
-    audio.play().catch((error) => console.error('Erro ao tocar o som:', error));
+    audio.play().catch(() => {});
   } //fim
 }

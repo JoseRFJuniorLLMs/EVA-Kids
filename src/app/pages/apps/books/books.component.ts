@@ -214,8 +214,7 @@ export class BooksComponent implements OnInit, AfterViewInit, OnDestroy {
         this.ebooks = data;
         this.cdr.detectChanges();
       },
-      error: (error) => {
-        console.error('Erro ao carregar ebooks:', error);
+      error: () => {
         this.showSnackBar('Erro ao carregar biblioteca');
       }
     });
@@ -230,9 +229,8 @@ export class BooksComponent implements OnInit, AfterViewInit, OnDestroy {
         this.texts = data.slice(0, 100); // Limitar para performance
         this.cdr.detectChanges();
       },
-      error: (error) => {
-        console.error('Erro ao carregar textos:', error);
-      }
+      error: () => {}
+
     });
   }
 
@@ -279,7 +277,6 @@ export class BooksComponent implements OnInit, AfterViewInit, OnDestroy {
       await this.speakText(`Abrindo o livro: ${ebook.title}. Tem ${this.totalPages} páginas.`);
 
     } catch (error) {
-      console.error('Erro ao carregar ebook:', error);
       this.showSnackBar('Erro ao abrir o livro');
       this.isLoading = false;
     }
@@ -342,7 +339,6 @@ export class BooksComponent implements OnInit, AfterViewInit, OnDestroy {
       }
 
     } catch (error) {
-      console.error('Erro ao ler página:', error);
       this.showSnackBar('Erro ao ler página');
     }
   }
@@ -457,7 +453,6 @@ export class BooksComponent implements OnInit, AfterViewInit, OnDestroy {
       await this.geminiAudio.speak(text, onEnd);
 
     } catch (error) {
-      console.error('Erro no Gemini Audio:', error);
       // Fallback para browser TTS
       this.fallbackSpeak(text, onEnd);
     }
@@ -494,7 +489,6 @@ export class BooksComponent implements OnInit, AfterViewInit, OnDestroy {
     try {
       await this.geminiAudio.startListening();
     } catch (error) {
-      console.error('Erro ao iniciar microfone:', error);
       this.showSnackBar('Erro ao acessar microfone');
     }
   }

@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { MatButtonModule } from '@angular/material/button';
 import { CommonModule } from '@angular/common';
 import { environment } from 'src/environments/environment';
+import { firstValueFrom } from 'rxjs';
 
 @Component({
   selector: 'app-clear-calls',
@@ -18,9 +19,8 @@ export class ClearCallsComponent {
 
   async clearCallsAndSetOffline() {
     try {
-      await this.http.post(`${this.apiUrl}/admin/clear-calls`, {}).toPromise();
+      await firstValueFrom(this.http.post(`${this.apiUrl}/admin/clear-calls`, {}));
     } catch (error) {
-      console.error('Erro ao limpar chamadas e definir alunos como offline:', error);
     }
   }
 }

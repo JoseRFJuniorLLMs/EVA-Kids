@@ -4,7 +4,7 @@ import words from '../../../../assets/json/word.json';
 import { NoteCollection } from '../note/note-collection';
 import { MatSnackBar, MatSnackBarHorizontalPosition, MatSnackBarVerticalPosition } from '@angular/material/snack-bar';
 import { Observable, of } from 'rxjs';
-import { map, catchError } from 'rxjs/operators';
+import { map, catchError, switchMap } from 'rxjs/operators';
 import { environment } from 'src/environments/environment';
 
 @Injectable({
@@ -72,58 +72,32 @@ export class DataService {
   }
 
   getSentences(): Observable<any[]> {
-    return new Observable<any[]>(observer => {
-      this.getNotes().subscribe((notes: NoteCollection[]) => {
-        const primeSentences = new Map<string, Set<string>>();
-        const targetSentences = new Map<string, Set<string>>();
-        const nodeColors = new Map<string, string>();
+    return this.getNotes().pipe(
+      map((notes: NoteCollection[]) => {
         const uniqueSentences = new Set<string>();
+        const noteByDescription = new Map<string, NoteCollection>();
 
         notes.forEach((note: NoteCollection) => {
           const sentence = note.description;
           if (sentence) {
-            const wordsInSentence = new Set<string>(this.tokenize(sentence));
-            let isRelated = false;
-
-            wordsInSentence.forEach(word => {
-              if (this.primeToTarget[word]) {
-                if (!primeSentences.has(word)) {
-                  primeSentences.set(word, new Set<string>());
-                }
-                primeSentences.get(word)?.add(sentence);
-                nodeColors.set(sentence, this.colorMapping[word]);
-                isRelated = true;
-              }
-              if (Object.values(this.primeToTarget).includes(word)) {
-                if (!targetSentences.has(word)) {
-                  targetSentences.set(word, new Set<string>());
-                }
-                targetSentences.get(word)?.add(sentence);
-                nodeColors.set(sentence, this.colorMapping[word]);
-                isRelated = true;
-              }
-            });
-
-            if (!isRelated) {
-              nodeColors.set(sentence, 'lightgrey');
-            }
             uniqueSentences.add(sentence);
+            if (!noteByDescription.has(sentence)) {
+              noteByDescription.set(sentence, note);
+            }
           }
         });
 
-        observer.next(Array.from(uniqueSentences).map((sentence, index) => {
-          const note = notes.find(n => n.description === sentence);
+        return Array.from(uniqueSentences).map((sentence, index) => {
+          const note = noteByDescription.get(sentence);
           return {
             id: index + 1,
-            shape: 'circularImage',
-            image: note?.image || 'https://priming-ai-7.web.app/assets/img/logo/priming.png',
             label: sentence,
-            color: { background: nodeColors.get(sentence) || 'lightgrey' }
+            tag: note?.tags || 'geral',
+            image: note?.image
           };
-        }));
-        observer.complete();
-      });
-    });
+        });
+      })
+    );
   }
 
   tokenize(text: string): string[] {

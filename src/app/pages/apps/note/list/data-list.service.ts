@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, of, BehaviorSubject } from 'rxjs';
+import { Observable, of, BehaviorSubject, firstValueFrom } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
 import { NoteCollection } from '../../note/note-collection';
 import { environment } from 'src/environments/environment';
@@ -41,7 +41,7 @@ export class DataListService {
   }
 
   updateNote(id: string, note: Partial<NoteCollection>): Promise<void> {
-    return this.http.put<any>(`${this.apiUrl}/notes/${id}`, {
+    return firstValueFrom(this.http.put<any>(`${this.apiUrl}/notes/${id}`, {
       title: note.title,
       description: note.description,
       answer: note.answer,
@@ -51,15 +51,15 @@ export class DataListService {
       level: note.level,
       last_revision_date: note.last_revision_date,
       next_revision_date: note.next_revision_date,
-    }).toPromise()
+    }))
       .then(() => { this.updateTotalNotesOfTheDay(); })
-      .catch(error => { console.error('Erro ao atualizar a nota:', error); });
+      .catch(() => {});
   }
 
   deleteNote(id: string): Promise<void> {
-    return this.http.delete<any>(`${this.apiUrl}/notes/${id}`).toPromise()
+    return firstValueFrom(this.http.delete<any>(`${this.apiUrl}/notes/${id}`))
       .then(() => { this.updateTotalNotesOfTheDay(); })
-      .catch(error => { console.error('Erro ao excluir a nota:', error); });
+      .catch(() => {});
   }
 
   getTotalNotesOfTheDay(): Observable<number> {
@@ -78,11 +78,9 @@ export class DataListService {
   }
 
   updateOverdueNotes(): Promise<void> {
-    return this.http.post<any>(`${this.apiUrl}/notes/update-overdue`, {}).toPromise()
+    return firstValueFrom(this.http.post<any>(`${this.apiUrl}/notes/update-overdue`, {}))
       .then(() => {})
-      .catch(error => {
-        console.error('Erro ao atualizar as notas atrasadas:', error);
-      });
+      .catch(() => {});
   }
 
   getPermanentNotes(): Observable<NoteCollection[]> {

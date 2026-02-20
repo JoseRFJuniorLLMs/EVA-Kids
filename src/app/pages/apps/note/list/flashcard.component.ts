@@ -73,9 +73,7 @@ export class FlashcardComponent implements AfterViewInit, OnDestroy {
           this.reviewCompleted = true;
         }
       },
-      error: (error) => {
-        console.error('Error loading notes of the day:', error);
-      }
+      error: () => {}
     });
   }
 
@@ -100,8 +98,6 @@ export class FlashcardComponent implements AfterViewInit, OnDestroy {
   ngAfterViewInit(): void {
     if (this.voiceService) {
       this.voiceService.setupWaveSurfer(this.waveformElement);
-    } else {
-      console.error('voiceService is not initialized');
     }
   }
   
@@ -147,17 +143,13 @@ export class FlashcardComponent implements AfterViewInit, OnDestroy {
 
     if (typeof note.calculateNextReview === 'function') {
       note.calculateNextReview(response);
-    } else {
-      console.error('calculateNextReview is not a function');
     }
 
     this.dataService.updateNote(note._id, {
       last_revision_date: note.last_revision_date,
       next_revision_date: note.next_revision_date
     }).then(() => {
-    }).catch(error => {
-      console.error('Error updating note:', error);
-    });
+    }).catch(() => {});
   }
 
   onVoiceChange(event: Event): void {

@@ -9,7 +9,8 @@ import { VexPageLayoutHeaderDirective } from '@vex/components/vex-page-layout/ve
 import { VexPageLayoutComponent } from '@vex/components/vex-page-layout/vex-page-layout.component';
 
 import { CommonModule } from '@angular/common';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
+import { VexLayoutService } from '@vex/services/vex-layout.service';
 import { FormsModule } from '@angular/forms';
 import { MatBottomSheetModule } from '@angular/material/bottom-sheet';
 import { MatCardModule } from '@angular/material/card';
@@ -69,12 +70,11 @@ export class ShareBottomGpt4Component implements OnInit {
   isLoading = false;
   errorText = '';
   data: any;
-  collapsed: any;
-  layoutService: any;
 
   constructor(
     private http: HttpClient,
-    private _snackBar: MatSnackBar
+    private _snackBar: MatSnackBar,
+    private layoutService: VexLayoutService
   ) {}
 
   openSnackBar(message: string) {
@@ -88,14 +88,9 @@ export class ShareBottomGpt4Component implements OnInit {
   ngOnInit(): void {
     if (screenfull.isEnabled) {
       screenfull.request();
-      this.toggleCollapse();
+      this.layoutService.collapseSidenav();
     }
   }
-  toggleCollapse() {
-    this.collapsed
-      ? this.layoutService.expandSidenav()
-      : this.layoutService.collapseSidenav();
-  } //fim
 
   async questionToOpenAI(question: string) {
     this.openSnackBar('Funcionalidade migrada para Gemini AI');

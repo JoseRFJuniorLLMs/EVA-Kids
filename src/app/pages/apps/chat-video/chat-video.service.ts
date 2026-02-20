@@ -1,5 +1,6 @@
 import { Injectable, ElementRef } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { firstValueFrom } from 'rxjs';
 import { SoundService } from 'src/app/layouts/components/footer/sound.service';
 import { MatSnackBar, MatSnackBarHorizontalPosition, MatSnackBarVerticalPosition } from '@angular/material/snack-bar';
 import { NotificationService } from 'src/app/pages/apps/chat-video/notification.service';
@@ -69,7 +70,6 @@ export class ChatVideoService {
         const data = JSON.parse(event.data);
         await this.handleSignalingMessage(data);
       } catch (e) {
-        console.error('Error handling signaling message:', e);
       }
     };
 
@@ -82,9 +82,7 @@ export class ChatVideoService {
       }, 3000);
     };
 
-    this.ws.onerror = (error) => {
-      console.error('WebSocket error:', error);
-    };
+    this.ws.onerror = () => {};
   }
 
   private async handleSignalingMessage(data: any) {
@@ -115,7 +113,6 @@ export class ChatVideoService {
           try {
             await this.pc.addIceCandidate(new RTCIceCandidate(data.candidate));
           } catch (e) {
-            console.error('Error adding ICE candidate:', e);
           }
         }
         break;
@@ -136,7 +133,6 @@ export class ChatVideoService {
         break;
 
       case 'error':
-        console.error('Signaling error:', data.message);
         break;
     }
   }
@@ -158,7 +154,6 @@ export class ChatVideoService {
 
   setupPeerConnection(remoteVideo: HTMLVideoElement) {
     if (!this.localStream) {
-      console.error('Local stream not initialized');
       return;
     }
 
@@ -212,7 +207,6 @@ export class ChatVideoService {
       remoteVideo.nativeElement.srcObject = this.remoteStream;
 
       if (!currentUserId) {
-        console.error('No user is currently logged in');
         return;
       }
 
@@ -230,7 +224,6 @@ export class ChatVideoService {
       this.callState = CallState.CALLING;
       this.updateOnlineStatus(currentUserId, true);
     } catch (error) {
-      console.error('Error during startCall:', error);
     }
   }
 
@@ -254,7 +247,6 @@ export class ChatVideoService {
 
       this.callDocId = '';
     } catch (error) {
-      console.error('Error during finishCall:', error);
     } finally {
       await this.cleanupResources();
     }
@@ -263,7 +255,6 @@ export class ChatVideoService {
   async createOffer(userId: string, targetUserId?: string) {
     try {
       if (!this.pc) {
-        console.error('RTCPeerConnection is not initialized');
         return;
       }
 
@@ -278,7 +269,6 @@ export class ChatVideoService {
         });
       }
     } catch (error) {
-      console.error('Error during createOffer:', error);
     }
   }
 
@@ -298,7 +288,6 @@ export class ChatVideoService {
         });
       }
     } catch (error) {
-      console.error('Error during answerCall:', error);
     }
   }
 
@@ -319,11 +308,10 @@ export class ChatVideoService {
   async checkUserOnlineStatus(userId: string): Promise<boolean> {
     try {
       this.soundService.playOnline();
-      const students = await this.http.get<any[]>(`${this.apiUrl}/students`).toPromise();
+      const students = await firstValueFrom(this.http.get<any[]>(`${this.apiUrl}/students`));
       const student = students?.find(s => s.usuario_id?.toString() === userId || s.id?.toString() === userId);
       return student?.online ?? false;
     } catch (error) {
-      console.error('Error during checkUserOnlineStatus:', error);
       return false;
     }
   }
@@ -336,7 +324,6 @@ export class ChatVideoService {
         this.soundService.playClose();
       });
     } catch (error) {
-      console.error('Error during muteMicrophone:', error);
     }
   }
 
@@ -348,7 +335,6 @@ export class ChatVideoService {
         this.soundService.playOn();
       });
     } catch (error) {
-      console.error('Error durante turnOffCamera:', error);
     }
   }
 
@@ -374,7 +360,6 @@ export class ChatVideoService {
         });
       };
     } catch (error) {
-      console.error('Error during shareScreen:', error);
     }
   }
 
@@ -387,7 +372,6 @@ export class ChatVideoService {
       this.finishCall();
       this.soundService.playClose();
     } catch (error) {
-      console.error('Error durante endCall:', error);
     }
   }
 
@@ -408,12 +392,11 @@ export class ChatVideoService {
 
   async updateOnlineStatus(userId: string, status: boolean) {
     try {
-      const profile = await this.http.get<any>(`${this.apiUrl}/profile`).toPromise();
+      const profile = await firstValueFrom(this.http.get<any>(`${this.apiUrl}/profile`));
       if (profile?.id) {
-        await this.http.put(`${this.apiUrl}/students/${profile.id}/online`, { online: status }).toPromise();
+        await firstValueFrom(this.http.put(`${this.apiUrl}/students/${profile.id}/online`, { online: status }));
       }
     } catch (error) {
-      console.error('Error during updateOnlineStatus:', error);
     }
   }
 }

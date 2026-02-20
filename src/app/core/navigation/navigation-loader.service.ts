@@ -160,26 +160,14 @@ export class NavigationLoaderService {
               {
                 type: 'link',
                 label: 'Ler Livros',
-                route: '/apps/book2',
+                route: '/apps/books',
                 icon: 'mat:menu_book'
-              },
-              {
-                type: 'link',
-                label: 'Histórias',
-                route: '/apps/book3',
-                icon: 'mat:library_books'
               },
               {
                 type: 'link',
                 label: 'Aprender Gramática',
                 route: '/apps/grammar-analyzer',
                 icon: 'mat:spellcheck'
-              },
-              {
-                type: 'link',
-                label: 'Livro Interativo',
-                route: '/apps/book',
-                icon: 'mat:record_voice_over'
               }
             ]
           },

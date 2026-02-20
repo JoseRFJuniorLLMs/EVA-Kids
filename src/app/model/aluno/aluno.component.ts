@@ -99,7 +99,6 @@ export class AlunoComponent implements OnInit, OnDestroy {
       catchError(err => {
         this.isLoading = false;
         this.error = 'Erro ao carregar dados do aluno.';
-        console.error('Erro no service (component):', err);
         return of(null); // Retorna null em caso de erro
       })
     );
@@ -122,7 +121,6 @@ export class AlunoComponent implements OnInit, OnDestroy {
        catchError(err => {
          this.isLoading = false;
          this.error = 'Erro ao carregar dados do aluno.';
-         console.error('Erro no service (component):', err);
          return of(null);
        })
      );
@@ -133,7 +131,6 @@ export class AlunoComponent implements OnInit, OnDestroy {
   // Exemplo: Método chamado por um botão de editar no template
   editarAluno(aluno: Aluno): void {
      if (!aluno._id) {
-        console.error('Não é possível editar aluno sem ID.');
         this.showSnackbar('Erro: Aluno sem ID.');
         return;
      }
@@ -177,7 +174,6 @@ export class AlunoComponent implements OnInit, OnDestroy {
   // Exemplo: Método chamado por um botão de deletar no template
   deletarAluno(aluno: Aluno): void {
     if (!aluno._id) {
-        console.error('Não é possível deletar aluno sem ID.');
         this.showSnackbar('Erro: Aluno sem ID.');
         return;
      }

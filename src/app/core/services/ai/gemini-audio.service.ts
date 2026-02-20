@@ -6,7 +6,7 @@
  */
 
 import { Injectable, OnDestroy } from '@angular/core';
-import { BehaviorSubject, Subject } from 'rxjs';
+import { BehaviorSubject, Subject, firstValueFrom } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { environment } from 'src/environments/environment';
 
@@ -65,7 +65,6 @@ export class GeminiAudioService implements OnDestroy {
     try {
       this.audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
     } catch (error) {
-      console.error('AudioContext not supported:', error);
     }
   }
 
@@ -98,8 +97,7 @@ export class GeminiAudioService implements OnDestroy {
           this.handleWebSocketMessage(event);
         };
 
-        this.ws.onerror = (error) => {
-          console.error('WebSocket error:', error);
+        this.ws.onerror = () => {
           this._state.next('error');
           resolve(false);
         };
@@ -110,7 +108,6 @@ export class GeminiAudioService implements OnDestroy {
         };
 
       } catch (error) {
-        console.error('Erro ao conectar:', error);
         resolve(false);
       }
     });
@@ -176,7 +173,6 @@ export class GeminiAudioService implements OnDestroy {
       }
 
     } catch (error) {
-      console.error('Erro ao processar mensagem:', error);
     }
   }
 
@@ -249,7 +245,7 @@ export class GeminiAudioService implements OnDestroy {
     try {
       const url = `${this.baseUrl}/models/${this.model}:generateContent?key=${this.apiKey}`;
 
-      const response = await this.http.post<any>(url, {
+      const response = await firstValueFrom(this.http.post<any>(url, {
         contents: [{
           parts: [{ text: `Responda de forma amigavel e breve: ${text}` }]
         }],
@@ -263,7 +259,7 @@ export class GeminiAudioService implements OnDestroy {
             }
           }
         }
-      }).toPromise();
+      }));
 
       // Procura audio na resposta
       if (response?.candidates?.[0]?.content?.parts) {
@@ -279,7 +275,6 @@ export class GeminiAudioService implements OnDestroy {
       this.finishSpeaking();
 
     } catch (error) {
-      console.error('Erro na REST API:', error);
       this.finishSpeaking();
     }
   }
@@ -317,7 +312,6 @@ export class GeminiAudioService implements OnDestroy {
       await audio.play();
 
     } catch (error) {
-      console.error('Erro ao reproduzir audio:', error);
     }
   }
 

@@ -46,9 +46,7 @@ export class NoteDialogEditComponent {
           this.dialogRef.close(this.data); 
           this.dialogRef.close();
         },
-        (error) => {
-          console.error('Error updating note', error);
-        }
+        () => {}
       );
     }
   }

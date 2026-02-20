@@ -15,6 +15,5 @@ export const DEFAULT_VOICE_GAME_CONFIG: VoiceGameConfig = {
   voicePreset: 'game',
   fullscreenOnInit: true,
   enablePlayback: true,
-  enableSatoshi: true,
-  studentId: 'student-id'
+  enableSatoshi: true
 };

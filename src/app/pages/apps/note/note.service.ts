@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { MatSnackBar, MatSnackBarHorizontalPosition, MatSnackBarVerticalPosition } from '@angular/material/snack-bar';
-import { Observable, of } from 'rxjs';
+import { Observable, of, firstValueFrom } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
 import { NoteCollection } from './note-collection';
 import { environment } from 'src/environments/environment';
@@ -41,7 +41,7 @@ export class NoteService {
 
   async createNote(note: NoteCollection): Promise<void> {
     try {
-      await this.http.post(`${this.apiUrl}/notes`, {
+      await firstValueFrom(this.http.post(`${this.apiUrl}/notes`, {
         title: note.title,
         description: note.description,
         answer: note.answer,
@@ -51,17 +51,16 @@ export class NoteService {
         level: note.level,
         last_revision_date: note.last_revision_date,
         next_revision_date: note.next_revision_date,
-      }).toPromise();
+      }));
       this.openSnackBar('Create Note OK !');
       // Satoshi increment is automatic on the backend
     } catch (error) {
-      console.error('Error creating note:', error);
     }
   }
 
   async updateNote(id: string, note: Partial<NoteCollection>): Promise<void> {
     try {
-      await this.http.put(`${this.apiUrl}/notes/${id}`, {
+      await firstValueFrom(this.http.put(`${this.apiUrl}/notes/${id}`, {
         title: note.title,
         description: note.description,
         answer: note.answer,
@@ -71,19 +70,17 @@ export class NoteService {
         level: note.level,
         last_revision_date: note.last_revision_date,
         next_revision_date: note.next_revision_date,
-      }).toPromise();
+      }));
       this.openSnackBar('Update Note OK !');
     } catch (error) {
-      console.error('Error updating note:', error);
     }
   }
 
   async deleteNote(id: string): Promise<void> {
     try {
-      await this.http.delete(`${this.apiUrl}/notes/${id}`).toPromise();
+      await firstValueFrom(this.http.delete(`${this.apiUrl}/notes/${id}`));
       this.openSnackBar('Delete Note OK !');
     } catch (error) {
-      console.error('Error deleting note:', error);
     }
   }
 

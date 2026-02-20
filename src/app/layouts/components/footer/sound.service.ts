@@ -34,9 +34,7 @@ export class SoundService {
         .then(() => {
           this.isPlaying = true;
         })
-        .catch((error) =>
-          console.error('Erro ao tentar reproduzir o áudio:', error)
-        );
+        .catch(() => {});
 
       this.audioPlayer.onended = () => {
         this.isPlaying = false;
@@ -59,9 +57,7 @@ export class SoundService {
         .then(() => {
           this.isPlaying = true;
         })
-        .catch((error) =>
-          console.error('Erro ao tentar reproduzir o áudio:', error)
-        );
+        .catch(() => {});
 
       this.audioPlayer.onended = () => {
         this.isPlaying = false;
@@ -84,9 +80,7 @@ export class SoundService {
         .then(() => {
           this.isPlaying = true;
         })
-        .catch((error) =>
-          console.error('Erro ao tentar reproduzir o áudio:', error)
-        );
+        .catch(() => {});
 
       this.audioPlayer.onended = () => {
         this.isPlaying = false;
@@ -109,9 +103,7 @@ export class SoundService {
         .then(() => {
           this.isPlaying = true;
         })
-        .catch((error) =>
-          console.error('Erro ao tentar reproduzir o áudio:', error)
-        );
+        .catch(() => {});
 
       this.audioPlayer.onended = () => {
         this.isPlaying = false;
@@ -134,9 +126,7 @@ export class SoundService {
         .then(() => {
           this.isPlaying = true;
         })
-        .catch((error) =>
-          console.error('Erro ao tentar reproduzir o áudio:', error)
-        );
+        .catch(() => {});
 
       this.audioPlayer.onended = () => {
         this.isPlaying = false;
@@ -159,9 +149,7 @@ export class SoundService {
         .then(() => {
           this.isPlaying = true;
         })
-        .catch((error) =>
-          console.error('Erro ao tentar reproduzir o áudio:', error)
-        );
+        .catch(() => {});
 
       this.audioPlayer.onended = () => {
         this.isPlaying = false;
@@ -184,9 +172,7 @@ export class SoundService {
         .then(() => {
           this.isPlaying = true;
         })
-        .catch((error) =>
-          console.error('Erro ao tentar reproduzir o áudio:', error)
-        );
+        .catch(() => {});
 
       this.audioPlayer.onended = () => {
         this.isPlaying = false;
@@ -209,9 +195,7 @@ export class SoundService {
         .then(() => {
           this.isPlaying = true;
         })
-        .catch((error) =>
-          console.error('Erro ao tentar reproduzir o áudio:', error)
-        );
+        .catch(() => {});
 
       this.audioPlayer.onended = () => {
         this.isPlaying = false;
@@ -234,9 +218,7 @@ export class SoundService {
         .then(() => {
           this.isPlaying = true;
         })
-        .catch((error) =>
-          console.error('Erro ao tentar reproduzir o áudio:', error)
-        );
+        .catch(() => {});
 
       this.audioPlayer.onended = () => {
         this.isPlaying = false;
@@ -259,9 +241,7 @@ export class SoundService {
         .then(() => {
           this.isPlaying = true;
         })
-        .catch((error) =>
-          console.error('Erro ao tentar reproduzir o áudio:', error)
-        );
+        .catch(() => {});
 
       this.audioPlayer.onended = () => {
         this.isPlaying = false;

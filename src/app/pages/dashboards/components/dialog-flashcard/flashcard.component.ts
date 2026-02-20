@@ -286,7 +286,6 @@ export class FlashcardComponent implements AfterViewInit, OnDestroy {
       });
 
     } catch (error) {
-      console.error('Erro ao falar palavra:', error);
       this.errorText = 'Erro ao reproduzir audio';
       this.isLoading = false;
 
@@ -314,8 +313,6 @@ export class FlashcardComponent implements AfterViewInit, OnDestroy {
       });
 
     } catch (error) {
-      console.error('Erro ao falar traducao:', error);
-
       // Fallback para browser TTS
       this.fallbackSpeak(translation, 'pt-BR', callback);
     }

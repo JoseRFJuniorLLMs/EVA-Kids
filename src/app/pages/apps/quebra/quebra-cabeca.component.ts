@@ -1,7 +1,7 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { DragDropModule, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
-import { Subject } from 'rxjs';
+import { Subject, firstValueFrom } from 'rxjs';
 import { UnifiedVoiceService } from 'src/app/core/services/voice/unified-voice.service';
 import { HttpClient } from '@angular/common/http';
 import { AuthService } from '../../pages/auth/login/auth.service';
@@ -104,11 +104,10 @@ export class QuebraCabecaComponent implements OnInit, OnDestroy {
 
   async saveCompletionCount() {
     try {
-      await this.http.put(`${this.apiUrl}/profile`, {
+      await firstValueFrom(this.http.put(`${this.apiUrl}/profile`, {
         completion_count: this.completionCount
-      }).toPromise();
+      }));
     } catch (error) {
-      console.error('Error saving completion count:', error);
     }
   }
   

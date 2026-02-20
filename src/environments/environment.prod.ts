@@ -29,8 +29,8 @@ export const environment = {
     sampleRate: 24000,
   },
 
-  // API URLs
-  api: {
-    baseUrl: 'https://priming-1532995a3138.herokuapp.com'
+  // Ollama (local AI for grammar analysis)
+  ollama: {
+    apiUrl: 'http://localhost:11434/api/generate'
   }
 };

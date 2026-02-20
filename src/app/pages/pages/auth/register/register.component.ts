@@ -62,7 +62,6 @@ export class RegisterComponent {
         this.snackbar.open('Registration successful!', 'Close', { duration: 3000 });
         this.router.navigate(['/dashboards/analytics']);
       } catch (error) {
-        console.error('Registration error:', error);
         this.snackbar.open('Registration failed. Please try again.', 'Close', { duration: 5000 });
       }
     } else {

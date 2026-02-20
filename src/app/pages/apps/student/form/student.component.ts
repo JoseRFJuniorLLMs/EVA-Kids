@@ -59,9 +59,7 @@ export class StudentComponent implements OnInit {
 
   addStudent(student: Student) {
     this.studentService.addStudentData(student).then(() => {
-    }).catch(error => {
-      console.error('Error adding student:', error);
-    });
+    }).catch(() => {});
   }
 
   async updateStudent(student: Student) {
@@ -70,22 +68,15 @@ export class StudentComponent implements OnInit {
       if (uid) {
         student._id = uid.toString();
         await this.studentService.updateStudentData(student);
-      } else {
-        console.error('Error: User is not logged in.');
       }
     } catch (error) {
-      console.error('Error updating student:', error);
     }
   }
 
   deleteStudent(id: string) {
     if (id) {
       this.studentService.deleteStudentData(id).then(() => {
-      }).catch(error => {
-        console.error('Error deleting student:', error);
-      });
-    } else {
-      console.error('Error: Student ID is undefined');
+      }).catch(() => {});
     }
   }
 

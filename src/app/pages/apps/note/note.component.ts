@@ -85,9 +85,7 @@ export class NoteComponent implements OnInit, OnDestroy {
       .then(() => {
         this.loadNotes();
       })
-      .catch((error) => {
-        console.error('Error updating note:', error);
-      });
+      .catch(() => {});
   }
 
   deleteNote(id: string): void {
@@ -96,9 +94,7 @@ export class NoteComponent implements OnInit, OnDestroy {
       .then(() => {
         this.loadNotes();
       })
-      .catch((error) => {
-        console.error('Error deleting note:', error);
-      });
+      .catch(() => {});
   }
 
   togglePermanent(note: NoteCollection): void {
@@ -108,9 +104,7 @@ export class NoteComponent implements OnInit, OnDestroy {
       .then(() => {
         this.loadNotes();
       })
-      .catch((error) => {
-        console.error('Error updating note:', error);
-      });
+      .catch(() => {});
   }
 
   convertToDate(dateString: string | undefined): Date | undefined {

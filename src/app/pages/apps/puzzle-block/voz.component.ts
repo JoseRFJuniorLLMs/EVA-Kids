@@ -111,7 +111,6 @@ export class VozComponent implements OnInit {
     }
 
     if (!this.micElement || !this.micElement.nativeElement) {
-      console.error('micElement is not yet available.');
       return;
     }
     try {
@@ -144,9 +143,7 @@ export class VozComponent implements OnInit {
             this.micSelectElement.nativeElement.appendChild(option);
           });
         })
-        .catch((error) => {
-          console.error('Error fetching microphone devices:', error);
-        });
+        .catch(() => {});
 
       // Handle plugin-specific events
       this.recordPlugin.on('record-start', () => {});
@@ -158,7 +155,6 @@ export class VozComponent implements OnInit {
 
       this.setupSpeechRecognition();
     } catch (error) {
-      console.error('Error initializing WaveSurfer:', error);
     }
   }
 
@@ -170,7 +166,6 @@ export class VozComponent implements OnInit {
       (window as any).webkitSpeechRecognition;
 
     if (!SpeechRecognition) {
-      console.error('Speech Recognition API not supported in this browser.');
       return;
     }
 
@@ -205,7 +200,6 @@ export class VozComponent implements OnInit {
   /* ==================toggleRecording==================== */
   toggleRecording() {
     if (!this.recordPlugin) {
-      console.error('Recording plugin NOT initialized');
       return;
     }
 
@@ -221,11 +215,7 @@ export class VozComponent implements OnInit {
         .then(() => {
           this.isRecording = true;
         })
-        .catch((error: any) => {
-          console.error('Error starting recording:', error);
-        });
-    } else {
-      console.error('Mic SelectElement not initialized');
+        .catch(() => {});
     }
   } //fim
 

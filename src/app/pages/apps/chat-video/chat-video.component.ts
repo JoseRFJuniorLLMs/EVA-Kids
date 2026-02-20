@@ -75,7 +75,6 @@ export class ChatVideoComponent implements OnInit, OnDestroy {
       await this.startCall();
       this.startPeriodicCheck();
     } catch (error) {
-      console.error('Error in ngOnInit:', error);
     }
   }
   

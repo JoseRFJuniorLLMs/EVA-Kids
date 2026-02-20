@@ -6,6 +6,7 @@ import screenfull from 'screenfull';
 import { UnifiedVoiceService } from 'src/app/core/services/voice/unified-voice.service';
 import { SoundService } from 'src/app/layouts/components/footer/sound.service';
 import { SatoshiService } from '../note/satoshi.service';
+import { AuthService } from '../../pages/auth/login/auth.service';
 import { VoiceGameConfig, DEFAULT_VOICE_GAME_CONFIG } from './voice-game.models';
 
 @Directive()
@@ -25,6 +26,7 @@ export abstract class BaseVoiceGame implements OnInit, OnDestroy {
   protected voiceService = inject(UnifiedVoiceService);
   protected soundService = inject(SoundService);
   protected satoshiService = inject(SatoshiService);
+  protected authService = inject(AuthService);
   protected cdr = inject(ChangeDetectorRef);
 
   protected get gameConfig(): VoiceGameConfig {
@@ -110,19 +112,27 @@ export abstract class BaseVoiceGame implements OnInit, OnDestroy {
     this.playbackWavesurfer.load(url);
   }
 
+  private getStudentId(): string | null {
+    const configId = this.gameConfig.studentId;
+    if (configId) return configId;
+    const uid = this.authService.getUID();
+    return uid ? uid.toString() : null;
+  }
+
   protected updateSatoshiBalance(): void {
-    const studentId = this.gameConfig.studentId || 'student-id';
+    const studentId = this.getStudentId();
+    if (!studentId) return;
     this.satoshiService.getSatoshiBalance(studentId).pipe(takeUntil(this.destroy$)).subscribe(
       (balance: number) => {
         this.totalSatoshis = balance;
         this.cdr.detectChanges();
-      },
-      (error: any) => console.error('Error fetching satoshi balance:', error)
+      }
     );
   }
 
   protected incrementSatoshi(): void {
-    const studentId = this.gameConfig.studentId || 'student-id';
+    const studentId = this.getStudentId();
+    if (!studentId) return;
     this.satoshiService.incrementSatoshi(studentId, 1).pipe(takeUntil(this.destroy$)).subscribe(
       (newBalance: number) => {
         this.totalSatoshis = newBalance;
@@ -132,8 +142,7 @@ export abstract class BaseVoiceGame implements OnInit, OnDestroy {
           this.showSatoshiAlert = false;
           this.cdr.detectChanges();
         }, 2000);
-      },
-      (error: any) => console.error('Error incrementing satoshi:', error)
+      }
     );
   }
 

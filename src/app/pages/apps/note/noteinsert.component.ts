@@ -82,24 +82,20 @@ export class NoteinsertComponent implements OnInit, AfterViewInit {
       const text = await navigator.clipboard.readText();
       this.newNote.description = text;
     } catch (err) {
-      console.error('Failed to read clipboard contents: ', err);
     }
   }
 
   async createNote(): Promise<void> {
     if (!this.newNote.title || !this.newNote.description) {
-      console.error('Title and description are required');
       return;
     }
-  
+
     if (!this.newNote.tags || this.newNote.tags.length === 0) {
-      console.error('At least one tag is required');
       return;
     }
-  
+
     const uid = this.authService.getUID();
     if (!uid) {
-      console.error('User not authenticated');
       return;
     }
 
@@ -117,9 +113,7 @@ export class NoteinsertComponent implements OnInit, AfterViewInit {
         this.resetForm();
         window.close(); // Fechar a página após a criação da nota
       })
-      .catch((error) => {
-        console.error('Error creating note:', error);
-      });
+      .catch(() => {});
   }
   
   

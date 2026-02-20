@@ -51,8 +51,6 @@ export class CardComponent implements OnInit, OnDestroy {
       this.studentId = uid.toString();
       this.newGame();
       this.updateSatoshiBalance();
-    } else {
-      console.error('Não foi possível obter o ID do estudante.');
     }
   }
 
@@ -69,7 +67,6 @@ export class CardComponent implements OnInit, OnDestroy {
 
   updateSatoshiBalance() {
     if (!this.studentId) {
-      console.error('O ID do estudante não está definido.');
       return;
     }
 
@@ -77,7 +74,7 @@ export class CardComponent implements OnInit, OnDestroy {
       balance => {
         this.totalSatoshis = balance;
       },
-      error => console.error('Erro ao buscar o saldo de satoshi:', error)
+      () => {}
     );
   }
 
@@ -95,7 +92,6 @@ export class CardComponent implements OnInit, OnDestroy {
         this.remainingPairs = this.cards.length / 2;
         this.gameCount++;
       } else {
-        console.error('Nenhuma carta válida encontrada');
       }
     });
   }
@@ -140,7 +136,6 @@ export class CardComponent implements OnInit, OnDestroy {
 
   private incrementSatoshi() {
     if (!this.studentId) {
-      console.error('O ID do estudante não está definido.');
       return;
     }
 
@@ -150,7 +145,7 @@ export class CardComponent implements OnInit, OnDestroy {
         this.showSatoshiAlert = true;
         setTimeout(() => this.showSatoshiAlert = false, 2000);
       },
-      error => console.error('Erro ao incrementar saldo de satoshi:', error)
+      () => {}
     );
   }
 }

@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Router } from '@angular/router';
-import { BehaviorSubject, Observable, of } from 'rxjs';
+import { BehaviorSubject, Observable, of, firstValueFrom } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { Student } from 'src/app/model/student/student';
 import { ChatVideoService } from 'src/app/pages/apps/chat-video/chat-video.service';
@@ -59,19 +59,19 @@ export class AuthService {
 
   async register(email: string, password: string, studentData: Omit<Student, '_id' | 'email'>) {
     try {
-      const res = await this.http.post<LoginResponse>(`${this.apiUrl}/auth/register`, {
+      const res = await firstValueFrom(this.http.post<LoginResponse>(`${this.apiUrl}/auth/register`, {
         name: studentData.name || '',
         email,
         senha_hash: password,
         role: 'cuidador'
-      }).toPromise();
+      }));
 
       if (res && res.access_token) {
         localStorage.setItem('eva_jwt_token', res.access_token);
         this.authenticatedSubject.next(true);
 
         // Create student profile in kids system
-        await this.http.post(`${this.apiUrl}/kids/students`, {
+        await firstValueFrom(this.http.post(`${this.apiUrl}/kids/students`, {
           name: studentData.name,
           city: studentData.city,
           country: studentData.country,
@@ -79,12 +79,11 @@ export class AuthService {
           phone: studentData.phone,
           image_url: studentData.image_url,
           spoken_language: studentData.spoken_language,
-        }).toPromise();
+        }));
 
         this.router.navigate(['/dashboards/analytics']);
       }
     } catch (error) {
-      console.error('Error during registration:', error);
       this.loginErrorSubject.next('Registration failed. Please try again.');
     }
   }
@@ -96,9 +95,9 @@ export class AuthService {
         .set('username', email)
         .set('password', password);
 
-      const res = await this.http.post<LoginResponse>(`${this.apiUrl}/auth/login`, body.toString(), {
+      const res = await firstValueFrom(this.http.post<LoginResponse>(`${this.apiUrl}/auth/login`, body.toString(), {
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
-      }).toPromise();
+      }));
 
       if (res && res.access_token) {
         localStorage.setItem('eva_jwt_token', res.access_token);
@@ -112,7 +111,7 @@ export class AuthService {
         // Update login timestamp on student profile
         if (userId) {
           try {
-            const profile = await this.http.get<any>(`${this.apiUrl}/kids/profile`).toPromise();
+            const profile = await firstValueFrom(this.http.get<any>(`${this.apiUrl}/kids/profile`));
             if (profile) {
               this.userNameSubject.next(profile.name ?? null);
               // Update online status
@@ -133,7 +132,7 @@ export class AuthService {
           // Update overdue notes
           setTimeout(() => {
             this.dataListService.updateOverdueNotes()
-              .catch(error => console.error('Erro ao atualizar as notas atrasadas após o login:', error));
+              .catch(() => {});
           }, 0);
         }
 
@@ -141,7 +140,6 @@ export class AuthService {
         this.router.navigate(['/dashboards/analytics']);
       }
     } catch (error) {
-      console.error('Error during login:', error);
       this.loginErrorSubject.next('Incorrect email or password.');
     }
   }
@@ -152,9 +150,9 @@ export class AuthService {
       if (userId) {
         // Set offline
         try {
-          const profile = await this.http.get<any>(`${this.apiUrl}/kids/profile`).toPromise();
+          const profile = await firstValueFrom(this.http.get<any>(`${this.apiUrl}/kids/profile`));
           if (profile?.id) {
-            await this.http.put(`${this.apiUrl}/kids/students/${profile.id}/online`, { online: false }).toPromise();
+            await firstValueFrom(this.http.put(`${this.apiUrl}/kids/students/${profile.id}/online`, { online: false }));
           }
         } catch {}
         this.chatVideoService.endCall();
@@ -168,7 +166,6 @@ export class AuthService {
       this.userNameSubject.next(null);
       this.router.navigate(['/login']);
     } catch (error) {
-      console.error('Error during logout:', error);
     }
   }
 

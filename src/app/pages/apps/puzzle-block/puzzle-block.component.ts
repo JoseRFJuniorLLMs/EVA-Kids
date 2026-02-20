@@ -166,10 +166,6 @@ export class PuzzleBlockComponent implements OnInit {
     this.setupWaveSurfer();
 
     setTimeout(() => {
-      if (!this.recordPlugin) {
-        console.error('RecordPlugin was NOT initialized correctly.');
-      } else {
-        }
     }, 1000);
   } //fim
 
@@ -204,7 +200,6 @@ export class PuzzleBlockComponent implements OnInit {
     }
 
     if (!this.micElement || !this.micElement.nativeElement) {
-      console.error('micElement is not yet available.');
       return;
     }
 
@@ -239,10 +234,6 @@ export class PuzzleBlockComponent implements OnInit {
             !this.recordPlugin.isRecording()
           ) {
             this.createWaveSurferPlay(this.recordedUrl);
-          } else {
-            console.error(
-              'Recorded URL not yet available or WaveSurfer is busy'
-            );
           }
         }, 500);
       });
@@ -261,13 +252,10 @@ export class PuzzleBlockComponent implements OnInit {
             this.micSelectElement.nativeElement.appendChild(option);
           });
         })
-        .catch((error) => {
-          console.error('Error fetching microphone devices:', error);
-        });
+        .catch(() => {});
 
      // this.setupSpeechRecognition();  TODO: COMENTEI PARA TESTAR OUTRO COMPONNTE.
     } catch (error) {
-      console.error('Error initializing WaveSurfer:', error);
     }
   }
 
@@ -279,7 +267,6 @@ export class PuzzleBlockComponent implements OnInit {
       (window as any).webkitSpeechRecognition;
 
     if (!SpeechRecognition) {
-      console.error('Speech Recognition API not supported in this browser.');
       return;
     }
 
@@ -374,7 +361,6 @@ export class PuzzleBlockComponent implements OnInit {
       const container =
         this.elementRef.nativeElement.querySelector('#waveformPlay');
       if (!container) {
-        console.error('WaveSurfer container element not found.');
         return;
       }
 
@@ -415,15 +401,12 @@ export class PuzzleBlockComponent implements OnInit {
 
       this.wavesurfer.on('finish', () => {
       });
-    } else {
-      console.error('Recorded URL not yet available');
     }
   } //fim
 
   /* ==================Toggle Recording==================== */
   toggleRecording() {
     if (!this.recordPlugin) {
-      console.error('Recording plugin NOT initialized');
       return;
     }
 
@@ -454,17 +437,13 @@ export class PuzzleBlockComponent implements OnInit {
           this.isRecording = false;
         })
         .catch((error: any) => {
-          console.error('Error starting recording:', error);
         });
-    } else {
-      console.error('Mic SelectElement not initialized');
     }
   } //fim
 
   /* ==================Stop Recording==================== */
   stopRecording() {
     if (!this.recordPlugin) {
-      console.error('Recording plugin NOT initialized');
       return;
     }
 
@@ -485,7 +464,6 @@ export class PuzzleBlockComponent implements OnInit {
   /* ==================Start Recording==================== */
   startRecording() {
     if (!this.recordPlugin) {
-      console.error('Recording plugin NOT initialized');
       return;
     }
 
@@ -501,11 +479,7 @@ export class PuzzleBlockComponent implements OnInit {
             }
             this.isRecording = true;
           })
-          .catch((error: any) => {
-            console.error('Error starting recording:', error);
-          });
-      } else {
-        console.error('Mic SelectElement not initialized');
+          .catch(() => {});
       }
     }
   }
@@ -550,14 +524,10 @@ export class PuzzleBlockComponent implements OnInit {
             next: (response) => {
               this.transcribedText = response.text;
             },
-            error: (error) => {
-              console.error('Error transcribing audio:', error);
-            }
+            error: () => {}
           });
         })
-        .catch(error => {
-          console.error('Error fetching audio:', error);
-        });
+        .catch(() => {});
     } else {
       // For direct blob/file input - audio transcription requires blob input
     }
@@ -569,9 +539,7 @@ export class PuzzleBlockComponent implements OnInit {
       next: (response) => {
         this.transcribedText = response.text;
       },
-      error: (error) => {
-        console.error('Error transcribing audio:', error);
-      }
+      error: () => {}
     });
   } //fim
 } //fim

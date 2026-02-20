@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, of } from 'rxjs';
+import { Observable, of, firstValueFrom } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
 import { Aluno } from './aluno';
 import { environment } from 'src/environments/environment';
@@ -36,19 +36,19 @@ export class AlunoService {
   }
 
   addAlunoData(alunoData: Omit<Aluno, '_id'>): Promise<any> {
-    return this.http.post(`${this.apiUrl}/students`, {
+    return firstValueFrom(this.http.post(`${this.apiUrl}/students`, {
       name: alunoData.nome,
       city: alunoData.enderecoPrincipal?.logradouro || undefined,
       gender: alunoData.sexo || undefined,
       phone: alunoData.contatos?.[0]?.valor || undefined,
-    }).toPromise();
+    }));
   }
 
   updateAlunoData(id: string, data: Partial<Aluno>): Promise<void> {
     if (!id) return Promise.reject(new Error('ID obrigatorio'));
-    return this.http.put(`${this.apiUrl}/profile`, {
+    return firstValueFrom(this.http.put(`${this.apiUrl}/profile`, {
       name: data.nome,
-    }).toPromise().then(() => {});
+    })).then(() => {});
   }
 
   deleteAlunoData(id: string): Promise<void> {

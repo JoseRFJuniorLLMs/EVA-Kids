@@ -6,11 +6,12 @@
  */
 
 import { CommonModule } from '@angular/common';
-import { Component, Inject } from '@angular/core';
+import { Component, Inject, OnInit, OnDestroy } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatButtonModule } from '@angular/material/button';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-node-dialog',
@@ -25,13 +26,26 @@ import { MatButtonModule } from '@angular/material/button';
     MatButtonModule
   ]
 })
-export class NodeDialogComponent {
+export class NodeDialogComponent implements OnInit, OnDestroy {
   isSpeaking = false;
+  private audioSub?: Subscription;
 
   constructor(
     @Inject(MAT_DIALOG_DATA) public data: any,
     private dialogRef: MatDialogRef<NodeDialogComponent>
   ) {}
+
+  ngOnInit(): void {
+    if (this.data.audioState$) {
+      this.audioSub = this.data.audioState$.subscribe((state: string) => {
+        this.isSpeaking = state === 'speaking';
+      });
+    }
+  }
+
+  ngOnDestroy(): void {
+    this.audioSub?.unsubscribe();
+  }
 
   /**
    * Retorna a palavra alvo relacionada (se houver)
@@ -47,12 +61,7 @@ export class NodeDialogComponent {
    */
   speakWord(): void {
     if (this.data.speakWord && this.data.node?.label) {
-      this.isSpeaking = true;
       this.data.speakWord(this.data.node.label);
-      // Simular fim da fala
-      setTimeout(() => {
-        this.isSpeaking = false;
-      }, 2000);
     }
   }
 

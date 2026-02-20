@@ -1,12 +1,13 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpEvent, HttpEventType } from '@angular/common/http';
 import { Observable, Subject } from 'rxjs';
+import { environment } from 'src/environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class OllamaService {
-  private apiUrl = 'http://localhost:11434/api/generate';
+  private apiUrl = (environment as any).ollama?.apiUrl || 'http://localhost:11434/api/generate';
 
   constructor(private http: HttpClient) { }
 
@@ -37,7 +38,6 @@ export class OllamaService {
                     subject.complete();
                   }
                 } catch (e) {
-                  console.error('Erro ao processar linha:', e);
                 }
               }
             });

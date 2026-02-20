@@ -98,11 +98,9 @@ export class LoginComponent implements OnInit {
         this.snackbar.open('Login successful!', 'Close', { duration: 3000 });
         // O redirecionamento é tratado no AuthService após o login bem-sucedido
       } catch (error) {
-        console.error('Login error:', error);
         this.snackbar.open('Login failed. Please check your credentials and try again.', 'Close', { duration: 5000 });
       }
     } else {
-      console.error('Please enter a valid email and password.:');
       this.snackbar.open('Please enter a valid email and password.', 'Close', { duration: 3000 });
     }
   }

@@ -151,7 +151,6 @@ export class DialogIAComponent implements OnInit {
   private initWaveSurferPlayback(): void {
     // Garante que o container está disponível
     if (!this.playbackContainer) {
-      console.error('Container para WaveSurfer não encontrado!');
       return;
     }
     // Criação da instância WaveSurfer
@@ -235,7 +234,6 @@ export class DialogIAComponent implements OnInit {
     this.isGeneratingAudio = true;
 
     if (!this.chatMessage) {
-      console.error('No chatMessage to generate audio from.');
       this.isGeneratingAudio = false;
       return;
     }
@@ -254,8 +252,7 @@ export class DialogIAComponent implements OnInit {
     ).then(() => {
       this.isAudioReady = true;
       this.isGeneratingAudio = false;
-    }).catch((error) => {
-      console.error('Error generating audio:', error);
+    }).catch(() => {
       this.isGeneratingAudio = false;
     });
   } //fim
@@ -302,9 +299,7 @@ export class DialogIAComponent implements OnInit {
           this.audioChunks.push(event.data);
         };
       })
-      .catch((err) => {
-        console.error('Could not access the microphone', err);
-      });
+      .catch(() => {});
   } //fim
 
   /* ==================startRecording==================== */
@@ -424,9 +419,7 @@ export class DialogIAComponent implements OnInit {
       next: (response) => {
         this.transcribedText = response.text;
       },
-      error: (error) => {
-        console.error('Error transcribing audio:', error);
-      }
+      error: () => {}
     });
   } //fim
 

@@ -20,13 +20,11 @@ export class NlpService {
       try {
         await tf.setBackend('webgl');
       } catch {
-        console.warn('WebGL backend not available, falling back to CPU');
         await tf.setBackend('cpu');
       }
       await tf.ready();
       this.model = await use.load();
     } catch (error) {
-      console.error('Error loading TensorFlow model:', error);
       this.model = null;
     }
   }
@@ -63,7 +61,6 @@ export class NlpService {
 
     // Fallback: se o modelo não carregou, retorna matriz zerada
     if (!embeddings) {
-      console.warn('TensorFlow model not available, using fallback similarity');
       return this.fallbackSimilarities(sentences);
     }
 

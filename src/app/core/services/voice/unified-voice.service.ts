@@ -626,7 +626,6 @@ export class UnifiedVoiceService implements OnDestroy {
     const message = details instanceof Error ? details.message : String(details);
     this.stateSubject.next('error');
     this.error$.next({ code, message, details });
-    console.error(`[UnifiedVoiceService] ${code}:`, details);
   }
 
   /**

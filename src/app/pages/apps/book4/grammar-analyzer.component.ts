@@ -2,7 +2,6 @@ import { Component, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { OllamaComponent } from './ollama.component';
 import nlp from 'compromise';
 
 interface PartOfSpeech {
@@ -23,8 +22,7 @@ interface AnalyzedWord {
   imports: [
     CommonModule,
     MatButtonModule,
-    MatTooltipModule,
-    OllamaComponent
+    MatTooltipModule
   ]
 })
 export class GrammarAnalyzerComponent {
@@ -63,12 +61,13 @@ export class GrammarAnalyzerComponent {
 
   performAnalysis(): void {
     if (!this.text) return;
-    
+
     const doc = nlp(this.text);
 
-    this.analyzedText = doc.terms().out('array').map((term: any) => {
-      const word = term.text;
-      const tags = term.tags as string[];
+    this.analyzedText = doc.terms().json().map((item: any) => {
+      const term = item.terms?.[0] || {};
+      const word = term.text || item.text || '';
+      const tags = term.tags ? Object.keys(term.tags) : [];
       const type = this.determineWordType(tags);
       return { word, type };
     });

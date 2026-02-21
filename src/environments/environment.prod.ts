@@ -26,10 +26,5 @@ export const environment = {
   evaBack: {
     apiUrl: '/eva-back/api/v1',
     wsSignaling: 'wss://34.56.82.116/eva-back/api/v1/kids/ws/signaling'
-  },
-
-  // Ollama (disabled in production)
-  ollama: {
-    apiUrl: ''
   }
 };

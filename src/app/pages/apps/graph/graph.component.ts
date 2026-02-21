@@ -159,6 +159,7 @@ export class GraphComponent implements OnInit, AfterViewInit, OnDestroy {
       try {
         await this.processSentences();
       } catch (nlpError) {
+        console.warn('Graph: Semantic similarity unavailable, showing nodes without edges', nlpError);
       }
 
       this.createNetwork();

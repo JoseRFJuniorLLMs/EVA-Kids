@@ -27,7 +27,8 @@ export class NlpService {
       }
       await tf.ready();
       this.model = await use.load();
-    } catch {
+    } catch (err) {
+      console.warn('NlpService: TensorFlow USE model failed to load, using Jaccard fallback', err);
       this.model = null;
     }
   }

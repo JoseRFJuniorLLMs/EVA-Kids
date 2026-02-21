@@ -43,16 +43,17 @@ jobs:
 
       - name: Deploy to VM
         run: |
-          ssh ${{ env.VM_USER }}@${{ env.VM_IP }} "rm -rf /tmp/eva-kids-dist"
-          scp -r dist ${{ env.VM_USER }}@${{ env.VM_IP }}:/tmp/eva-kids-dist
+          tar czf /tmp/eva-kids-dist.tar.gz -C dist .
+          ssh ${{ env.VM_USER }}@${{ env.VM_IP }} "sudo rm -f /tmp/eva-kids-dist.tar.gz || true"
+          scp /tmp/eva-kids-dist.tar.gz ${{ env.VM_USER }}@${{ env.VM_IP }}:/tmp/eva-kids-dist.tar.gz
 
           ssh ${{ env.VM_USER }}@${{ env.VM_IP }} '
             set -e
             sudo rm -rf /var/www/eva-kids
             sudo mkdir -p /var/www/eva-kids
-            sudo cp -r /tmp/eva-kids-dist/* /var/www/eva-kids/
+            sudo tar xzf /tmp/eva-kids-dist.tar.gz -C /var/www/eva-kids
             sudo chown -R www-data:www-data /var/www/eva-kids
-            rm -rf /tmp/eva-kids-dist
+            rm -f /tmp/eva-kids-dist.tar.gz
             echo "EVA-Kids deployed to /var/www/eva-kids/"
           '
 

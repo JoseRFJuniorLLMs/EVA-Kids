@@ -421,7 +421,7 @@ export class UnifiedAIService {
   }
 
   isAvailable(): Observable<boolean> {
-    return this.http.get<any>(`${environment.eva?.baseUrl || 'https://eva-ia.org:8091'}/api/health`).pipe(
+    return this.http.get<any>(`${environment.eva?.baseUrl || '/api/v1'}/api/health`).pipe(
       map(() => true),
       catchError(() => of(false))
     );

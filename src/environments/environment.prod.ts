@@ -7,9 +7,9 @@ export const environment = {
 
   // EVA - Main AI Backend (Go)
   eva: {
-    baseUrl: 'https://eva-ia.org:8091',
-    wsUrl: 'wss://eva-ia.org:8091/ws/browser',
-    chatUrl: 'https://eva-ia.org:8091/api/chat',
+    baseUrl: '/api/v1',
+    wsUrl: 'wss://34.56.82.116/ws/browser',
+    chatUrl: '/api/v1/chat',
     sampleRate: 24000,
   },
 
@@ -24,8 +24,8 @@ export const environment = {
 
   // EVA-Back API (data services: students, notes, auth)
   evaBack: {
-    apiUrl: 'https://eva-ia.org:8000/api/v1',
-    wsSignaling: 'wss://eva-ia.org:8000/api/v1/kids/ws/signaling'
+    apiUrl: '/eva-back/api/v1',
+    wsSignaling: 'wss://34.56.82.116/eva-back/api/v1/kids/ws/signaling'
   },
 
   // Ollama (disabled in production)

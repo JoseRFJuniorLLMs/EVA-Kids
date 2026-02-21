@@ -1,7 +1,7 @@
-import { Component, Inject, Input, OnInit } from '@angular/core';
-import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
-import { EMPTY, Subscription } from 'rxjs';
+import { CommonModule, Location } from '@angular/common';
+import { Subscription } from 'rxjs';
 
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -11,10 +11,9 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { MatStepperModule } from '@angular/material/stepper';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTooltipModule } from '@angular/material/tooltip';
-
+import { DataListService } from 'src/app/pages/apps/note/list/data-list.service';
 
 @Component({
   selector: 'rsvpreader',
@@ -22,7 +21,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
   templateUrl: './rsvpreader.component.html',
   styleUrls: ['./rsvpreader.component.scss'],
   imports: [
-    MatDialogModule,
+    CommonModule,
     MatButtonModule,
     MatIconModule,
     MatFormFieldModule,
@@ -31,47 +30,40 @@ import { MatTooltipModule } from '@angular/material/tooltip';
     MatTooltipModule,
     MatCardModule,
     MatToolbarModule,
-    MatStepperModule,
     MatProgressBarModule,
     MatDividerModule,
   ]
 })
-export class RsvpreaderComponent implements OnInit{
-
-  chatMessage: string = this.data.texto;
-  @Input() text: string = '';
-  selectedText: string = '';
+export class RsvpreaderComponent implements OnInit, OnDestroy {
   words: string[] = [];
   currentWord = '';
   currentWordFormatted: SafeHtml | undefined;
   currentIndex = 0;
   readingInterval: any;
   intervalSpeed = 200;
-  private textSubscription: Subscription = EMPTY.subscribe();
+  private notesSub: Subscription | null = null;
 
   constructor(
-    //private sharedDataService: SharedDataService,
     private sanitizer: DomSanitizer,
-    @Inject(MAT_DIALOG_DATA) public data: { texto: string }
-    ) {}
+    private dataService: DataListService,
+    private location: Location
+  ) {}
 
   ngOnInit() {
-      this.words = this.chatMessage.split(' ');
-  }
-
-  ngOnChanges(): void {
-    this.words = this.text.split(',').map(word => word.trim());
-    this.currentIndex = 0;
+    this.notesSub = this.dataService.getNotes().subscribe(notes => {
+      const combinedText = notes.map(n => n.description).filter(Boolean).join(' ');
+      this.words = combinedText.split(' ').filter(Boolean);
+    });
   }
 
   ngOnDestroy() {
-    this.textSubscription.unsubscribe();
+    this.notesSub?.unsubscribe();
     this.stopReading();
   }
 
   startReading() {
     if (this.readingInterval) {
-      return; // Impede a criação de múltiplos intervalos se já estiver lendo
+      return;
     }
 
     this.readingInterval = setInterval(() => {
@@ -80,11 +72,10 @@ export class RsvpreaderComponent implements OnInit{
         this.currentWord = word;
         this.currentWordFormatted = this.formatWord(word);
       } else {
-        this.stopReading(); // Para a leitura quando todas as palavras forem lidas
+        this.stopReading();
       }
     }, this.intervalSpeed);
   }
-
 
   stopReading() {
     clearInterval(this.readingInterval);
@@ -107,5 +98,9 @@ export class RsvpreaderComponent implements OnInit{
       return this.sanitizer.bypassSecurityTrustHtml(formattedWord);
     }
     return this.sanitizer.bypassSecurityTrustHtml(word);
+  }
+
+  goBack(): void {
+    this.location.back();
   }
 }

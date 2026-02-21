@@ -1,20 +1,15 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Observable } from 'rxjs';
-import { map, take } from 'rxjs/operators';
+import { map } from 'rxjs/operators';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
-import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatBadgeModule } from '@angular/material/badge';
-import { RouterModule } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 
-import { FlashcardComponent } from './flashcard.component';
-import { NoteDialogComponent } from './note-dialog.component';
 import { UnifiedVoiceService } from 'src/app/core/services/voice/unified-voice.service';
-import { RsvpreaderComponent } from '../../../dashboards/components/dialog-rsvpreader/rsvpreader.component';
-import { NoteDialogEditComponent } from './note-dialog-edit.component';
 
 import { DataListService } from './data-list.service';
 import { NoteCollection } from '../../note/note-collection';
@@ -29,7 +24,6 @@ import { NoteCollection } from '../../note/note-collection';
     FormsModule,
     MatIconModule,
     MatButtonModule,
-    MatDialogModule,
     MatTooltipModule,
     MatBadgeModule,
     RouterModule
@@ -39,15 +33,13 @@ export class NoteListComponent implements OnInit, OnDestroy {
 
   notes$!: Observable<NoteCollection[]>;
   filteredNotes$!: Observable<NoteCollection[]>;
-  totalNotes$: Observable<number>; 
+  totalNotes$: Observable<number>;
   searchTerm: string = '';
-  private flashcardDialogRef: any;
-  private srvpDialogRef: any;
 
   constructor(
     private dataListService: DataListService,
-    public dialog: MatDialog,
-    private voiceService: UnifiedVoiceService
+    private voiceService: UnifiedVoiceService,
+    private router: Router
   ) {
     this.totalNotes$ = this.dataListService.getTotalNotesOfTheDay();
   }
@@ -61,7 +53,6 @@ export class NoteListComponent implements OnInit, OnDestroy {
     if (this.voiceService && this.voiceService.wavesurfer) {
       this.voiceService.wavesurfer.destroy();
     }
-    // Additional cleanup - stop any speech synthesis
     if (typeof speechSynthesis !== 'undefined') {
       speechSynthesis.cancel();
     }
@@ -74,31 +65,11 @@ export class NoteListComponent implements OnInit, OnDestroy {
   }
 
   editNote(note: NoteCollection): void {
-    const dialogRef = this.dialog.open(NoteDialogEditComponent, {
-      width: '80vw',  // 80% da largura da viewport
-      height: '80vh', // 80% da altura da viewport
-      data: note
-    });
-
-    dialogRef.afterClosed().subscribe(result => {
-      if (result) {
-        this.dataListService.updateNote(note._id, result);
-      }
-    });
+    this.router.navigate(['/apps/note-edit', note._id]);
   }
 
   viewNote(note: NoteCollection): void {
-    const dialogRef = this.dialog.open(NoteDialogComponent, {
-      width: '80vw',  // 80% da largura da viewport
-      height: '80vh', // 80% da altura da viewport
-      data: note
-    });
-
-    dialogRef.afterClosed().subscribe(result => {
-      if (result) {
-        this.dataListService.updateNote(note._id, result);
-      }
-    });
+    this.router.navigate(['/apps/note-view', note._id]);
   }
 
   deleteNote(id: string): void {
@@ -106,47 +77,15 @@ export class NoteListComponent implements OnInit, OnDestroy {
   }
 
   openFlashcard(): void {
-    this.filteredNotes$.pipe(take(1)).subscribe(notes => {
-      if (!this.flashcardDialogRef) {
-        this.flashcardDialogRef = this.dialog.open(FlashcardComponent, {
-          width: '80vw',
-          height: '80vh',
-          data: { notes },
-          hasBackdrop: false
-        });
-
-        this.flashcardDialogRef.afterClosed().subscribe(() => {
-          this.flashcardDialogRef = null;
-        });
-      } else {
-        this.flashcardDialogRef.componentInstance.updateNotes(notes);
-      }
-    });
+    this.router.navigate(['/apps/flashcard']);
   }
 
   openSRVP(): void {
-    this.filteredNotes$.pipe(take(1)).subscribe(notes => {
-      const combinedText = notes.map(note => note.description).join(' '); // Concatena as descrições das notas
-      if (!this.srvpDialogRef) {
-        this.srvpDialogRef = this.dialog.open(RsvpreaderComponent, {
-          width: '80vw',
-          height: '80vh',
-          data: { texto: combinedText }, // Passa o texto combinado para o componente `RsvpreaderComponent`
-          hasBackdrop: false
-        });
-  
-        this.srvpDialogRef.afterClosed().subscribe(() => {
-          this.srvpDialogRef = null;
-        });
-      }
-    });
+    this.router.navigate(['/apps/srvp']);
   }
 
   // ==================== HELPER METHODS FOR KIDS UI ====================
 
-  /**
-   * Get CSS class based on tag type
-   */
   getTagClass(tags: string | undefined): string {
     if (!tags) return 'tag-default';
     const tagMap: Record<string, string> = {
@@ -160,25 +99,19 @@ export class NoteListComponent implements OnInit, OnDestroy {
     return tagMap[tags.toUpperCase()] || 'tag-default';
   }
 
-  /**
-   * Get emoji based on tag type
-   */
   getTagEmoji(tags: string | undefined): string {
-    if (!tags) return '📝';
+    if (!tags) return '\u{1F4DD}';
     const emojiMap: Record<string, string> = {
-      'VERB': '🏃',
-      'NOUN': '🎁',
-      'BOOK': '📚',
-      'CLASS': '🏫',
-      'GAME': '🎮',
-      'MUSIC': '🎵'
+      'VERB': '\u{1F3C3}',
+      'NOUN': '\u{1F381}',
+      'BOOK': '\u{1F4DA}',
+      'CLASS': '\u{1F3EB}',
+      'GAME': '\u{1F3AE}',
+      'MUSIC': '\u{1F3B5}'
     };
-    return emojiMap[tags.toUpperCase()] || '📝';
+    return emojiMap[tags.toUpperCase()] || '\u{1F4DD}';
   }
 
-  /**
-   * Get human-readable text for tag
-   */
   getTagText(tags: string | undefined): string {
     if (!tags) return 'Nota';
     const textMap: Record<string, string> = {
@@ -187,40 +120,31 @@ export class NoteListComponent implements OnInit, OnDestroy {
       'BOOK': 'Livro',
       'CLASS': 'Aula',
       'GAME': 'Jogo',
-      'MUSIC': 'Música'
+      'MUSIC': 'M\u00fasica'
     };
     return textMap[tags.toUpperCase()] || tags || 'Nota';
   }
 
-  /**
-   * Get emoji based on difficulty level
-   */
   getLevelEmoji(level: string | undefined): string {
-    if (!level) return '⭐';
+    if (!level) return '\u{2B50}';
     const emojiMap: Record<string, string> = {
-      'easy': '😊',
-      'medium': '🤔',
-      'hard': '🧠'
+      'easy': '\u{1F60A}',
+      'medium': '\u{1F914}',
+      'hard': '\u{1F9E0}'
     };
-    return emojiMap[level.toLowerCase()] || '⭐';
+    return emojiMap[level.toLowerCase()] || '\u{2B50}';
   }
 
-  /**
-   * Get human-readable text for level
-   */
   getLevelText(level: string | undefined): string {
     if (!level) return 'Normal';
     const textMap: Record<string, string> = {
-      'easy': 'Fácil',
-      'medium': 'Médio',
-      'hard': 'Difícil'
+      'easy': 'F\u00e1cil',
+      'medium': 'M\u00e9dio',
+      'hard': 'Dif\u00edcil'
     };
     return textMap[level.toLowerCase()] || level || 'Normal';
   }
 
-  /**
-   * Handle image loading error
-   */
   handleImageError(event: Event): void {
     const img = event.target as HTMLImageElement;
     img.style.display = 'none';

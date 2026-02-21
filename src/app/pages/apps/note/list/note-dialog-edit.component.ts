@@ -1,18 +1,18 @@
-import { Component, Inject } from '@angular/core';
-import { MAT_DIALOG_DATA, MatDialogRef, MatDialogModule } from '@angular/material/dialog';
-import { CommonModule } from '@angular/common';
+import { Component, OnInit } from '@angular/core';
+import { CommonModule, Location } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { MatBadgeModule } from '@angular/material/badge';
-import { NoteCollection } from '../../note/note-collection';
-import { NoteService } from '../note.service';
 import { MatIconModule } from '@angular/material/icon';
+import { MatCheckboxModule } from '@angular/material/checkbox';
+import { NoteCollection } from '../../note/note-collection';
+import { DataListService } from './data-list.service';
 
 @Component({
-  selector: 'note-dialog-edit',
+  selector: 'note-edit-page',
   templateUrl: './note-dialog-edit.component.html',
   styleUrls: ['./note-dialog-edit.component.scss'],
   standalone: true,
@@ -22,34 +22,48 @@ import { MatIconModule } from '@angular/material/icon';
     MatFormFieldModule,
     MatInputModule,
     MatButtonModule,
-    MatDialogModule ,
     MatTooltipModule,
-    MatBadgeModule,
-    MatIconModule
+    MatIconModule,
+    MatCheckboxModule
   ]
 })
-export class NoteDialogEditComponent {
+export class NoteDialogEditComponent implements OnInit {
+  data: NoteCollection | null = null;
+  loading = true;
+
   constructor(
-    public dialogRef: MatDialogRef<NoteDialogEditComponent>,
-    @Inject(MAT_DIALOG_DATA) public data: NoteCollection,
-    private noteService: NoteService 
+    private route: ActivatedRoute,
+    private dataService: DataListService,
+    private location: Location
   ) {}
 
-  onNoClick(): void {
-    this.dialogRef.close();
+  ngOnInit(): void {
+    const id = this.route.snapshot.paramMap.get('id');
+    if (id) {
+      this.dataService.getNoteById(id).subscribe({
+        next: (note) => {
+          this.data = note;
+          this.loading = false;
+        },
+        error: () => {
+          this.loading = false;
+        }
+      });
+    }
   }
 
   update(): void {
-    if (this.data._id) {
-      this.noteService.updateNote(this.data._id, this.data).then(
+    if (this.data?._id) {
+      this.dataService.updateNote(this.data._id, this.data).then(
         () => {
-          this.dialogRef.close(this.data); 
-          this.dialogRef.close();
+          this.location.back();
         },
         () => {}
       );
     }
   }
 
-
-}//fim
+  goBack(): void {
+    this.location.back();
+  }
+}

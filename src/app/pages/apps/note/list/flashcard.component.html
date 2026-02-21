@@ -1,4 +1,4 @@
-<mat-dialog-content>
+<div class="flashcard-page">
   <div class="flashcard-container">
     <mat-card class="flashcard">
       <mat-card-header>
@@ -17,29 +17,29 @@
       </mat-card-header>
     </mat-card>
   </div>
-</mat-dialog-content>
-<mat-card-actions>
-  <div class="flex">
-    <button mat-fab (click)="toggleTranslation()" matTooltip="Show Answer">
-      <span class="material-symbols-outlined" style="font-size: 30px;">visibility</span>
+  <mat-card-actions>
+    <div class="flex">
+      <button mat-fab (click)="toggleTranslation()" matTooltip="Show Answer">
+        <span class="material-symbols-outlined" style="font-size: 30px;">visibility</span>
+      </button>
+      <button mat-fab (click)="answer('hard')" matTooltip="Hard">
+        <span class="material-symbols-outlined" style="font-size: 30px;">sentiment_very_dissatisfied</span>
+      </button>
+      <button mat-fab (click)="answer('good')" matTooltip="Good">
+        <span class="material-symbols-outlined" style="font-size: 30px;">sentiment_satisfied</span>
+      </button>
+      <button mat-fab (click)="answer('easy')" matTooltip="Easy">
+        <span class="material-symbols-outlined" style="font-size: 30px;">sentiment_very_satisfied</span>
+      </button>
+    </div>
+    <div>
+      <label for="voiceSelect">Select Voice:</label>
+      <select id="voiceSelect" (change)="onVoiceChange($event)">
+        <option *ngFor="let voice of voices" [value]="voice.name">{{ voice.name }}</option>
+      </select>
+    </div>
+    <button mat-icon-button class="close-button" matTooltip="Voltar" (click)="goBack()">
+      <span class="material-symbols-outlined">arrow_back</span>
     </button>
-    <button mat-fab (click)="answer('hard')" matTooltip="Hard" >
-      <span class="material-symbols-outlined" style="font-size: 30px;">sentiment_very_dissatisfied</span>
-    </button>
-    <button mat-fab (click)="answer('good')" matTooltip="Good">
-      <span class="material-symbols-outlined" style="font-size: 30px;">sentiment_satisfied</span>
-    </button>
-    <button mat-fab (click)="answer('easy')" matTooltip="Easy" >
-      <span class="material-symbols-outlined" style="font-size: 30px;">sentiment_very_satisfied</span>
-    </button>
-  </div>
-  <div>
-    <label for="voiceSelect">Select Voice:</label>
-    <select id="voiceSelect" (change)="onVoiceChange($event)">
-      <option *ngFor="let voice of voices" [value]="voice.name">{{ voice.name }}</option>
-    </select>
-  </div>
-  <button mat-icon-button class="close-button" matTooltip="Close" (click)="closeClick()">
-    <span class="material-symbols-outlined" style="color: red;">close</span>
-  </button>
-</mat-card-actions>
+  </mat-card-actions>
+</div>

@@ -1,21 +1,29 @@
-<mat-dialog-content>
-  <div @fadeInUp class="card overflow-hidden">
+<div class="rsvp-page">
+  <div class="page-header">
+    <button mat-icon-button (click)="goBack()" matTooltip="Voltar">
+      <mat-icon>arrow_back</mat-icon>
+    </button>
+    <h1>Leitura Rapida</h1>
+  </div>
+
+  <div class="card overflow-hidden">
     <div class="rsvp-container">
       <h1 class="text-display" [innerHTML]="currentWordFormatted || 'Click Start !'"></h1>
     </div>
   </div>
-</mat-dialog-content>
-<div class="controls">
-  <button mat-fab color="primary" (click)="startReading()" matTooltip="Start">
-    <i class="fa fa-play" style="font-size: 24px;"></i>
-  </button>
-  <button mat-fab color="warn" (click)="stopReading()" matTooltip="Stop">
-    <i class="fa fa-stop" style="font-size: 24px;"></i>
-  </button>
-  <button mat-fab (click)="adjustSpeed(100)" matTooltip="More">
-    <i class="fa fa-angle-double-right" style="font-size: 24px;"></i>
-  </button>
-  <button mat-fab (click)="adjustSpeed(300)" matTooltip="Slow">
-    <i class="fa fa-angle-right" style="font-size: 24px;"></i>
-  </button>
+
+  <div class="controls">
+    <button mat-fab color="primary" (click)="startReading()" matTooltip="Start">
+      <mat-icon>play_arrow</mat-icon>
+    </button>
+    <button mat-fab color="warn" (click)="stopReading()" matTooltip="Stop">
+      <mat-icon>stop</mat-icon>
+    </button>
+    <button mat-fab (click)="adjustSpeed(100)" matTooltip="Rapido">
+      <mat-icon>fast_forward</mat-icon>
+    </button>
+    <button mat-fab (click)="adjustSpeed(300)" matTooltip="Devagar">
+      <mat-icon>fast_rewind</mat-icon>
+    </button>
+  </div>
 </div>

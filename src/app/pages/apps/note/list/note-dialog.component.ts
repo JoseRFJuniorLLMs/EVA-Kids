@@ -1,37 +1,50 @@
-import { Component, Inject } from '@angular/core';
-import { MAT_DIALOG_DATA, MatDialogRef, MatDialogModule } from '@angular/material/dialog';
-import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
+import { Component, OnInit } from '@angular/core';
+import { CommonModule, Location } from '@angular/common';
+import { ActivatedRoute } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { MatBadgeModule } from '@angular/material/badge';
 import { NoteCollection } from '../../note/note-collection';
+import { DataListService } from './data-list.service';
 
 @Component({
-  selector: 'note-dialog-view',
+  selector: 'note-view-page',
   templateUrl: './note-dialog.component.html',
   styleUrls: ['./note-dialog.component.scss'],
   standalone: true,
   imports: [
     CommonModule,
-    FormsModule,
-    MatFormFieldModule,
-    MatInputModule,
     MatButtonModule,
-    MatDialogModule ,
-    MatTooltipModule,
-    MatBadgeModule
+    MatIconModule,
+    MatTooltipModule
   ]
 })
-export class NoteDialogComponent {
+export class NoteDialogComponent implements OnInit {
+  data: NoteCollection | null = null;
+  loading = true;
+
   constructor(
-    public dialogRef: MatDialogRef<NoteDialogComponent>,
-    @Inject(MAT_DIALOG_DATA) public data: NoteCollection
+    private route: ActivatedRoute,
+    private dataService: DataListService,
+    private location: Location
   ) {}
 
-  onNoClick(): void {
-    this.dialogRef.close();
+  ngOnInit(): void {
+    const id = this.route.snapshot.paramMap.get('id');
+    if (id) {
+      this.dataService.getNoteById(id).subscribe({
+        next: (note) => {
+          this.data = note;
+          this.loading = false;
+        },
+        error: () => {
+          this.loading = false;
+        }
+      });
+    }
+  }
+
+  goBack(): void {
+    this.location.back();
   }
 }

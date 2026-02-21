@@ -1,19 +1,17 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
-import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { NoteService } from './note.service';
 import { NoteCollection } from './note-collection';
-import { Observable, Subject, Subscription } from 'rxjs';
+import { Observable, Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { CommonModule } from '@angular/common';
 import { CdkDragDrop, moveItemInArray, DragDropModule } from '@angular/cdk/drag-drop';
 import { UnifiedVoiceService } from '../../../core/services/voice/unified-voice.service';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { FormsModule } from '@angular/forms';
-import { FlashcardComponent } from '../note/list/flashcard.component';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { RouterModule } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 
 @Component({
   selector: 'notes',
@@ -40,9 +38,9 @@ export class NoteComponent implements OnInit, OnDestroy {
   searchTerm: string = '';
 
   constructor(
-    public dialog: MatDialog,
     private noteService: NoteService,
-    private voiceService: UnifiedVoiceService
+    private voiceService: UnifiedVoiceService,
+    private router: Router
   ) {}
 
   trackById(index: number, noteCollection: NoteCollection): string | number {
@@ -141,20 +139,7 @@ export class NoteComponent implements OnInit, OnDestroy {
   }
 
   openFlashcard(): void {
-    this.notes$.pipe(takeUntil(this.destroy$)).subscribe(notes => {
-      const dialogRef = this.dialog.open(FlashcardComponent, {
-        width: '80vw',
-        height: '80vh',
-        data: { notes },
-        hasBackdrop: false
-      });
-
-      dialogRef.afterClosed().pipe(takeUntil(this.destroy$)).subscribe(result => {
-        if (dialogRef.componentInstance) {
-          dialogRef.componentInstance.ngOnDestroy();
-        }
-      });
-    });
+    this.router.navigate(['/apps/flashcard']);
   }
 
   /* editNote(note: NoteCollection): void {

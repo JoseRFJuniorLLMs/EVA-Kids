@@ -222,6 +222,46 @@ export const appRoutes: VexRoutes = [
             }
           },
           {
+            path: 'flashcard',
+            loadComponent: () =>
+              import('./pages/apps/note/list/flashcard.component').then(
+                (m) => m.FlashcardComponent
+              ),
+            data: {
+              toolbarShadowEnabled: false
+            }
+          },
+          {
+            path: 'note-view/:id',
+            loadComponent: () =>
+              import('./pages/apps/note/list/note-dialog.component').then(
+                (m) => m.NoteDialogComponent
+              ),
+            data: {
+              toolbarShadowEnabled: false
+            }
+          },
+          {
+            path: 'note-edit/:id',
+            loadComponent: () =>
+              import('./pages/apps/note/list/note-dialog-edit.component').then(
+                (m) => m.NoteDialogEditComponent
+              ),
+            data: {
+              toolbarShadowEnabled: false
+            }
+          },
+          {
+            path: 'srvp',
+            loadComponent: () =>
+              import('./pages/dashboards/components/dialog-rsvpreader/rsvpreader.component').then(
+                (m) => m.RsvpreaderComponent
+              ),
+            data: {
+              toolbarShadowEnabled: false
+            }
+          },
+          {
             path: 'clase',
             loadComponent: () =>
               import('./pages/apps/clase/clase.component').then(

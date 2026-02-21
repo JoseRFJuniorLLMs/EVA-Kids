@@ -1,9 +1,7 @@
-import { Component, Inject, ElementRef, ViewChild, AfterViewInit, OnDestroy } from '@angular/core';
-import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
+import { Component, ElementRef, ViewChild, AfterViewInit, OnDestroy, OnInit } from '@angular/core';
 import { NoteCollection } from '../../note/note-collection';
-import { CommonModule } from '@angular/common';
+import { CommonModule, Location } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
-import { MatDialogModule } from '@angular/material/dialog';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
@@ -20,7 +18,6 @@ import { animate, style, transition, trigger } from '@angular/animations';
   imports: [
     CommonModule,
     MatButtonModule,
-    MatDialogModule,
     MatCardModule,
     MatIconModule,
     MatTooltipModule
@@ -35,10 +32,9 @@ import { animate, style, transition, trigger } from '@angular/animations';
         animate(1000, style({ opacity: 0 }))
       ])
     ])
-  ],
-  providers: [DataListService]
+  ]
 })
-export class FlashcardComponent implements AfterViewInit, OnDestroy {
+export class FlashcardComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('waveform') waveformElement!: ElementRef;
 
   currentNoteIndex: number = 0;
@@ -50,15 +46,14 @@ export class FlashcardComponent implements AfterViewInit, OnDestroy {
   audioAvailable = false;
 
   constructor(
-    public dialogRef: MatDialogRef<FlashcardComponent>,
-    @Inject(MAT_DIALOG_DATA) public data: { notes: NoteCollection[] },
     private dataService: DataListService,
-    private voiceService: UnifiedVoiceService
+    private voiceService: UnifiedVoiceService,
+    private location: Location
   ) {
     this.loadNotesOfTheDay();
     this.loadVoices();
   }
-  
+
   get currentNote(): NoteCollection {
     return this.notesOfTheDay[this.currentNoteIndex];
   }
@@ -90,9 +85,9 @@ export class FlashcardComponent implements AfterViewInit, OnDestroy {
   ngOnInit() {
     this.audioAvailable = this.checkAudioAvailability();
   }
-  
+
   checkAudioAvailability(): boolean {
-    return true; 
+    return true;
   }
 
   ngAfterViewInit(): void {
@@ -100,7 +95,7 @@ export class FlashcardComponent implements AfterViewInit, OnDestroy {
       this.voiceService.setupWaveSurfer(this.waveformElement);
     }
   }
-  
+
   ngOnDestroy(): void {
     if (this.voiceService && this.voiceService.wavesurfer) {
       this.voiceService.wavesurfer.destroy();
@@ -125,9 +120,6 @@ export class FlashcardComponent implements AfterViewInit, OnDestroy {
 
   showTranslationAndSpeak(): void {
     this.showTranslation = true;
-    if (this.currentNote && this.currentNote.answer) {
-      //TO DO: 
-    }
   }
 
   answer(response: 'fail' | 'hard' | 'good' | 'easy'): void {
@@ -164,7 +156,7 @@ export class FlashcardComponent implements AfterViewInit, OnDestroy {
     }
   }
 
-  closeClick(): void {
-    this.dialogRef.close();
+  goBack(): void {
+    this.location.back();
   }
 }

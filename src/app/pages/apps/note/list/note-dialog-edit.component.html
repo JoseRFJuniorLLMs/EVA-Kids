@@ -1,65 +1,72 @@
-<h1 mat-dialog-title>Note Details</h1>
-<div mat-dialog-content>
+<div class="note-edit-page" *ngIf="data">
+  <div class="page-header">
+    <button mat-icon-button (click)="goBack()" matTooltip="Voltar">
+      <mat-icon>arrow_back</mat-icon>
+    </button>
+    <h1>Editar Nota</h1>
+  </div>
+
   <form #noteForm="ngForm" class="form-container">
     <div class="form-column">
       <mat-form-field appearance="outline">
-        <mat-label matTooltip="Title Notes">Title <span style="color: red;"></span></mat-label>
+        <mat-label matTooltip="Title Notes">Title</mat-label>
         <input matInput [(ngModel)]="data.title" name="title" required>
       </mat-form-field>
 
       <mat-form-field appearance="outline">
-        <mat-label matTooltip="Tags Notes (VERB, BOOK, CLASS..)">Tags <span style="color: red;"></span></mat-label>
+        <mat-label matTooltip="Tags Notes (VERB, BOOK, CLASS..)">Tags</mat-label>
         <input matInput [(ngModel)]="data.tags" name="tags" required>
       </mat-form-field>
 
       <mat-form-field appearance="outline">
-        <mat-label matTooltip="Level">Level <span style="color: red;"></span></mat-label>
+        <mat-label matTooltip="Level">Level</mat-label>
         <input matInput [(ngModel)]="data.level" name="level" required>
       </mat-form-field>
 
       <mat-form-field appearance="outline">
-        <mat-label matTooltip="Last Revision Date">Last Revision Date <span style="color: red;"></span></mat-label>
+        <mat-label matTooltip="Last Revision Date">Last Revision Date</mat-label>
         <input matInput [(ngModel)]="data.last_revision_date" name="last_revision_date">
       </mat-form-field>
 
       <mat-form-field appearance="outline">
-        <mat-label matTooltip="Creation Date">Creation Date <span style="color: red;"></span></mat-label>
+        <mat-label matTooltip="Creation Date">Creation Date</mat-label>
         <input matInput [value]="data.created_at | date: 'short'" name="created_at" disabled>
       </mat-form-field>
     </div>
 
     <div class="form-column">
       <mat-form-field appearance="outline">
-        <mat-label matTooltip="Description Notes">Description <span style="color: red;"></span></mat-label>
+        <mat-label matTooltip="Description Notes">Description</mat-label>
         <textarea matInput [(ngModel)]="data.description" name="description" required></textarea>
       </mat-form-field>
 
       <mat-form-field appearance="outline">
-        <mat-label matTooltip="Answer">Answer <span style="color: red;"></span></mat-label>
+        <mat-label matTooltip="Answer">Answer</mat-label>
         <input matInput [(ngModel)]="data.answer" name="answer">
       </mat-form-field>
 
       <mat-form-field appearance="outline">
-        <mat-label matTooltip="Image URL">Image <span style="color: red;"></span></mat-label>
+        <mat-label matTooltip="Image URL">Image</mat-label>
         <input matInput [(ngModel)]="data.image" name="image">
       </mat-form-field>
 
       <mat-form-field appearance="outline">
-        <mat-label matTooltip="Next Revision Date">Next Revision Date <span style="color: red;"></span></mat-label>
+        <mat-label matTooltip="Next Revision Date">Next Revision Date</mat-label>
         <input matInput [(ngModel)]="data.next_revision_date" name="next_revision_date">
-      </mat-form-field>
-
-      <mat-form-field appearance="outline">
-        <mat-label matTooltip="Student ID">Student ID <span style="color: red;"></span></mat-label>
-        <input matInput [value]="data.student?._id" name="student_id" disabled>
       </mat-form-field>
 
       <mat-checkbox [(ngModel)]="data.permanent" name="permanent">Permanent</mat-checkbox>
     </div>
   </form>
+
+  <div class="page-actions">
+    <button mat-raised-button color="primary" matTooltip="Salvar" (click)="update()">
+      <mat-icon>save</mat-icon> Salvar
+    </button>
+    <button mat-raised-button (click)="goBack()">Cancelar</button>
+  </div>
 </div>
-<div mat-dialog-actions>
-  <button class="custom-button" matTooltip="Update" (click)="update()">Update
-    <mat-icon svgIcon="mat:save"></mat-icon>
-  </button>
+
+<div *ngIf="loading" class="loading-container">
+  <p>Carregando...</p>
 </div>

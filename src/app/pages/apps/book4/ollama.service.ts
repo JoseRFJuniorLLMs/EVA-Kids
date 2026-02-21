@@ -37,7 +37,8 @@ export class OllamaService {
                   if (jsonResponse.done) {
                     subject.complete();
                   }
-                } catch (e) {
+                } catch {
+                  // Non-JSON line from stream, skip
                 }
               }
             });

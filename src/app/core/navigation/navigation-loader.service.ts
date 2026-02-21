@@ -1,15 +1,16 @@
-import { Injectable } from '@angular/core';
+import { Injectable, OnDestroy } from '@angular/core';
 import { VexLayoutService } from '@vex/services/vex-layout.service';
-import { BehaviorSubject, Observable } from 'rxjs';
+import { BehaviorSubject, Observable, Subscription } from 'rxjs';
 import { NavigationItem } from './navigation-item.interface';
 import { DataListService } from 'src/app/pages/apps/note/list/data-list.service';
 
 @Injectable({
   providedIn: 'root'
 })
-export class NavigationLoaderService {
+export class NavigationLoaderService implements OnDestroy {
   private readonly _items: BehaviorSubject<NavigationItem[]> = new BehaviorSubject<NavigationItem[]>([]);
   private totalNotesSubject: BehaviorSubject<number> = new BehaviorSubject<number>(0);
+  private notesSub: Subscription | null = null;
 
   get items$(): Observable<NavigationItem[]> {
     return this._items.asObservable();
@@ -24,10 +25,14 @@ export class NavigationLoaderService {
   }
 
   private initializeTotalNotes(): void {
-    this.dataListService.getTotalNotesOfTheDay().subscribe(totalNotes => {
+    this.notesSub = this.dataListService.getTotalNotesOfTheDay().subscribe(totalNotes => {
       this.totalNotesSubject.next(totalNotes);
       this.updateNotesBadges(totalNotes);
     });
+  }
+
+  ngOnDestroy(): void {
+    this.notesSub?.unsubscribe();
   }
 
   loadNavigation(): void {

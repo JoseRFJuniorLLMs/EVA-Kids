@@ -1,6 +1,6 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Observable } from 'rxjs';
-import { map } from 'rxjs/operators'; // Adicione esta importação
+import { map, take } from 'rxjs/operators';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
@@ -106,7 +106,7 @@ export class NoteListComponent implements OnInit, OnDestroy {
   }
 
   openFlashcard(): void {
-    this.filteredNotes$.subscribe(notes => {
+    this.filteredNotes$.pipe(take(1)).subscribe(notes => {
       if (!this.flashcardDialogRef) {
         this.flashcardDialogRef = this.dialog.open(FlashcardComponent, {
           width: '80vw',
@@ -125,7 +125,7 @@ export class NoteListComponent implements OnInit, OnDestroy {
   }
 
   openSRVP(): void {
-    this.filteredNotes$.subscribe(notes => {
+    this.filteredNotes$.pipe(take(1)).subscribe(notes => {
       const combinedText = notes.map(note => note.description).join(' '); // Concatena as descrições das notas
       if (!this.srvpDialogRef) {
         this.srvpDialogRef = this.dialog.open(RsvpreaderComponent, {

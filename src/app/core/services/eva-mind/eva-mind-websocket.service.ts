@@ -60,6 +60,13 @@ export class EVAMindWebSocketService implements OnDestroy {
   private audioLevelInterval: any = null;
   private analyserNode: AnalyserNode | null = null;
 
+  // Reconnection
+  private readonly MAX_RECONNECT = 5;
+  private readonly RECONNECT_DELAYS = [1000, 2000, 4000, 8000, 16000];
+  private reconnectCount = 0;
+  private reconnectTimer: any = null;
+  private intentionalClose = false;
+
   get currentState(): EVAState {
     return this._state.value;
   }
@@ -92,6 +99,8 @@ export class EVAMindWebSocketService implements OnDestroy {
   }
 
   hangup(): void {
+    this.intentionalClose = true;
+    this.reconnectCount = 0;
     this.cleanup();
     this._state.next('idle');
     this._transcript.next('');
@@ -164,6 +173,9 @@ export class EVAMindWebSocketService implements OnDestroy {
     this.ws = new WebSocket(wsUrl);
 
     this.ws.onopen = () => {
+      this.reconnectCount = 0;
+      this.intentionalClose = false;
+
       // Send config message with CPF and kids system prompt
       const configMsg = {
         type: 'config',
@@ -192,13 +204,29 @@ export class EVAMindWebSocketService implements OnDestroy {
     };
 
     this.ws.onerror = () => {
-      this._state.next('error');
+      // onclose fires after onerror, reconnect logic is handled there
       this._error.next('Erro na conexao WebSocket com EVA');
     };
 
     this.ws.onclose = () => {
-      if (this._state.value !== 'idle' && this._state.value !== 'error') {
+      if (this.intentionalClose) {
         this._state.next('idle');
+        return;
+      }
+
+      if (this._state.value !== 'idle') {
+        if (this.reconnectCount < this.MAX_RECONNECT) {
+          const delay = this.RECONNECT_DELAYS[this.reconnectCount] || 16000;
+          this.reconnectCount++;
+          this._state.next('connecting');
+          this._error.next(`Reconectando em ${delay / 1000}s... (${this.reconnectCount}/${this.MAX_RECONNECT})`);
+          this.reconnectTimer = setTimeout(() => {
+            this.connectWebSocket();
+          }, delay);
+        } else {
+          this._state.next('error');
+          this._error.next('Conexao perdida. Tente novamente.');
+        }
       }
     };
   }
@@ -388,6 +416,11 @@ export class EVAMindWebSocketService implements OnDestroy {
   }
 
   private cleanup(): void {
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
+    }
+
     if (this.audioLevelInterval) {
       clearInterval(this.audioLevelInterval);
       this.audioLevelInterval = null;

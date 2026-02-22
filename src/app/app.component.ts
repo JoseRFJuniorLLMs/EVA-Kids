@@ -1,5 +1,6 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
+import { WebMCPToolsService } from './core/services/webmcp/webmcp-tools.service';
 
 @Component({
   selector: 'vex-root',
@@ -7,4 +8,10 @@ import { RouterOutlet } from '@angular/router';
   standalone: true,
   imports: [RouterOutlet]
 })
-export class AppComponent {}
+export class AppComponent implements OnInit {
+  constructor(private webmcp: WebMCPToolsService) {}
+
+  ngOnInit(): void {
+    this.webmcp.init().catch(console.warn);
+  }
+}
